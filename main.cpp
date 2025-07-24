@@ -405,6 +405,7 @@ int create_command_pool(Init &init, RenderData &data) {
   pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   pool_info.queueFamilyIndex =
       init.device.get_queue_index(vkb::QueueType::graphics).value();
+  pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
   if (init.disp.createCommandPool(&pool_info, nullptr, &data.command_pool) !=
       VK_SUCCESS) {
