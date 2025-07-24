@@ -4,18 +4,25 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+find_package(Vulkan REQUIRED)
 add_subdirectory(lib/vk-bootstrap)
 add_subdirectory(lib/glfw)
+add_subdirectory(lib/glm)
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/config.hpp.in"
     "${CMAKE_CURRENT_BINARY_DIR}/config.hpp"
 )
 
-add_executable(main main.cpp config.hpp)
+add_executable(main
+    main.cpp
+    config.hpp
+)
 target_link_libraries(main PUBLIC
     vk-bootstrap::vk-bootstrap
     glfw
+    glm::glm
+    Vulkan::Vulkan
 )
 target_include_directories(main PUBLIC
     ${CMAKE_BINARY_DIR}

@@ -428,6 +428,10 @@ int create_command_buffers(Init &init, RenderData &data) {
     return -1; // failed to allocate command buffers;
   }
 
+  return 0;
+}
+
+int record_command_buffers(Init &init, RenderData &data) {
   for (size_t i = 0; i < data.command_buffers.size(); i++) {
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -478,6 +482,7 @@ int create_command_buffers(Init &init, RenderData &data) {
       return -1; // failed to record command buffer!
     }
   }
+
   return 0;
 }
 
@@ -657,6 +662,8 @@ int main() {
   if (0 != create_command_pool(init, render_data))
     return -1;
   if (0 != create_command_buffers(init, render_data))
+    return -1;
+  if (0 != record_command_buffers(init, render_data))
     return -1;
   if (0 != create_sync_objects(init, render_data))
     return -1;
