@@ -1,11 +1,7 @@
-/* from
- * https://github.com/charles-lunarg/vk-bootstrap/blob/main/example/triangle.cpp
- */
 #include <stdio.h>
 
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <string>
 
 #include <VkBootstrap.h>
@@ -274,24 +270,10 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
   input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   input_assembly.primitiveRestartEnable = VK_FALSE;
 
-  VkViewport viewport = {};
-  viewport.x = 0.0f;
-  viewport.y = 0.0f;
-  viewport.width = (float)init.swapchain.extent.width;
-  viewport.height = (float)init.swapchain.extent.height;
-  viewport.minDepth = 0.0f;
-  viewport.maxDepth = 1.0f;
-
-  VkRect2D scissor = {};
-  scissor.offset = {0, 0};
-  scissor.extent = init.swapchain.extent;
-
   VkPipelineViewportStateCreateInfo viewport_state = {};
   viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
   viewport_state.viewportCount = 1;
-  viewport_state.pViewports = &viewport;
   viewport_state.scissorCount = 1;
-  viewport_state.pScissors = &scissor;
 
   VkPipelineRasterizationStateCreateInfo rasterizer = {};
   rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -380,8 +362,8 @@ int create_framebuffers(Init &init, RenderData &data) {
 
   data.framebuffers.resize(data.swapchain_image_views.size());
 
-  for (size_t i = 0; i < data.swapchain_image_views.size(); i++) {
-    VkImageView attachments[] = {data.swapchain_image_views[i]};
+  for (size_t i = 0; i < data.swapchain_image_views.size(); ++i) {
+    VkImageView attachments[] = {data.swapchain_image_views.at(i)};
 
     VkFramebufferCreateInfo framebuffer_info = {};
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -393,7 +375,7 @@ int create_framebuffers(Init &init, RenderData &data) {
     framebuffer_info.layers = 1;
 
     if (init.disp.createFramebuffer(&framebuffer_info, nullptr,
-                                    &data.framebuffers[i]) != VK_SUCCESS) {
+                                    &data.framebuffers.at(i)) != VK_SUCCESS) {
       return -1; // failed to create framebuffer
     }
   }
@@ -432,65 +414,10 @@ int create_command_buffers(Init &init, RenderData &data) {
   return 0;
 }
 
-int record_command_buffers(Init &init, RenderData &data) {
-  for (size_t i = 0; i < data.command_buffers.size(); i++) {
-    VkCommandBufferBeginInfo begin_info = {};
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    if (init.disp.beginCommandBuffer(data.command_buffers[i], &begin_info) !=
-        VK_SUCCESS) {
-      return -1; // failed to begin recording command buffer
-    }
-
-    VkRenderPassBeginInfo render_pass_info = {};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_info.renderPass = data.render_pass;
-    render_pass_info.framebuffer = data.framebuffers[i];
-    render_pass_info.renderArea.offset = {0, 0};
-    render_pass_info.renderArea.extent = init.swapchain.extent;
-    VkClearValue clearColor{{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    render_pass_info.clearValueCount = 1;
-    render_pass_info.pClearValues = &clearColor;
-
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)init.swapchain.extent.width;
-    viewport.height = (float)init.swapchain.extent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = init.swapchain.extent;
-
-    init.disp.cmdSetViewport(data.command_buffers[i], 0, 1, &viewport);
-    init.disp.cmdSetScissor(data.command_buffers[i], 0, 1, &scissor);
-
-    init.disp.cmdBeginRenderPass(data.command_buffers[i], &render_pass_info,
-                                 VK_SUBPASS_CONTENTS_INLINE);
-
-    init.disp.cmdBindPipeline(data.command_buffers[i],
-                              VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              data.graphics_pipeline);
-
-    init.disp.cmdDraw(data.command_buffers[i], 3, 1, 0, 0);
-
-    init.disp.cmdEndRenderPass(data.command_buffers[i]);
-
-    if (init.disp.endCommandBuffer(data.command_buffers[i]) != VK_SUCCESS) {
-      std::cout << "failed to record command buffer\n";
-      return -1; // failed to record command buffer!
-    }
-  }
-
-  return 0;
-}
-
 int create_sync_objects(Init &init, RenderData &data) {
-  data.available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-  data.finished_semaphore.resize(init.swapchain.image_count);
-  data.in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
+  data.available_semaphores.resize(init.swapchain.image_count, VK_NULL_HANDLE);
+  data.finished_semaphore.resize(init.swapchain.image_count, VK_NULL_HANDLE);
+  data.in_flight_fences.resize(init.swapchain.image_count, VK_NULL_HANDLE);
   data.image_in_flight.resize(init.swapchain.image_count, VK_NULL_HANDLE);
 
   VkSemaphoreCreateInfo semaphore_info = {};
@@ -500,24 +427,19 @@ int create_sync_objects(Init &init, RenderData &data) {
   fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
   fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-  for (size_t i = 0; i < init.swapchain.image_count; i++) {
-    if (init.disp.createSemaphore(&semaphore_info, nullptr,
-                                  &data.finished_semaphore[i]) != VK_SUCCESS) {
+  // clang-format off
+  for (size_t i = 0; i < init.swapchain.image_count; ++i) {
+    if (init.disp.createSemaphore(
+          &semaphore_info, nullptr, &data.available_semaphores.at(i)) != VK_SUCCESS ||
+        init.disp.createSemaphore(
+          &semaphore_info, nullptr, &data.finished_semaphore.at(i)) != VK_SUCCESS ||
+        init.disp.createFence(
+          &fence_info, nullptr, &data.in_flight_fences.at(i)) != VK_SUCCESS) {
       std::cout << "failed to create sync objects\n";
       return -1; // failed to create synchronization objects for a frame
     }
   }
-
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    if (init.disp.createSemaphore(&semaphore_info, nullptr,
-                                  &data.available_semaphores[i]) !=
-            VK_SUCCESS ||
-        init.disp.createFence(&fence_info, nullptr,
-                              &data.in_flight_fences[i]) != VK_SUCCESS) {
-      std::cout << "failed to create sync objects\n";
-      return -1; // failed to create synchronization objects for a frame
-    }
-  }
+  // clang-format on
   return 0;
 }
 
@@ -543,14 +465,66 @@ int recreate_swapchain(Init &init, RenderData &data) {
   return 0;
 }
 
+int record_command_buffer(Init &init, RenderData &data,
+                          VkCommandBuffer command_buffer,
+                          uint32_t image_index) {
+  VkCommandBufferBeginInfo begin_info = {};
+  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+  if (init.disp.beginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
+    return -1; // failed to begin recording command buffer
+  }
+
+  VkRenderPassBeginInfo render_pass_info = {};
+  render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+  render_pass_info.renderPass = data.render_pass;
+  render_pass_info.framebuffer = data.framebuffers.at(image_index);
+  render_pass_info.renderArea.offset = {0, 0};
+  render_pass_info.renderArea.extent = init.swapchain.extent;
+
+  VkClearValue clearColor{{{0.0f, 0.0f, 0.0f, 1.0f}}};
+  render_pass_info.clearValueCount = 1;
+  render_pass_info.pClearValues = &clearColor;
+
+  init.disp.cmdBeginRenderPass(command_buffer, &render_pass_info,
+                               VK_SUBPASS_CONTENTS_INLINE);
+  init.disp.cmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            data.graphics_pipeline);
+
+  VkViewport viewport = {};
+  viewport.x = 0.0f;
+  viewport.y = 0.0f;
+  viewport.width = (float)init.swapchain.extent.width;
+  viewport.height = (float)init.swapchain.extent.height;
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+  init.disp.cmdSetViewport(command_buffer, 0, 1, &viewport);
+
+  VkRect2D scissor = {};
+  scissor.offset = {0, 0};
+  scissor.extent = init.swapchain.extent;
+  init.disp.cmdSetScissor(command_buffer, 0, 1, &scissor);
+
+  init.disp.cmdDraw(command_buffer, 3, 1, 0, 0);
+
+  init.disp.cmdEndRenderPass(command_buffer);
+
+  if (init.disp.endCommandBuffer(command_buffer) != VK_SUCCESS) {
+    std::cout << "failed to record command buffer\n";
+    return -1; // failed to record command buffer!
+  }
+  return 0;
+}
+
 int draw_frame(Init &init, RenderData &data) {
-  init.disp.waitForFences(1, &data.in_flight_fences[data.current_frame],
+  init.disp.waitForFences(1, &data.in_flight_fences.at(data.current_frame),
                           VK_TRUE, UINT64_MAX);
 
   uint32_t image_index = 0;
   VkResult result = init.disp.acquireNextImageKHR(
-      init.swapchain, UINT64_MAX, data.available_semaphores[data.current_frame],
-      VK_NULL_HANDLE, &image_index);
+      init.swapchain, UINT64_MAX,
+      data.available_semaphores.at(data.current_frame), VK_NULL_HANDLE,
+      &image_index);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     return recreate_swapchain(init, data);
@@ -559,17 +533,21 @@ int draw_frame(Init &init, RenderData &data) {
     return -1;
   }
 
-  if (data.image_in_flight[image_index] != VK_NULL_HANDLE) {
-    init.disp.waitForFences(1, &data.image_in_flight[image_index], VK_TRUE,
+  if (data.image_in_flight.at(image_index) != VK_NULL_HANDLE) {
+    init.disp.waitForFences(1, &data.image_in_flight.at(image_index), VK_TRUE,
                             UINT64_MAX);
   }
-  data.image_in_flight[image_index] = data.in_flight_fences[data.current_frame];
+  data.image_in_flight.at(image_index) =
+      data.in_flight_fences.at(data.current_frame);
+
+  record_command_buffer(init, data, data.command_buffers.at(data.current_frame),
+                        image_index);
 
   VkSubmitInfo submitInfo = {};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
   VkSemaphore wait_semaphores[] = {
-      data.available_semaphores[data.current_frame]};
+      data.available_semaphores.at(data.current_frame)};
   VkPipelineStageFlags wait_stages[] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
@@ -577,16 +555,15 @@ int draw_frame(Init &init, RenderData &data) {
   submitInfo.pWaitDstStageMask = wait_stages;
 
   submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &data.command_buffers[image_index];
+  submitInfo.pCommandBuffers = &data.command_buffers.at(data.current_frame);
 
-  VkSemaphore signal_semaphores[] = {data.finished_semaphore[image_index]};
+  VkSemaphore signal_semaphores[] = {data.finished_semaphore.at(image_index)};
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signal_semaphores;
 
-  init.disp.resetFences(1, &data.in_flight_fences[data.current_frame]);
-
+  init.disp.resetFences(1, &data.in_flight_fences.at(data.current_frame));
   if (init.disp.queueSubmit(data.graphics_queue, 1, &submitInfo,
-                            data.in_flight_fences[data.current_frame]) !=
+                            data.in_flight_fences.at(data.current_frame)) !=
       VK_SUCCESS) {
     std::cout << "failed to submit draw command buffer\n";
     return -1; //"failed to submit draw command buffer
@@ -617,12 +594,10 @@ int draw_frame(Init &init, RenderData &data) {
 }
 
 void cleanup(Init &init, RenderData &data) {
-  for (size_t i = 0; i < init.swapchain.image_count; i++) {
-    init.disp.destroySemaphore(data.finished_semaphore[i], nullptr);
-  }
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    init.disp.destroySemaphore(data.available_semaphores[i], nullptr);
-    init.disp.destroyFence(data.in_flight_fences[i], nullptr);
+  for (size_t i = 0; i < init.swapchain.image_count; ++i) {
+    init.disp.destroySemaphore(data.finished_semaphore.at(i), nullptr);
+    init.disp.destroySemaphore(data.available_semaphores.at(i), nullptr);
+    init.disp.destroyFence(data.in_flight_fences.at(i), nullptr);
   }
 
   init.disp.destroyCommandPool(data.command_pool, nullptr);
@@ -663,8 +638,6 @@ int main() {
   if (0 != create_command_pool(init, render_data))
     return -1;
   if (0 != create_command_buffers(init, render_data))
-    return -1;
-  if (0 != record_command_buffers(init, render_data))
     return -1;
   if (0 != create_sync_objects(init, render_data))
     return -1;
