@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -13,6 +14,12 @@
 #include "config.hpp"
 
 namespace mpvgl {
+
+namespace {
+const std::vector<Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+                                      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+};
 
 GLFWwindow *create_window_glfw(const char *window_name, bool resize) {
   glfwInit();
@@ -226,11 +233,17 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
   VkPipelineShaderStageCreateInfo shader_stages[] = {vert_stage_info,
                                                      frag_stage_info};
 
+  auto bindingDescription = Vertex::getBindingDescription();
+  auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
   VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
   vertex_input_info.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertex_input_info.vertexBindingDescriptionCount = 0;
-  vertex_input_info.vertexAttributeDescriptionCount = 0;
+  vertex_input_info.vertexBindingDescriptionCount = 1;
+  vertex_input_info.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(attributeDescriptions.size());
+  vertex_input_info.pVertexBindingDescriptions = &bindingDescription;
+  vertex_input_info.pVertexAttributeDescriptions = attributeDescriptions.data();
 
   VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
   input_assembly.sType =
@@ -365,6 +378,65 @@ int create_command_pool(Init &init, RenderData &data) {
   return 0;
 }
 
+static uint32_t find_memory_type(Init &init, RenderData &data,
+                                 uint32_t typeFilter,
+                                 VkMemoryPropertyFlags properties) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(init.device.physical_device,
+                                      &memProperties);
+
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags &
+                                    properties) == properties) {
+      return i;
+    }
+  }
+
+  throw std::runtime_error("failed to find suitable memory type!");
+}
+
+int create_vertex_buffer(Init &init, RenderData &data) {
+  VkBufferCreateInfo bufferInfo{};
+  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+
+  bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+  bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  if (vkCreateBuffer(init.device, &bufferInfo, nullptr, &data.vertex_buffer) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create vertex buffer!");
+  }
+
+  VkMemoryRequirements memRequirements;
+  vkGetBufferMemoryRequirements(init.device, data.vertex_buffer,
+                                &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex =
+      find_memory_type(init, data, memRequirements.memoryTypeBits,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+  if (vkAllocateMemory(init.device, &allocInfo, nullptr,
+                       &data.vertex_buffer_memory) != VK_SUCCESS) {
+    throw std::runtime_error("failed to allocate vertex buffer memory!");
+  }
+  vkBindBufferMemory(init.device, data.vertex_buffer, data.vertex_buffer_memory,
+                     0);
+
+  void *d;
+  vkMapMemory(init.device, data.vertex_buffer_memory, 0, bufferInfo.size, 0,
+              &d);
+  memcpy(d, vertices.data(), (size_t)bufferInfo.size);
+  vkUnmapMemory(init.device, data.vertex_buffer_memory);
+
+  return 0;
+}
+
 int create_command_buffers(Init &init, RenderData &data) {
   data.command_buffers.resize(data.framebuffers.size());
 
@@ -473,7 +545,12 @@ int record_command_buffer(Init &init, RenderData &data,
   scissor.extent = init.swapchain.extent;
   init.disp.cmdSetScissor(command_buffer, 0, 1, &scissor);
 
-  init.disp.cmdDraw(command_buffer, 3, 1, 0, 0);
+  VkBuffer vertexBuffers[] = {data.vertex_buffer};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+
+  init.disp.cmdDraw(command_buffer, static_cast<uint32_t>(vertices.size()), 1,
+                    0, 0);
 
   init.disp.cmdEndRenderPass(command_buffer);
 
@@ -581,6 +658,8 @@ void cleanup(Init &init, RenderData &data) {
   init.swapchain.destroy_image_views(data.swapchain_image_views);
 
   vkb::destroy_swapchain(init.swapchain);
+  vkDestroyBuffer(init.device, data.vertex_buffer, nullptr);
+  vkFreeMemory(init.device, data.vertex_buffer_memory, nullptr);
   vkb::destroy_device(init.device);
   vkb::destroy_surface(init.instance, init.surface);
   vkb::destroy_instance(init.instance);

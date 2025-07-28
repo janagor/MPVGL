@@ -28,6 +28,8 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     throw std::runtime_error("");
   if (0 != create_command_pool(init, render_data))
     throw std::runtime_error("");
+  if (0 != create_vertex_buffer(init, render_data))
+    throw std::runtime_error("");
   if (0 != create_command_buffers(init, render_data))
     throw std::runtime_error("");
   if (0 != create_sync_objects(init, render_data))

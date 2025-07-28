@@ -1,17 +1,50 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
 
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+
 namespace mpvgl {
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
+
+struct Vertex {
+  glm::vec2 pos;
+  glm::vec3 color;
+
+  static VkVertexInputBindingDescription getBindingDescription() {
+    VkVertexInputBindingDescription bindingDescription{};
+    bindingDescription.binding = 0;
+    bindingDescription.stride = sizeof(Vertex);
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    return bindingDescription;
+  }
+
+  static std::array<VkVertexInputAttributeDescription, 2>
+  getAttributeDescriptions() {
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+    return attributeDescriptions;
+  }
+};
 
 struct Init {
   GLFWwindow *window;
@@ -38,6 +71,9 @@ struct RenderData {
   VkCommandPool command_pool;
   std::vector<VkCommandBuffer> command_buffers;
 
+  VkBuffer vertex_buffer;
+  VkDeviceMemory vertex_buffer_memory;
+
   std::vector<VkSemaphore> available_semaphores;
   std::vector<VkSemaphore> finished_semaphore;
   std::vector<VkFence> in_flight_fences;
@@ -59,12 +95,10 @@ VkShaderModule createShaderModule(Init &init, const std::vector<char> &code);
 int create_graphics_pipeline(Init &init, RenderData &data);
 int create_framebuffers(Init &init, RenderData &data);
 int create_command_pool(Init &init, RenderData &data);
+int create_vertex_buffer(Init &init, RenderData &data);
 int create_command_buffers(Init &init, RenderData &data);
-
 int create_sync_objects(Init &init, RenderData &data);
-
 int recreate_swapchain(Init &init, RenderData &data);
-
 int record_command_buffer(Init &init, RenderData &data,
                           VkCommandBuffer command_buffer, uint32_t image_index);
 int draw_frame(Init &init, RenderData &data);
