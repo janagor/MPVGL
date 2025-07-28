@@ -9,6 +9,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Engine/Core/RenderWindow.hpp"
 #include "config.hpp"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -620,6 +621,7 @@ void cleanup(Init &init, RenderData &data) {
 }
 
 int main() {
+  mpvgl::hello();
   Init init;
   RenderData render_data;
 
