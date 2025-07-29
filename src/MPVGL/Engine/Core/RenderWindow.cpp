@@ -16,9 +16,9 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
 
   if (!device_initialization(init).has_value())
     throw std::runtime_error("");
-  if (create_swapchain(init).has_value())
+  if (!create_swapchain(init).has_value())
     throw std::runtime_error("");
-  if (get_queues(init, render_data).has_value())
+  if (!get_queues(init, render_data).has_value())
     throw std::runtime_error("");
   if (0 != create_render_pass(init, render_data))
     throw std::runtime_error("");
@@ -29,6 +29,8 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
   if (0 != create_command_pool(init, render_data))
     throw std::runtime_error("");
   if (0 != create_vertex_buffer(init, render_data))
+    throw std::runtime_error("");
+  if (0 != create_index_buffer(init, render_data))
     throw std::runtime_error("");
   if (0 != create_command_buffers(init, render_data))
     throw std::runtime_error("");

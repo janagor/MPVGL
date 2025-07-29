@@ -73,6 +73,8 @@ struct RenderData {
 
   VkBuffer vertex_buffer;
   VkDeviceMemory vertex_buffer_memory;
+  VkBuffer index_buffer;
+  VkDeviceMemory index_buffer_memory;
 
   std::vector<VkSemaphore> available_semaphores;
   std::vector<VkSemaphore> finished_semaphore;
@@ -96,6 +98,7 @@ int create_graphics_pipeline(Init &init, RenderData &data);
 int create_framebuffers(Init &init, RenderData &data);
 int create_command_pool(Init &init, RenderData &data);
 int create_vertex_buffer(Init &init, RenderData &data);
+int create_index_buffer(Init &init, RenderData &data);
 int create_command_buffers(Init &init, RenderData &data);
 int create_sync_objects(Init &init, RenderData &data);
 int recreate_swapchain(Init &init, RenderData &data);

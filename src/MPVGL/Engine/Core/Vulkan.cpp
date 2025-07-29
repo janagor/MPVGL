@@ -18,10 +18,16 @@
 namespace mpvgl {
 
 namespace {
-const std::vector<Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                                      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-                                      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
+const std::vector<Vertex> vertices = {
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
+    {{-1.5f, 1.5f}, {1.0f, 1.0f, 1.0f}},
 };
+
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 1, 2, 3};
+
+}; // namespace
 
 GLFWwindow *create_window_glfw(const char *window_name, bool resize) {
   glfwInit();
@@ -492,6 +498,34 @@ int create_vertex_buffer(Init &init, RenderData &data) {
   return 0;
 }
 
+int create_index_buffer(Init &init, RenderData &data) {
+  VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+  VkBuffer stagingBuffer;
+  VkDeviceMemory stagingBufferMemory;
+  create_buffer(init, data, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                stagingBuffer, stagingBufferMemory);
+
+  void *d;
+  vkMapMemory(init.device, stagingBufferMemory, 0, bufferSize, 0, &d);
+  memcpy(d, indices.data(), (size_t)bufferSize);
+  vkUnmapMemory(init.device, stagingBufferMemory);
+
+  create_buffer(init, data, bufferSize,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, data.index_buffer,
+                data.index_buffer_memory);
+
+  copy_buffer(init, data, stagingBuffer, data.index_buffer, bufferSize);
+
+  vkDestroyBuffer(init.device, stagingBuffer, nullptr);
+  vkFreeMemory(init.device, stagingBufferMemory, nullptr);
+  return 0;
+}
+
 int create_command_buffers(Init &init, RenderData &data) {
   data.command_buffers.resize(data.framebuffers.size());
 
@@ -604,8 +638,10 @@ int record_command_buffer(Init &init, RenderData &data,
   VkDeviceSize offsets[] = {0};
   vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
 
-  init.disp.cmdDraw(command_buffer, static_cast<uint32_t>(vertices.size()), 1,
-                    0, 0);
+  vkCmdBindIndexBuffer(command_buffer, data.index_buffer, 0,
+                       VK_INDEX_TYPE_UINT16);
+  vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(indices.size()), 1, 0,
+                   0, 0);
 
   init.disp.cmdEndRenderPass(command_buffer);
 
@@ -713,8 +749,13 @@ void cleanup(Init &init, RenderData &data) {
   init.swapchain.destroy_image_views(data.swapchain_image_views);
 
   vkb::destroy_swapchain(init.swapchain);
+
   vkDestroyBuffer(init.device, data.vertex_buffer, nullptr);
   vkFreeMemory(init.device, data.vertex_buffer_memory, nullptr);
+
+  vkDestroyBuffer(init.device, data.index_buffer, nullptr);
+  vkFreeMemory(init.device, data.index_buffer_memory, nullptr);
+
   vkb::destroy_device(init.device);
   vkb::destroy_surface(init.instance, init.surface);
   vkb::destroy_instance(init.instance);
