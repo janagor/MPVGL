@@ -110,6 +110,7 @@ int recreate_swapchain(Init &init, RenderData &data);
 int record_command_buffer(Init &init, RenderData &data,
                           VkCommandBuffer command_buffer, uint32_t image_index);
 int draw_frame(Init &init, RenderData &data);
+int reloadShadersAndPipeline(Init &init, RenderData &data);
 void cleanup(Init &init, RenderData &data);
 
 } // namespace mpvgl

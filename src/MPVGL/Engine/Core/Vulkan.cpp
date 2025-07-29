@@ -732,6 +732,15 @@ int draw_frame(Init &init, RenderData &data) {
   return 0;
 }
 
+int reloadShadersAndPipeline(Init &init, RenderData &data) {
+  vkQueueWaitIdle(data.graphics_queue);
+
+  init.disp.destroyPipeline(data.graphics_pipeline, nullptr);
+  init.disp.destroyPipelineLayout(data.pipeline_layout, nullptr);
+
+  return create_graphics_pipeline(init, data);
+}
+
 void cleanup(Init &init, RenderData &data) {
   for (size_t i = 0; i < init.swapchain.image_count; ++i) {
     init.disp.destroySemaphore(data.finished_semaphore.at(i), nullptr);
