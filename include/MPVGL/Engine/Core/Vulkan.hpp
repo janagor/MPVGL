@@ -6,11 +6,11 @@
 #include <vector>
 
 #include <VkBootstrap.h>
+#include <glm/glm.hpp>
+#include <tl/expected.hpp>
 #include <vulkan/vulkan.hpp>
 
 #include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
 
 namespace mpvgl {
 
@@ -86,9 +86,9 @@ GLFWwindow *create_window_glfw(const char *window_name = "",
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator = nullptr);
-int device_initialization(Init &init);
-int create_swapchain(Init &init);
-int get_queues(Init &init, RenderData &data);
+tl::expected<void, std::error_code> device_initialization(Init &init);
+tl::expected<void, std::error_code> create_swapchain(Init &init);
+tl::expected<void, std::error_code> get_queues(Init &init, RenderData &data);
 int create_render_pass(Init &init, RenderData &data);
 std::vector<char> readFile(const std::string &filename);
 VkShaderModule createShaderModule(Init &init, const std::vector<char> &code);

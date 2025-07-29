@@ -1,6 +1,6 @@
+#include <iostream>
 #include <stdexcept>
 #include <string>
-#include <iostream>
 
 #include <GLFW/glfw3.h>
 
@@ -14,11 +14,11 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
                            GLFWwindow *share) noexcept(false)
     : init(), render_data() {
 
-  if (0 != device_initialization(init))
+  if (!device_initialization(init).has_value())
     throw std::runtime_error("");
-  if (0 != create_swapchain(init))
+  if (create_swapchain(init).has_value())
     throw std::runtime_error("");
-  if (0 != get_queues(init, render_data))
+  if (get_queues(init, render_data).has_value())
     throw std::runtime_error("");
   if (0 != create_render_pass(init, render_data))
     throw std::runtime_error("");

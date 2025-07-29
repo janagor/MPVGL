@@ -3,9 +3,11 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include <VkBootstrap.h>
+#include <tl/expected.hpp>
 #include <vulkan/vulkan.hpp>
 
 #include <GLFW/glfw3.h>
@@ -53,7 +55,7 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
   return surface;
 }
 
-int device_initialization(Init &init) {
+tl::expected<void, std::error_code> device_initialization(Init &init) {
   init.window = create_window_glfw("Vulkan Triangle", true);
 
   vkb::InstanceBuilder instance_builder;
@@ -62,7 +64,7 @@ int device_initialization(Init &init) {
                           .build();
   if (!instance_ret) {
     std::cout << instance_ret.error().message() << "\n";
-    return -1;
+    return tl::unexpected(instance_ret.error());
   }
   init.instance = instance_ret.value();
 
@@ -75,7 +77,7 @@ int device_initialization(Init &init) {
       phys_device_selector.set_surface(init.surface).select();
   if (!phys_device_ret) {
     std::cout << phys_device_ret.error().message() << "\n";
-    return -1;
+    return tl::unexpected(phys_device_ret.error());
   }
   vkb::PhysicalDevice physical_device = phys_device_ret.value();
 
@@ -83,35 +85,35 @@ int device_initialization(Init &init) {
   auto device_ret = device_builder.build();
   if (!device_ret) {
     std::cout << device_ret.error().message() << "\n";
-    return -1;
+    return tl::unexpected(device_ret.error());
   }
   init.device = device_ret.value();
 
   init.disp = init.device.make_table();
 
-  return 0;
+  return {};
 }
 
-int create_swapchain(Init &init) {
+tl::expected<void, std::error_code> create_swapchain(Init &init) {
 
   vkb::SwapchainBuilder swapchain_builder{init.device};
   auto swap_ret = swapchain_builder.set_old_swapchain(init.swapchain).build();
   if (!swap_ret) {
     std::cout << swap_ret.error().message() << " " << swap_ret.vk_result()
               << "\n";
-    return -1;
+    return tl::unexpected(swap_ret.error());
   }
   vkb::destroy_swapchain(init.swapchain);
   init.swapchain = swap_ret.value();
-  return 0;
+  return {};
 }
 
-int get_queues(Init &init, RenderData &data) {
+tl::expected<void, std::error_code> get_queues(Init &init, RenderData &data) {
   auto gq = init.device.get_queue(vkb::QueueType::graphics);
   if (!gq.has_value()) {
     std::cout << "failed to get graphics queue: " << gq.error().message()
               << "\n";
-    return -1;
+    return tl::unexpected(gq.error());
   }
   data.graphics_queue = gq.value();
 
@@ -119,10 +121,10 @@ int get_queues(Init &init, RenderData &data) {
   if (!pq.has_value()) {
     std::cout << "failed to get present queue: " << pq.error().message()
               << "\n";
-    return -1;
+    return tl::unexpected(pq.error());
   }
   data.present_queue = pq.value();
-  return 0;
+  return {};
 }
 
 int create_render_pass(Init &init, RenderData &data) {
@@ -547,7 +549,7 @@ int recreate_swapchain(Init &init, RenderData &data) {
 
   init.swapchain.destroy_image_views(data.swapchain_image_views);
 
-  if (0 != create_swapchain(init))
+  if (!create_swapchain(init).has_value())
     return -1;
   if (0 != create_framebuffers(init, data))
     return -1;

@@ -8,6 +8,7 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/vk-bootstrap)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glm)
+add_subdirectory(${PROJECT_SOURCE_DIR}/lib/expected)
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/config.hpp.in"
@@ -26,12 +27,14 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
     glm::glm
     Vulkan::Vulkan
+    tl::expected
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
     vk-bootstrap::vk-bootstrap
     glfw
     glm::glm
     Vulkan::Vulkan
+    tl::expected
 )
 
 set(EXECUTABLE_NAME "main")
