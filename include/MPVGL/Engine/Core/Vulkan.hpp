@@ -12,11 +12,16 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Engine/Core/Color.hpp"
+
 namespace mpvgl {
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 struct Vertex {
+  Vertex(glm::vec2 pos, Color color)
+      : pos(pos), color({color.m_red, color.m_green, color.m_blue}) {}
+
   glm::vec2 pos;
   glm::vec3 color;
 

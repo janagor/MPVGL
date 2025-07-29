@@ -12,6 +12,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Engine/Core/Color.hpp"
 #include "MPVGL/Engine/Core/Vulkan.hpp"
 #include "config.hpp"
 
@@ -20,9 +21,11 @@ namespace mpvgl {
 namespace {
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
-    {{-1.5f, 1.5f}, {1.0f, 1.0f, 1.0f}},
+    {{-0.5f, -0.5f}, Color::literal::Red},
+    {{0.5f, -0.5f}, Color::literal::Green},
+    {{0.5f, 0.5f}, Color::literal::Blue},
+    {{-0.5f, 0.5f}, Color::literal::White},
+    {{-1.5f, 1.5f}, Color::literal::Black},
 };
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 1, 2, 3};
