@@ -1,18 +1,25 @@
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
 #include <GLFW/glfw3.h>
 
-#include "MPVGL/Engine/Core/RenderWindow.hpp"
-#include "MPVGL/Engine/Core/Vulkan.hpp"
+#include "MPVGL/Core/RenderWindow.hpp"
+#include "MPVGL/Core/Shader/ShaderWatcher.hpp"
+#include "MPVGL/Core/Vulkan.hpp"
+#include "MPVGL/Core/Vulkan/Init.hpp"
+#include "config.hpp"
 
 namespace mpvgl {
 
 RenderWindow::RenderWindow(int width, int height, std::string const &title,
                            GLFWmonitor *monitor,
                            GLFWwindow *share) noexcept(false)
-    : init(), render_data() {
+    : init(), render_data(),
+      shader_watcher(
+          std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY,
+          std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
 
   if (!device_initialization(init).has_value())
     throw std::runtime_error("");
@@ -38,32 +45,24 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     throw std::runtime_error("");
 }
 
-RenderWindow::RenderWindow(RenderWindow &&other) noexcept
-    : window(other.window), init(other.init), render_data(other.render_data) {
-  other.window = nullptr;
-  other.init = Init();
-  other.render_data = RenderData();
-}
-
-RenderWindow &RenderWindow::operator=(RenderWindow &&other) noexcept {
-  this->window = other.window;
-  other.window = nullptr;
-  this->init = other.init;
-  other.init = Init();
-  this->render_data = other.render_data;
-  other.render_data = RenderData();
-  return (*this);
-}
-
 RenderWindow::~RenderWindow() noexcept { cleanup(init, render_data); }
 
 int RenderWindow::draw() noexcept {
+  std::jthread watcherThread(
+      [&](std::stop_token st) { shader_watcher.run(st); });
+
+  int time = 0;
   while (!glfwWindowShouldClose(init.window)) {
     glfwPollEvents();
     int res = draw_frame(init, render_data);
     if (res != 0) {
       std::cout << "failed to draw frame \n";
       return -1;
+    }
+    if (time++ >= 10'000) {
+      std::cout << time << std::endl;
+      reloadShadersAndPipeline(init, render_data);
+      time = 0;
     }
   }
   init.disp.deviceWaitIdle();

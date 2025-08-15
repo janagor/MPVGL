@@ -12,8 +12,9 @@
 
 #include <GLFW/glfw3.h>
 
-#include "MPVGL/Engine/Core/Color.hpp"
-#include "MPVGL/Engine/Core/Vulkan.hpp"
+#include "MPVGL/Core//Vulkan/Init.hpp"
+#include "MPVGL/Core/Color.hpp"
+#include "MPVGL/Core/Vulkan.hpp"
 #include "config.hpp"
 
 namespace mpvgl {
@@ -216,11 +217,11 @@ VkShaderModule createShaderModule(Init &init, const std::vector<char> &code) {
 }
 
 int create_graphics_pipeline(Init &init, RenderData &data) {
-  std::cout << std::string(EXAMPLE_SOURCE_DIRECTORY) << std::endl;
-  auto vert_code = readFile(std::string(EXAMPLE_SOURCE_DIRECTORY) +
-                            "/shaders/triangle.vert.spv");
-  auto frag_code = readFile(std::string(EXAMPLE_SOURCE_DIRECTORY) +
-                            "/shaders/triangle.frag.spv");
+  std::cout << std::string(SOURCE_DIRECTORY) << std::endl;
+  auto vert_code =
+      readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv");
+  auto frag_code =
+      readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv");
 
   auto vert_module = createShaderModule(init, vert_code);
   auto frag_module = createShaderModule(init, frag_code);

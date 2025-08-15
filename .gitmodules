@@ -10,3 +10,6 @@
 [submodule "lib/expected"]
 	path = lib/expected
 	url = https://github.com/TartanLlama/expected/
+[submodule "lib/glslang"]
+	path = lib/glslang
+	url = https://github.com/KhronosGroup/glslang
