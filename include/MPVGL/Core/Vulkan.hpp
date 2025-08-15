@@ -16,8 +16,6 @@
 
 namespace mpvgl {
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
-
 GLFWwindow *create_window_glfw(const char *window_name = "",
                                bool resize = true);
 void destroy_window_glfw(GLFWwindow *window);
@@ -29,11 +27,15 @@ tl::expected<void, std::error_code> get_queues(Init &init, RenderData &data);
 int create_render_pass(Init &init, RenderData &data);
 std::vector<char> readFile(const std::string &filename);
 VkShaderModule createShaderModule(Init &init, const std::vector<char> &code);
+int create_descriptor_set_layout(Init &init, RenderData &data);
 int create_graphics_pipeline(Init &init, RenderData &data);
 int create_framebuffers(Init &init, RenderData &data);
 int create_command_pool(Init &init, RenderData &data);
 int create_vertex_buffer(Init &init, RenderData &data);
 int create_index_buffer(Init &init, RenderData &data);
+int create_uniform_buffers(Init &init, RenderData &data);
+int create_descriptor_pool(Init &init, RenderData &data);
+int create_descriptor_sets(Init &init, RenderData &data);
 int create_command_buffers(Init &init, RenderData &data);
 int create_sync_objects(Init &init, RenderData &data);
 int recreate_swapchain(Init &init, RenderData &data);

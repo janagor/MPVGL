@@ -33,6 +33,15 @@ public:
     };
   }
 
+  inline void compileAll() {
+    for (const auto &entry : std::filesystem::directory_iterator(shaderDir)) {
+      if (!isShaderFile(entry.path()))
+        continue;
+      else
+        compile(entry.path());
+    }
+  }
+
 private:
   std::string shaderDir;
   std::string outputDir;
