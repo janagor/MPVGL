@@ -1,11 +1,12 @@
+#include "MPVGL/Core/RenderWindow.hpp"
+
+#include <GLFW/glfw3.h>
+
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
-#include <GLFW/glfw3.h>
-
-#include "MPVGL/Core/RenderWindow.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -16,11 +17,11 @@ namespace mpvgl {
 RenderWindow::RenderWindow(int width, int height, std::string const &title,
                            GLFWmonitor *monitor,
                            GLFWwindow *share) noexcept(false)
-    : init(), render_data(),
+    : init(),
+      render_data(),
       shader_watcher(
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
-
   shader_watcher.compileAll();
 
   if (!device_initialization(init).has_value())
@@ -79,4 +80,4 @@ int RenderWindow::draw() noexcept {
   return 0;
 }
 
-} // namespace mpvgl
+}  // namespace mpvgl

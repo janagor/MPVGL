@@ -1,4 +1,6 @@
 #pragma once
+#include <glslang/Public/ShaderLang.h>
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -9,12 +11,11 @@
 #include <thread>
 
 #include "MPVGL/Core/Shader/ShaderCompiler.hpp"
-#include <glslang/Public/ShaderLang.h>
 
 namespace mpvgl {
 
 class ShaderWatcher {
-public:
+ public:
   ShaderWatcher(std::string const &shaderDir, std::string const &outputDir)
       : shaderDir(shaderDir), outputDir(outputDir) {
     std::filesystem::create_directories(outputDir);
@@ -25,7 +26,7 @@ public:
   ShaderWatcher(ShaderWatcher &&other) noexcept = delete;
   ShaderWatcher &operator=(ShaderWatcher &&other) noexcept = delete;
 
-public:
+ public:
   inline void run(std::stop_token stopToken) {
     while (!stopToken.stop_requested()) {
       scanAndCompile();
@@ -42,12 +43,12 @@ public:
     }
   }
 
-private:
+ private:
   std::string shaderDir;
   std::string outputDir;
   std::map<std::string, std::filesystem::file_time_type> timestamps;
 
-private:
+ private:
   inline bool isShaderFile(std::filesystem::path const &path) {
     return path.extension() == ".vert" || path.extension() == ".frag";
   }
@@ -66,11 +67,10 @@ private:
     }
   }
 
-  inline void compile(const std::filesystem::path &shaderPath) {
+  inline void compile(std::filesystem::path const &shaderPath) {
     std::cout << shaderPath << std::endl;
     std::ifstream file(shaderPath, std::ios::binary | std::ios::ate);
-    if (!file)
-      throw std::runtime_error("Cannot open file");
+    if (!file) throw std::runtime_error("Cannot open file");
 
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
@@ -102,8 +102,7 @@ private:
 
   inline void scanAndCompile() {
     for (const auto &entry : std::filesystem::directory_iterator(shaderDir)) {
-      if (!isShaderFile(entry.path()))
-        continue;
+      if (!isShaderFile(entry.path())) continue;
 
       std::string pathStr = entry.path().string();
       auto currentTime = std::filesystem::last_write_time(entry);
@@ -117,4 +116,4 @@ private:
   }
 };
 
-} // namespace mpvgl
+}  // namespace mpvgl

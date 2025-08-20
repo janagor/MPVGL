@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include <GLFW/glfw3.h>
+
+#include <string>
 
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -10,7 +10,7 @@
 namespace mpvgl {
 
 class RenderWindow {
-public:
+ public:
   explicit RenderWindow(int width, int height, std::string const &title,
                         GLFWmonitor *monitor = nullptr,
                         GLFWwindow *share = nullptr) noexcept(false);
@@ -23,14 +23,14 @@ public:
 
   ~RenderWindow() noexcept;
 
-public:
+ public:
   int draw() noexcept;
 
-private:
+ private:
   Init init;
   RenderData render_data;
   GLFWwindow *window;
   ShaderWatcher shader_watcher;
 };
 
-} // namespace mpvgl
+}  // namespace mpvgl

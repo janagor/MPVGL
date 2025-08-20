@@ -25,4 +25,4 @@ struct Color::literal {
   static constexpr Color White = Color(255, 255, 255);
 };
 
-} // namespace mpvgl
+}  // namespace mpvgl

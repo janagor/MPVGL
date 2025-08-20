@@ -1,13 +1,13 @@
 #pragma once
 
+#include <glslang/Public/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+
 #include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
-
-#include <glslang/Public/ResourceLimits.h>
-#include <glslang/Public/ShaderLang.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
 
 namespace mpvgl {
 
@@ -27,7 +27,7 @@ struct GlslShaderIncluder : public glslang::TShader::Includer {
 
   virtual void releaseInclude(IncludeResult *) override {};
 
-private:
+ private:
   static inline const std::string sEmpty = "";
   static inline IncludeResult smFailResult =
       IncludeResult(sEmpty, "Header does not exist!", 0, nullptr);
@@ -38,7 +38,7 @@ private:
 };
 
 struct ShaderCompiler {
-public:
+ public:
   ShaderCompiler() noexcept {};
 
   ShaderCompiler(const ShaderCompiler &) = delete;
@@ -46,7 +46,7 @@ public:
   ShaderCompiler(ShaderCompiler &&other) noexcept = delete;
   ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
 
-public:
+ public:
   std::vector<uint32_t> compile(const std::string &source, EShLanguage lang) {
     std::cout << source << std::endl;
     glslang::TShader shader(lang);
@@ -101,7 +101,7 @@ public:
     return spirv;
   };
 
-private:
+ private:
 };
 
-} // namespace mpvgl
+}  // namespace mpvgl

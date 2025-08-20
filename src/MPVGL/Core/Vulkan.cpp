@@ -39,13 +39,12 @@ const std::vector<Vertex> vertices = {
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 1, 2, 3};
 
-}; // namespace
+};  // namespace
 
 GLFWwindow *create_window_glfw(const char *window_name, bool resize) {
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  if (!resize)
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  if (!resize) glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
   return glfwCreateWindow(1024, 1024, window_name, NULL, NULL);
 }
@@ -64,8 +63,7 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
     int ret = glfwGetError(&error_msg);
     if (ret != 0) {
       std::cout << ret << " ";
-      if (error_msg != nullptr)
-        std::cout << error_msg;
+      if (error_msg != nullptr) std::cout << error_msg;
       std::cout << "\n";
     }
     surface = VK_NULL_HANDLE;
@@ -113,7 +111,6 @@ tl::expected<void, std::error_code> device_initialization(Init &init) {
 }
 
 tl::expected<void, std::error_code> create_swapchain(Init &init) {
-
   vkb::SwapchainBuilder swapchain_builder{init.device};
   auto swap_ret = swapchain_builder.set_old_swapchain(init.swapchain).build();
   if (!swap_ret) {
@@ -186,7 +183,7 @@ int create_render_pass(Init &init, RenderData &data) {
   if (init.disp.createRenderPass(&render_pass_info, nullptr,
                                  &data.render_pass) != VK_SUCCESS) {
     std::cout << "failed to create render pass\n";
-    return -1; // failed to create render pass!
+    return -1;  // failed to create render pass!
   }
   return 0;
 }
@@ -218,7 +215,7 @@ VkShaderModule createShaderModule(Init &init, const std::vector<char> &code) {
   VkShaderModule shaderModule;
   if (init.disp.createShaderModule(&create_info, nullptr, &shaderModule) !=
       VK_SUCCESS) {
-    return VK_NULL_HANDLE; // failed to create shader module
+    return VK_NULL_HANDLE;  // failed to create shader module
   }
 
   return shaderModule;
@@ -240,7 +237,7 @@ int create_descriptor_set_layout(Init &init, RenderData &data) {
   if (vkCreateDescriptorSetLayout(init.device, &layoutInfo, nullptr,
                                   &data.descriptor_set_layout) != VK_SUCCESS) {
     std::cout << "failed to create descriptor set layout!\n";
-    return -1; // failed to create descriptor set layout
+    return -1;  // failed to create descriptor set layout
   }
   return 0;
 }
@@ -256,7 +253,7 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
   auto frag_module = createShaderModule(init, frag_code);
   if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE) {
     std::cout << "failed to create shader module\n";
-    return -1; // failed to create shader modules
+    return -1;  // failed to create shader modules
   }
 
   VkPipelineShaderStageCreateInfo vert_stage_info = {};
@@ -339,7 +336,7 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
   if (init.disp.createPipelineLayout(&pipeline_layout_info, nullptr,
                                      &data.pipeline_layout) != VK_SUCCESS) {
     std::cout << "failed to create pipeline layout\n";
-    return -1; // failed to create pipeline layout
+    return -1;  // failed to create pipeline layout
   }
 
   std::vector<VkDynamicState> dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT,
@@ -379,7 +376,7 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
                                         nullptr, &data.graphics_pipeline) !=
       VK_SUCCESS) {
     std::cout << "failed to create pipline\n";
-    return -1; // failed to create graphics pipeline
+    return -1;  // failed to create graphics pipeline
   }
 
   init.disp.destroyShaderModule(frag_module, nullptr);
@@ -407,7 +404,7 @@ int create_framebuffers(Init &init, RenderData &data) {
 
     if (init.disp.createFramebuffer(&framebuffer_info, nullptr,
                                     &data.framebuffers.at(i)) != VK_SUCCESS) {
-      return -1; // failed to create framebuffer
+      return -1;  // failed to create framebuffer
     }
   }
   return 0;
@@ -423,7 +420,7 @@ int create_command_pool(Init &init, RenderData &data) {
   if (init.disp.createCommandPool(&pool_info, nullptr, &data.command_pool) !=
       VK_SUCCESS) {
     std::cout << "failed to create command pool\n";
-    return -1; // failed to create command pool
+    return -1;  // failed to create command pool
   }
   return 0;
 }
@@ -495,8 +492,8 @@ static void copy_buffer(Init &init, RenderData &data, VkBuffer srcBuffer,
   vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
   VkBufferCopy copyRegion{};
-  copyRegion.srcOffset = 0; // Optional
-  copyRegion.dstOffset = 0; // Optional
+  copyRegion.srcOffset = 0;  // Optional
+  copyRegion.dstOffset = 0;  // Optional
   copyRegion.size = size;
   vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
@@ -508,7 +505,7 @@ static void copy_buffer(Init &init, RenderData &data, VkBuffer srcBuffer,
   submitInfo.pCommandBuffers = &commandBuffer;
 
   vkQueueSubmit(data.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-  vkQueueWaitIdle(data.graphics_queue); // TODO: use fences instead
+  vkQueueWaitIdle(data.graphics_queue);  // TODO: use fences instead
 
   vkFreeCommandBuffers(init.device, data.command_pool, 1, &commandBuffer);
 }
@@ -528,11 +525,11 @@ int create_vertex_buffer(Init &init, RenderData &data) {
   memcpy(d, vertices.data(), (size_t)bufferSize);
   vkUnmapMemory(init.device, stagingBufferMemory);
 
-  create_buffer(init, data, bufferSize,
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, data.vertex_buffer,
-                data.vertex_buffer_memory);
+  create_buffer(
+      init, data, bufferSize,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, data.vertex_buffer,
+      data.vertex_buffer_memory);
 
   copy_buffer(init, data, stagingBuffer, data.vertex_buffer, bufferSize);
   vkDestroyBuffer(init.device, stagingBuffer, nullptr);
@@ -555,11 +552,11 @@ int create_index_buffer(Init &init, RenderData &data) {
   memcpy(d, indices.data(), (size_t)bufferSize);
   vkUnmapMemory(init.device, stagingBufferMemory);
 
-  create_buffer(init, data, bufferSize,
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, data.index_buffer,
-                data.index_buffer_memory);
+  create_buffer(
+      init, data, bufferSize,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, data.index_buffer,
+      data.index_buffer_memory);
 
   copy_buffer(init, data, stagingBuffer, data.index_buffer, bufferSize);
 
@@ -661,7 +658,7 @@ int create_command_buffers(Init &init, RenderData &data) {
 
   if (init.disp.allocateCommandBuffers(
           &allocInfo, data.command_buffers.data()) != VK_SUCCESS) {
-    return -1; // failed to allocate command buffers;
+    return -1;  // failed to allocate command buffers;
   }
 
   return 0;
@@ -707,14 +704,10 @@ int recreate_swapchain(Init &init, RenderData &data) {
 
   init.swapchain.destroy_image_views(data.swapchain_image_views);
 
-  if (!create_swapchain(init).has_value())
-    return -1;
-  if (0 != create_framebuffers(init, data))
-    return -1;
-  if (0 != create_command_pool(init, data))
-    return -1;
-  if (0 != create_command_buffers(init, data))
-    return -1;
+  if (!create_swapchain(init).has_value()) return -1;
+  if (0 != create_framebuffers(init, data)) return -1;
+  if (0 != create_command_pool(init, data)) return -1;
+  if (0 != create_command_buffers(init, data)) return -1;
   return 0;
 }
 
@@ -725,7 +718,7 @@ int record_command_buffer(Init &init, RenderData &data,
   begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
   if (init.disp.beginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
-    return -1; // failed to begin recording command buffer
+    return -1;  // failed to begin recording command buffer
   }
 
   VkRenderPassBeginInfo render_pass_info = {};
@@ -776,7 +769,7 @@ int record_command_buffer(Init &init, RenderData &data,
 
   if (init.disp.endCommandBuffer(command_buffer) != VK_SUCCESS) {
     std::cout << "failed to record command buffer\n";
-    return -1; // failed to record command buffer!
+    return -1;  // failed to record command buffer!
   }
   return 0;
 }
@@ -796,10 +789,10 @@ int update_uniform_buffer(Init &init, RenderData &data,
   ubo.view =
       glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo.projection = glm::perspective(glm::radians(45.0f),
-                                    init.swapchain.extent.width /
-                                        (float)init.swapchain.extent.height,
-                                    0.1f, 10.0f);
+  ubo.projection = glm::perspective(
+      glm::radians(45.0f),
+      init.swapchain.extent.width / (float)init.swapchain.extent.height, 0.1f,
+      10.0f);
   ubo.projection[1][1] *= -1;
 
   memcpy(data.uniform_buffers_mapped.at(current_image), &ubo, sizeof(ubo));
@@ -857,7 +850,7 @@ int draw_frame(Init &init, RenderData &data) {
                             data.in_flight_fences.at(data.current_frame)) !=
       VK_SUCCESS) {
     std::cout << "failed to submit draw command buffer\n";
-    return -1; //"failed to submit draw command buffer
+    return -1;  //"failed to submit draw command buffer
   }
 
   VkPresentInfoKHR present_info = {};
@@ -936,4 +929,4 @@ void cleanup(Init &init, RenderData &data) {
   destroy_window_glfw(init.window);
 }
 
-} // namespace mpvgl
+}  // namespace mpvgl

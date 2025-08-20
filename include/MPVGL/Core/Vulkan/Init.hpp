@@ -1,13 +1,12 @@
 #pragma once
 
-#include <array>
-#include <vector>
-
-#include <VkBootstrap.h>
-#include <glm/glm.hpp>
-#include <vulkan/vulkan.hpp>
-
 #include <GLFW/glfw3.h>
+#include <VkBootstrap.h>
+
+#include <array>
+#include <glm/glm.hpp>
+#include <vector>
+#include <vulkan/vulkan.hpp>
 
 #include "MPVGL/Core/Color.hpp"
 
@@ -92,4 +91,4 @@ struct RenderData {
   size_t current_frame = 0;
 };
 
-} // namespace mpvgl
+}  // namespace mpvgl

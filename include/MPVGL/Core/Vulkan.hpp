@@ -1,16 +1,15 @@
 #pragma once
 
+#include <GLFW/glfw3.h>
+#include <VkBootstrap.h>
+
 #include <array>
 #include <cstdint>
-#include <string>
-#include <vector>
-
-#include <VkBootstrap.h>
 #include <glm/glm.hpp>
+#include <string>
 #include <tl/expected.hpp>
+#include <vector>
 #include <vulkan/vulkan.hpp>
-
-#include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Vulkan/Init.hpp"
 
@@ -45,4 +44,4 @@ int draw_frame(Init &init, RenderData &data);
 int reloadShadersAndPipeline(Init &init, RenderData &data);
 void cleanup(Init &init, RenderData &data);
 
-} // namespace mpvgl
+}  // namespace mpvgl
