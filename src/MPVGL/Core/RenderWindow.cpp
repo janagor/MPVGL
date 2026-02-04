@@ -40,6 +40,12 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     throw std::runtime_error("Failed at `create_framebuffers`.");
   if (0 != create_command_pool(init, render_data))
     throw std::runtime_error("Failed at `create_command_pool`.");
+  if (0 != create_texture_image(init, render_data))
+    throw std::runtime_error("Failed at `create_texture_image`.");
+  if (0 != create_texture_image_view(init, render_data))
+    throw std::runtime_error("Failed at `create_texture_image_view`.");
+  if (0 != create_texture_sampler(init, render_data))
+    throw std::runtime_error("Failed at `create_texture_sampler`.");
   if (0 != create_vertex_buffer(init, render_data))
     throw std::runtime_error("Failed at `create_vertex_buffer`.");
   if (0 != create_index_buffer(init, render_data))
@@ -71,7 +77,6 @@ int RenderWindow::draw() noexcept {
       return -1;
     }
     if (time++ >= 10'000) {
-      std::cout << time << std::endl;
       reloadShadersAndPipeline(init, render_data);
       time = 0;
     }

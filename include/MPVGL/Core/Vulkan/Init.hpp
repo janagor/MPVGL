@@ -8,16 +8,19 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
-#include "MPVGL/Core/Color.hpp"
+#include "MPVGL/Graphics/Color.hpp"
 
 namespace mpvgl {
 
 struct Vertex {
-  Vertex(glm::vec2 pos, Color color)
-      : pos(pos), color({color.m_red, color.m_green, color.m_blue}) {}
+  Vertex(glm::vec2 pos, Color color, glm::vec2 texCoord)
+      : pos(pos),
+        color({color.m_red, color.m_green, color.m_blue}),
+        texCoord(texCoord) {}
 
   glm::vec2 pos;
   glm::vec3 color;
+  glm::vec2 texCoord;
 
   static VkVertexInputBindingDescription getBindingDescription() noexcept {
     VkVertexInputBindingDescription bindingDescription{};
@@ -27,9 +30,9 @@ struct Vertex {
     return bindingDescription;
   }
 
-  static constexpr std::array<VkVertexInputAttributeDescription, 2>
+  static constexpr std::array<VkVertexInputAttributeDescription, 3>
   getAttributeDescriptions() noexcept {
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
@@ -40,6 +43,11 @@ struct Vertex {
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
     return attributeDescriptions;
   }
@@ -76,6 +84,11 @@ struct RenderData {
   VkDeviceMemory vertex_buffer_memory;
   VkBuffer index_buffer;
   VkDeviceMemory index_buffer_memory;
+
+  VkImage texture_image;
+  VkImageView texture_image_view;
+  VkSampler texture_sampler;
+  VkDeviceMemory texture_image_memory;
 
   std::vector<VkBuffer> uniform_buffers;
   std::vector<VkDeviceMemory> uniform_buffers_memory;

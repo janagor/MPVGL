@@ -39,6 +39,7 @@ add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC} )
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}
+	${PROJECT_SOURCE_DIR}/lib/
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -61,17 +62,8 @@ add_executable(${EXECUTABLE_NAME}
 
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     ${PROJECT_NAME}
-    glfw
-    glm::glm
-    tl::expected
-    Vulkan::Vulkan
-    glslang::SPIRV
-    glslang::glslang
-    vk-bootstrap::vk-bootstrap
-    glslang::glslang-default-resource-limits
 )
 
 target_include_directories(${EXECUTABLE_NAME} PUBLIC
     ${PROJECT_NAME}/include
-    ${CMAKE_BINARY_DIR}
 )
