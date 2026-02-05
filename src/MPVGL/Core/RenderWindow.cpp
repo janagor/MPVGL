@@ -1,5 +1,3 @@
-#include "MPVGL/Core/RenderWindow.hpp"
-
 #include <GLFW/glfw3.h>
 
 #include <filesystem>
@@ -7,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "MPVGL/Core/RenderWindow.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -36,10 +35,12 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     throw std::runtime_error("Failed at `create_descriptor_set_layout`.");
   if (0 != create_graphics_pipeline(init, render_data))
     throw std::runtime_error("Failed at `create_graphics_pipeline`.");
-  if (0 != create_framebuffers(init, render_data))
-    throw std::runtime_error("Failed at `create_framebuffers`.");
   if (0 != create_command_pool(init, render_data))
     throw std::runtime_error("Failed at `create_command_pool`.");
+  if (0 != create_depth_resources(init, render_data))
+    throw std::runtime_error("Failed at `create_depth_resources`.");
+  if (0 != create_framebuffers(init, render_data))
+    throw std::runtime_error("Failed at `create_framebuffers`.");
   if (0 != create_texture_image(init, render_data))
     throw std::runtime_error("Failed at `create_texture_image`.");
   if (0 != create_texture_image_view(init, render_data))

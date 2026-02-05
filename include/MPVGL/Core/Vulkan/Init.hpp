@@ -85,6 +85,10 @@ struct RenderData {
   VkBuffer index_buffer;
   VkDeviceMemory index_buffer_memory;
 
+  VkImage depth_image;
+  VkDeviceMemory depth_image_memory;
+  VkImageView depth_image_view;
+
   VkImage texture_image;
   VkImageView texture_image_view;
   VkSampler texture_sampler;
