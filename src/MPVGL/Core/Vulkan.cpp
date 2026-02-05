@@ -32,10 +32,10 @@ namespace mpvgl {
 namespace {
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, Color::literal::Red, {0.0f, 0.0f}},
-    {{0.5f, -0.5f}, Color::literal::Green, {1.0f, 0.0f}},
-    {{0.5f, 0.5f}, Color::literal::Blue, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f}, Color::literal::White, {0.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.0f}, Color::literal::Red, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, Color::literal::Green, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, Color::literal::Blue, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, Color::literal::White, {0.0f, 1.0f}},
 };
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
@@ -647,8 +647,7 @@ void copy_buffer_to_image(Init &init, RenderData &data, VkBuffer buffer,
 int create_texture_image(Init &init, RenderData &data) {
   uint32_t texWidth, texHeight, texChannels;
   auto rgb_pixels = PPMLoader::load("textures/output.ppm");
-  auto rgba_pixels =
-      static_cast<Pixel::Map<Pixel::RGBA>>(rgb_pixels);
+  auto rgba_pixels = static_cast<Pixel::Map<Pixel::RGBA>>(rgb_pixels);
   auto pixels_data = rgba_pixels.dataPtr();
   texWidth = rgba_pixels.width();
   texHeight = rgba_pixels.height();
