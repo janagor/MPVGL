@@ -12,6 +12,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/expected)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glm)
 
+add_compile_definitions(GLFW_INCLUDE_NONE)
+
 ##
 set(GLSLANG_DIR "${PROJECT_SOURCE_DIR}/lib/glslang")
 execute_process(
@@ -34,12 +36,16 @@ configure_file (
 )
 
 file(GLOB_RECURSE MPVGL_SRC ${PROJECT_SOURCE_DIR}/src/MPVGL/*.cpp)
-add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC} )
+add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}
-	${PROJECT_SOURCE_DIR}/lib/
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/lib
+    ${PROJECT_SOURCE_DIR}/lib/glm
+    ${PROJECT_SOURCE_DIR}/lib/glslang
+    ${PROJECT_SOURCE_DIR}/lib/glfw/include
+    ${PROJECT_SOURCE_DIR}/lib/vk-bootstrap/src
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -65,5 +71,5 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC
 )
 
 target_include_directories(${EXECUTABLE_NAME} PUBLIC
-    ${PROJECT_NAME}/include
+	${PROJECT_SOURCE_DIR}/include
 )
