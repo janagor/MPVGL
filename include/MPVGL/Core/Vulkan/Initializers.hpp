@@ -1,358 +1,452 @@
 #pragma once
 
+#include <cinttypes>
 #include <span>
 
 #include "vulkan/vulkan.h"
 
-namespace mpvgl::wk::initializers {
-
-inline VkAttachmentDescription attachmentDescription(
-    VkAttachmentDescriptionFlags flags, VkFormat format,
-    VkSampleCountFlagBits samples, VkAttachmentLoadOp loadOp,
-    VkAttachmentStoreOp storeOp, VkAttachmentLoadOp stencilLoadOp,
-    VkAttachmentStoreOp stencilStoreOp, VkImageLayout initialLayout,
-    VkImageLayout finalLayout) {
-  VkAttachmentDescription description = {};
-  description.format = format;
-  description.samples = samples;
-  description.loadOp = loadOp;
-  description.storeOp = storeOp;
-  description.stencilLoadOp = stencilLoadOp;
-  description.stencilStoreOp = stencilStoreOp;
-  description.initialLayout = initialLayout;
-  description.finalLayout = finalLayout;
-  return description;
-}
-
-inline VkAttachmentReference attachmentReference(uint32_t attachment,
-                                                 VkImageLayout layout) {
-  VkAttachmentReference reference = {};
-  reference.attachment = attachment;
-  reference.layout = layout;
-  return reference;
-}
+namespace mpvgl::vlk::initializers {
 
 inline VkRenderPassCreateInfo renderPassCreateInfo(
-    VkRenderPassCreateFlags flags,
     std::span<const VkAttachmentDescription> attachments,
     std::span<const VkSubpassDescription> subpasses,
-    std::span<const VkSubpassDependency> dependencies) {
-  VkRenderPassCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  info.attachmentCount = static_cast<uint32_t>(attachments.size());
-  info.pAttachments = attachments.data();
-  info.subpassCount = static_cast<uint32_t>(attachments.size());
-  info.pSubpasses = subpasses.data();
-  info.dependencyCount = static_cast<uint32_t>(attachments.size());
-  info.pDependencies = dependencies.data();
-  return info;
+    std::span<const VkSubpassDependency> dependencies,
+    VkRenderPassCreateFlags flags = 0) {
+  return VkRenderPassCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .attachmentCount = static_cast<std::uint32_t>(attachments.size()),
+      .pAttachments = attachments.data(),
+      .subpassCount = static_cast<std::uint32_t>(subpasses.size()),
+      .pSubpasses = subpasses.data(),
+      .dependencyCount = static_cast<std::uint32_t>(dependencies.size()),
+      .pDependencies = dependencies.data(),
+  };
 }
 
 inline VkShaderModuleCreateInfo shaderModuleCreateInfo(
-    VkShaderModuleCreateFlags flags, std::span<const uint32_t> code) {
-  VkShaderModuleCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  info.flags = flags;
-  info.codeSize = static_cast<std::size_t>(code.size_bytes());
-  info.pCode = code.data();
-  return info;
-}
-
-inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
-    uint32_t binding, VkDescriptorType type, uint32_t count,
-    VkShaderStageFlags flags) {
-  VkDescriptorSetLayoutBinding bind{};
-  bind.binding = binding;
-  bind.descriptorType = type;
-  bind.descriptorCount = count;
-  bind.stageFlags = flags;
-  bind.pImmutableSamplers = nullptr;
-  return bind;
+    std::span<const std::uint32_t> code) {
+  return VkShaderModuleCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .codeSize = static_cast<std::size_t>(code.size_bytes()),
+      .pCode = code.data(),
+  };
 }
 
 inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
-    VkDescriptorSetLayoutCreateFlags flags,
-    std::span<const VkDescriptorSetLayoutBinding> bindings) {
-  VkDescriptorSetLayoutCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-  info.bindingCount = static_cast<uint32_t>(bindings.size());
-  info.pBindings = bindings.data();
-  return info;
+    std::span<const VkDescriptorSetLayoutBinding> bindings,
+    VkDescriptorSetLayoutCreateFlags flags = 0) {
+  return VkDescriptorSetLayoutCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .bindingCount = static_cast<std::uint32_t>(bindings.size()),
+      .pBindings = bindings.data(),
+  };
 }
 
 inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(
-    VkPipelineShaderStageCreateFlags flags, VkShaderStageFlagBits stage,
-    VkShaderModule module, const char* pName) {
-  VkPipelineShaderStageCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  info.flags = flags;
-  info.stage = stage;
-  info.module = module;
-  info.pName = pName;
-  return info;
+    VkShaderStageFlagBits stage, VkShaderModule module, char const* pName,
+    VkSpecializationInfo const* pSpecializationInfo = nullptr,
+    VkPipelineShaderStageCreateFlags flags = 0) {
+  return VkPipelineShaderStageCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .stage = stage,
+      .module = module,
+      .pName = pName,
+      .pSpecializationInfo = pSpecializationInfo,
+  };
 }
 
 inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(
-    VkPipelineVertexInputStateCreateFlags flags,
     std::span<const VkVertexInputBindingDescription> bindingDescriptions,
     std::span<const VkVertexInputAttributeDescription> attributeDescriptions) {
-  VkPipelineVertexInputStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  info.flags = flags;
-  info.vertexBindingDescriptionCount =
-      static_cast<uint32_t>(bindingDescriptions.size());
-  info.pVertexBindingDescriptions = bindingDescriptions.data();
-  info.vertexAttributeDescriptionCount =
-      static_cast<uint32_t>(attributeDescriptions.size());
-  info.pVertexAttributeDescriptions = attributeDescriptions.data();
-  return info;
+  return VkPipelineVertexInputStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .vertexBindingDescriptionCount =
+          static_cast<std::uint32_t>(bindingDescriptions.size()),
+      .pVertexBindingDescriptions = bindingDescriptions.data(),
+      .vertexAttributeDescriptionCount =
+          static_cast<std::uint32_t>(attributeDescriptions.size()),
+      .pVertexAttributeDescriptions = attributeDescriptions.data(),
+  };
 }
 
 inline VkPipelineInputAssemblyStateCreateInfo
-pipelineInputAssemblyStateCreateInfo() {
-  VkPipelineInputAssemblyStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-  info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  info.primitiveRestartEnable = VK_FALSE;
-  return info;
+pipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology,
+                                     VkBool32 primitiveRestartEnable) {
+  return VkPipelineInputAssemblyStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .topology = topology,
+      .primitiveRestartEnable = primitiveRestartEnable,
+  };
 }
 
-inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo() {
-  VkPipelineViewportStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  info.viewportCount = 1;
-  info.scissorCount = 1;
-  return info;
+inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
+    std::uint32_t viewportCount, std::uint32_t scissorCount) {
+  return VkPipelineViewportStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .viewportCount = viewportCount,
+      .pViewports = nullptr,
+      .scissorCount = scissorCount,
+      .pScissors = nullptr,
+  };
+}
+
+inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
+    std::span<const VkViewport> viewports, std::span<const VkRect2D> scissors) {
+  return VkPipelineViewportStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .viewportCount = static_cast<std::uint32_t>(viewports.size()),
+      .pViewports = viewports.data(),
+      .scissorCount = static_cast<std::uint32_t>(scissors.size()),
+      .pScissors = scissors.data(),
+  };
 }
 
 inline VkPipelineRasterizationStateCreateInfo
-pipelineRasterizationStateCreateInfo() {
-  VkPipelineRasterizationStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-  info.depthClampEnable = VK_FALSE;
-  info.rasterizerDiscardEnable = VK_FALSE;
-  info.polygonMode = VK_POLYGON_MODE_FILL;
-  info.lineWidth = 1.0f;
-  info.cullMode = VK_CULL_MODE_BACK_BIT;
-  info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-  info.depthBiasEnable = VK_FALSE;
-  return info;
+pipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode,
+                                     VkCullModeFlags cullMode,
+                                     VkFrontFace frontFace) {
+  return VkPipelineRasterizationStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .depthClampEnable = VK_FALSE,
+      .rasterizerDiscardEnable = VK_FALSE,
+      .polygonMode = polygonMode,
+      .cullMode = cullMode,
+      .frontFace = frontFace,
+      .depthBiasEnable = VK_FALSE,
+      .depthBiasConstantFactor = 0.0f,
+      .depthBiasClamp = 0.0f,
+      .depthBiasSlopeFactor = 0.0f,
+      .lineWidth = 1.0f,
+  };
 }
 
-inline VkPipelineMultisampleStateCreateInfo
-pipelineMultisampleStateCreateInfo() {
-  VkPipelineMultisampleStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-  info.sampleShadingEnable = VK_FALSE;
-  info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-  return info;
+inline VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo(
+    VkSampleCountFlagBits rasterizationSamples) {
+  return VkPipelineMultisampleStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .rasterizationSamples = rasterizationSamples,
+      .sampleShadingEnable = VK_FALSE,
+      .minSampleShading = 0.0f,
+      .pSampleMask = nullptr,
+      .alphaToCoverageEnable = false,
+      .alphaToOneEnable = false,
+  };
 }
 
 inline VkPipelineDepthStencilStateCreateInfo
-pipelineDepthStencilStateCreateInfo() {
-  VkPipelineDepthStencilStateCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-  info.depthTestEnable = VK_TRUE;
-  info.depthWriteEnable = VK_TRUE;
-  info.depthCompareOp = VK_COMPARE_OP_LESS;
-  info.depthBoundsTestEnable = VK_FALSE;
-  info.minDepthBounds = 0.0f;
-  info.maxDepthBounds = 1.0f;
-  info.stencilTestEnable = VK_FALSE;
-  info.front = {};
-  info.back = {};
-  return info;
-}
-
-inline VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState() {
-  VkPipelineColorBlendAttachmentState state = {};
-  state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-  state.blendEnable = VK_FALSE;
-  return state;
+pipelineDepthStencilStateCreateInfo(
+    VkBool32 depthTestEnable, VkBool32 depthWriteEnable,
+    VkCompareOp depthCompareOp,
+    VkPipelineDepthStencilStateCreateFlags flags = 0) {
+  return VkPipelineDepthStencilStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .depthTestEnable = depthTestEnable,
+      .depthWriteEnable = depthWriteEnable,
+      .depthCompareOp = depthCompareOp,
+      .depthBoundsTestEnable = VK_FALSE,
+      .stencilTestEnable = VK_FALSE,
+      .front = {},
+      .back = {},
+      .minDepthBounds = 0.0f,
+      .maxDepthBounds = 0.0f,
+  };
 }
 
 inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
-    std::span<const VkPipelineColorBlendAttachmentState> states) {
-  VkPipelineColorBlendStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-  info.logicOpEnable = VK_FALSE;
-  info.logicOp = VK_LOGIC_OP_COPY;
-  info.attachmentCount = static_cast<uint32_t>(states.size());
-  info.pAttachments = states.data();
-  info.blendConstants[0] = 0.0f;
-  info.blendConstants[1] = 0.0f;
-  info.blendConstants[2] = 0.0f;
-  info.blendConstants[3] = 0.0f;
-  return info;
+    std::span<const VkPipelineColorBlendAttachmentState> states,
+    VkBool32 logicOpEnable, VkLogicOp logicOp,
+    VkPipelineColorBlendStateCreateFlags flags = 0) {
+  return VkPipelineColorBlendStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .logicOpEnable = logicOpEnable,
+      .logicOp = logicOp,
+      .attachmentCount = static_cast<std::uint32_t>(states.size()),
+      .pAttachments = states.data(),
+  };
 }
 
 inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
     std::span<const VkDynamicState> states) {
-  VkPipelineDynamicStateCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-  info.dynamicStateCount = static_cast<uint32_t>(states.size());
-  info.pDynamicStates = states.data();
-  return info;
+  return VkPipelineDynamicStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .dynamicStateCount = static_cast<std::uint32_t>(states.size()),
+      .pDynamicStates = states.data(),
+  };
+}
+
+inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(
+    std::span<const VkDescriptorSetLayout> setLayouts,
+    std::span<const VkPushConstantRange> pushConstantRanges,
+    VkPipelineLayoutCreateFlags flags = 0) {
+  return VkPipelineLayoutCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+      .flags = flags,
+      .setLayoutCount = static_cast<std::uint32_t>(setLayouts.size()),
+      .pSetLayouts = setLayouts.data(),
+      .pushConstantRangeCount =
+          static_cast<std::uint32_t>(pushConstantRanges.size()),
+      .pPushConstantRanges = pushConstantRanges.data(),
+  };
+}
+
+inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo() {
+  return VkGraphicsPipelineCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+      .pNext = nullptr,
+  };
+}
+
+inline VkFramebufferCreateInfo framebufferCreateInfo(
+    VkRenderPass renderPass, std::span<const VkImageView> attachments,
+    VkExtent2D const& extent2D, uint32_t layers,
+    VkFramebufferCreateFlags flags = 0) {
+  return VkFramebufferCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .renderPass = renderPass,
+      .attachmentCount = static_cast<std::uint32_t>(attachments.size()),
+      .pAttachments = attachments.data(),
+      .width = extent2D.width,
+      .height = extent2D.height,
+      .layers = layers,
+  };
+}
+
+inline VkCommandPoolCreateInfo commandPoolCreateInfo(
+    std::uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0) {
+  return VkCommandPoolCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .queueFamilyIndex = queueFamilyIndex,
+  };
+}
+
+inline VkMemoryAllocateInfo memoryAllocateInfo(VkDeviceSize allocationSize,
+                                               std::uint32_t memoryTypeIndex) {
+  return VkMemoryAllocateInfo{
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .pNext = nullptr,
+      .allocationSize = allocationSize,
+      .memoryTypeIndex = memoryTypeIndex,
+  };
+}
+
+inline VkWriteDescriptorSet writeDescriptorSet(
+    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    uint32_t descriptorCount, VkDescriptorType descriptorType,
+    VkDescriptorImageInfo const* pImageInfo,
+    VkDescriptorBufferInfo const* pBufferInfo,
+    VkBufferView const* pTexelBufferView) {
+  return VkWriteDescriptorSet{
+      .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+      .pNext = nullptr,
+      .dstSet = dstSet,
+      .dstBinding = dstBinding,
+      .dstArrayElement = dstArrayElement,
+      .descriptorCount = descriptorCount,
+      .descriptorType = descriptorType,
+      .pImageInfo = pImageInfo,
+      .pBufferInfo = pBufferInfo,
+      .pTexelBufferView = pTexelBufferView,
+
+  };
+}
+
+inline VkWriteDescriptorSet writeDescriptorSet(
+    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    VkDescriptorType descriptorType,
+    std::span<const VkDescriptorImageInfo> descriptorImageInfos) {
+  return writeDescriptorSet(
+      dstSet, dstBinding, dstArrayElement,
+      static_cast<std::uint32_t>(descriptorImageInfos.size()), descriptorType,
+      descriptorImageInfos.data(), nullptr, nullptr);
+}
+
+inline VkWriteDescriptorSet writeDescriptorSet(
+    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    VkDescriptorType descriptorType,
+    std::span<const VkDescriptorBufferInfo> descriptorBufferInfos) {
+  return writeDescriptorSet(
+      dstSet, dstBinding, dstArrayElement,
+      static_cast<std::uint32_t>(descriptorBufferInfos.size()), descriptorType,
+      nullptr, descriptorBufferInfos.data(), nullptr);
+}
+
+inline VkWriteDescriptorSet writeDescriptorSet(
+    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    VkDescriptorType descriptorType,
+    std::span<const VkBufferView> texelBufferViews) {
+  return writeDescriptorSet(dstSet, dstBinding, dstArrayElement,
+                            static_cast<std::uint32_t>(texelBufferViews.size()),
+                            descriptorType, nullptr, nullptr,
+                            texelBufferViews.data());
+}
+
+inline VkRenderPassBeginInfo renderPassBeginInfo(
+    VkRenderPass renderPass, VkFramebuffer framebuffer,
+    VkRect2D const& renderArea, std::span<const VkClearValue> clearValues) {
+  return VkRenderPassBeginInfo{
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+      .pNext = nullptr,
+      .renderPass = renderPass,
+      .framebuffer = framebuffer,
+      .renderArea = renderArea,
+      .clearValueCount = static_cast<std::uint32_t>(clearValues.size()),
+      .pClearValues = clearValues.data(),
+  };
 }
 
 inline VkBufferCreateInfo bufferCreateInfo(VkDeviceSize size,
-                                           VkBufferUsageFlags usage) {
-  VkBufferCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  info.size = size;
-  info.usage = usage;
-  info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  return info;
+                                           VkBufferUsageFlags usage,
+                                           VkBufferCreateFlags flags = 0) {
+  return VkBufferCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .size = size,
+      .usage = usage,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+  };
 }
 
-inline VkImageCreateInfo imageCreateInfo(uint32_t width, uint32_t height,
-                                         VkFormat format, VkImageTiling tiling,
-                                         VkImageUsageFlags usage) {
-  VkImageCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  info.imageType = VK_IMAGE_TYPE_2D;
-  info.extent.width = width;
-  info.extent.height = height;
-  info.extent.depth = 1;
-  info.mipLevels = 1;
-  info.arrayLayers = 1;
-  info.format = format;
-  info.tiling = tiling;
-  info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  info.usage = usage;
-  info.samples = VK_SAMPLE_COUNT_1_BIT;
-  info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  return info;
+inline VkImageCreateInfo imageCreateInfo() {
+  return VkImageCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+  };
 }
 
-inline VkImageMemoryBarrier imageMemoryBarrier(VkImage image,
-                                               VkImageLayout oldLayout,
-                                               VkImageLayout newLayout) {
-  VkImageMemoryBarrier barrier{};
-  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-  barrier.image = image;
-  barrier.oldLayout = oldLayout;
-  barrier.newLayout = newLayout;
-  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-  barrier.subresourceRange.baseMipLevel = 0;
-  barrier.subresourceRange.levelCount = 1;
-  barrier.subresourceRange.baseArrayLayer = 0;
-  barrier.subresourceRange.layerCount = 1;
-  return barrier;
-}
-
-inline VkBufferImageCopy bufferImageCopy(uint32_t width, uint32_t height) {
-  VkBufferImageCopy copy{};
-  copy.bufferOffset = 0;
-  copy.bufferRowLength = 0;
-  copy.bufferImageHeight = 0;
-  copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-  copy.imageSubresource.mipLevel = 0;
-  copy.imageSubresource.baseArrayLayer = 0;
-  copy.imageSubresource.layerCount = 1;
-  copy.imageOffset = {0, 0, 0};
-  copy.imageExtent = {width, height, 1};
-  return copy;
+inline VkImageMemoryBarrier imageMemoryBarrier(
+    VkImageLayout oldLayout, VkImageLayout newLayout, VkImage image,
+    VkImageSubresourceRange subresourceRange) {
+  return VkImageMemoryBarrier{
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = VK_ACCESS_NONE,
+      .dstAccessMask = VK_ACCESS_NONE,
+      .oldLayout = oldLayout,
+      .newLayout = newLayout,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = image,
+      .subresourceRange = subresourceRange,
+  };
 }
 
 inline VkImageViewCreateInfo imageViewCreateInfo(
-    VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
-  VkImageViewCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-  info.image = image;
-  info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-  info.format = format;
-  info.subresourceRange.aspectMask = aspectFlags;
-  info.subresourceRange.baseMipLevel = 0;
-  info.subresourceRange.levelCount = 1;
-  info.subresourceRange.baseArrayLayer = 0;
-  info.subresourceRange.layerCount = 1;
-  return info;
+    VkImage image, VkImageViewType viewType, VkFormat format,
+    VkImageSubresourceRange subresourceRange, VkImageViewCreateFlags flags = 0,
+    VkComponentMapping components = VkComponentMapping{
+        .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+        .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+        .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+        .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+    }) {
+  return VkImageViewCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .image = image,
+      .viewType = viewType,
+      .format = format,
+      .components = components,
+      .subresourceRange = subresourceRange,
+  };
 }
 
-inline VkSamplerCreateInfo samplerCreateInfo(
-    VkPhysicalDeviceProperties const& properties) {
-  VkSamplerCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-  info.magFilter = VK_FILTER_LINEAR;
-  info.minFilter = VK_FILTER_LINEAR;
-  info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  info.anisotropyEnable = VK_FALSE;
-  info.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-  info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-  info.unnormalizedCoordinates = VK_FALSE;
-  info.compareEnable = VK_FALSE;
-  info.compareOp = VK_COMPARE_OP_ALWAYS;
-  info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-  return info;
+inline VkSamplerCreateInfo samplerCreateInfo() {
+  return VkSamplerCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+  };
 }
+
 inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(
     std::span<const VkDescriptorPoolSize> sizes, std::uint32_t maxSets) {
   VkDescriptorPoolCreateInfo info{};
   info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  info.poolSizeCount = static_cast<uint32_t>(sizes.size());
+  info.poolSizeCount = static_cast<std::uint32_t>(sizes.size());
   info.pPoolSizes = sizes.data();
   info.maxSets = maxSets;
   return info;
 }
 
 inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo(
-    VkDescriptorPool pool, std::uint32_t count,
-    std::span<const VkDescriptorSetLayout> layouts) {
-  VkDescriptorSetAllocateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  info.descriptorPool = pool;
-  info.descriptorSetCount = count;
-  info.pSetLayouts = layouts.data();
-  return info;
+    VkDescriptorPool descriptorPool,
+    std::span<const VkDescriptorSetLayout> descriptorSetLayouts) {
+  return VkDescriptorSetAllocateInfo{
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+      .pNext = nullptr,
+      .descriptorPool = descriptorPool,
+      .descriptorSetCount =
+          static_cast<std::uint32_t>(descriptorSetLayouts.size()),
+      .pSetLayouts = descriptorSetLayouts.data(),
+  };
 }
 
-inline VkDescriptorBufferInfo descriptorBufferInfo(VkBuffer buffer,
-                                                   VkDeviceSize offset,
-                                                   VkDeviceSize range) {
-  VkDescriptorBufferInfo info{};
-  info.buffer = buffer;
-  info.offset = offset;
-  info.range = range;
-  return info;
+inline VkCommandBufferAllocateInfo commandBufferAllocateInfo(
+    VkCommandPool commandPool, VkCommandBufferLevel level,
+    std::uint32_t commandBufferCount) {
+  return VkCommandBufferAllocateInfo{
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .pNext = nullptr,
+      .commandPool = commandPool,
+      .level = level,
+      .commandBufferCount = commandBufferCount,
+  };
 }
 
-inline VkDescriptorImageInfo descriptorImageInfo(VkSampler sampler,
-                                                 VkImageView imageView) {
-  VkDescriptorImageInfo info{};
-  info.sampler = sampler;
-  info.imageView = imageView;
-  info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-  return info;
+inline VkSemaphoreCreateInfo semaphoreCreateInfo() {
+  return VkSemaphoreCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+  };
 }
-
-inline VkCommandBufferAllocateInfo commandBufferAllocateInfo(VkCommandPool pool,
-                                                             uint32_t count) {
-  VkCommandBufferAllocateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  info.commandPool = pool;
-  info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  info.commandBufferCount = count;
-  return info;
-}
-
-inline VkFenceCreateInfo fenceCreateInfo() {
-  VkFenceCreateInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-  info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-  return info;
+inline VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0) {
+  return VkFenceCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+  };
 }
 
 inline VkCommandBufferBeginInfo commandBufferBeginInfo(
     VkCommandBufferUsageFlags flags = 0) {
-  VkCommandBufferBeginInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  return info;
+  return VkCommandBufferBeginInfo{
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .pNext = nullptr,
+      .flags = flags,
+      .pInheritanceInfo = nullptr,
+  };
 }
 
 inline VkSubmitInfo submitInfo(
@@ -360,32 +454,34 @@ inline VkSubmitInfo submitInfo(
     std::span<const VkPipelineStageFlags> waitDstStageMask,
     std::span<const VkCommandBuffer> commandBuffers,
     std::span<const VkSemaphore> signalSemaphores) {
-  VkSubmitInfo info = {};
-  info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-  info.waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size());
-  info.pWaitSemaphores = waitSemaphores.data();
-  info.pWaitDstStageMask = waitDstStageMask.data();
-  info.commandBufferCount = static_cast<std::uint32_t>(commandBuffers.size());
-  info.pCommandBuffers = commandBuffers.data();
-  info.signalSemaphoreCount =
-      static_cast<std::uint32_t>(signalSemaphores.size());
-  info.pSignalSemaphores = signalSemaphores.data();
-  return info;
+  return VkSubmitInfo{
+      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+      .pNext = nullptr,
+      .waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size()),
+      .pWaitSemaphores = waitSemaphores.data(),
+      .pWaitDstStageMask = waitDstStageMask.data(),
+      .commandBufferCount = static_cast<std::uint32_t>(commandBuffers.size()),
+      .pCommandBuffers = commandBuffers.data(),
+      .signalSemaphoreCount =
+          static_cast<std::uint32_t>(signalSemaphores.size()),
+      .pSignalSemaphores = signalSemaphores.data(),
+  };
 }
 
 inline VkPresentInfoKHR presentInfoKHR(
     std::span<const VkSemaphore> waitSemaphores,
     std::span<const VkSwapchainKHR> swapchains,
-    std::span<const uint32_t> indices) {
-  VkPresentInfoKHR info = {};
-  info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-  info.waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size());
-  info.pWaitSemaphores = waitSemaphores.data();
-  info.swapchainCount = static_cast<std::uint32_t>(swapchains.size());
-  info.pSwapchains = swapchains.data();
-  info.pImageIndices = indices.data();
-  return info;
+    std::span<const std::uint32_t> indices) {
+  return VkPresentInfoKHR{
+      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+      .pNext = nullptr,
+      .waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size()),
+      .pWaitSemaphores = waitSemaphores.data(),
+      .swapchainCount = static_cast<std::uint32_t>(swapchains.size()),
+      .pSwapchains = swapchains.data(),
+      .pImageIndices = indices.data(),
+      .pResults = nullptr,
+  };
 }
 
-}  // namespace mpvgl::wk::initializers
+}  // namespace mpvgl::vlk::initializers
