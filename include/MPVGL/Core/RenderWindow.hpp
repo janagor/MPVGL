@@ -10,27 +10,27 @@
 namespace mpvgl {
 
 class RenderWindow {
- public:
-  explicit RenderWindow(int width, int height, std::string const &title,
-                        GLFWmonitor *monitor = nullptr,
-                        GLFWwindow *share = nullptr) noexcept(false);
+   public:
+    explicit RenderWindow(int width, int height, std::string const &title,
+                          GLFWmonitor *monitor = nullptr,
+                          GLFWwindow *share = nullptr) noexcept(false);
 
-  RenderWindow(RenderWindow const &other) noexcept = delete;
-  RenderWindow(RenderWindow &&other) noexcept = delete;
+    RenderWindow(RenderWindow const &other) noexcept = delete;
+    RenderWindow(RenderWindow &&other) noexcept = delete;
 
-  RenderWindow &operator=(RenderWindow const &other) noexcept = delete;
-  RenderWindow &operator=(RenderWindow &&other) noexcept = delete;
+    RenderWindow &operator=(RenderWindow const &other) noexcept = delete;
+    RenderWindow &operator=(RenderWindow &&other) noexcept = delete;
 
-  ~RenderWindow() noexcept;
+    ~RenderWindow() noexcept;
 
- public:
-  int draw() noexcept;
+   public:
+    int draw() noexcept;
 
- private:
-  Init init;
-  RenderData render_data;
-  GLFWwindow *window;
-  ShaderWatcher shader_watcher;
+   private:
+    Init init;
+    RenderData render_data;
+    GLFWwindow *window;
+    ShaderWatcher shader_watcher;
 };
 
 }  // namespace mpvgl
