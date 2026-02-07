@@ -40,12 +40,8 @@ add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/lib
-	${CMAKE_CURRENT_SOURCE_DIR}/lib/glm
-	${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang
-	${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include
-	${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
