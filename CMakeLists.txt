@@ -7,15 +7,15 @@ project(MPVGL)
 
 find_package(Vulkan REQUIRED)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/vk-bootstrap)
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/expected)
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glm)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/expected)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
 
 add_compile_definitions(GLFW_INCLUDE_NONE)
 
 ##
-set(GLSLANG_DIR "${PROJECT_SOURCE_DIR}/lib/glslang")
+set(GLSLANG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang")
 execute_process(
   COMMAND  env PYTHONPATH=. python3 update_glslang_sources.py
   WORKING_DIRECTORY ${GLSLANG_DIR}
@@ -28,24 +28,24 @@ if(NOT UPDATE_GLSLANG_SOURCES_RESULT EQUAL 0)
 else()
   message(STATUS "update_glslang_sources.py succeeded:\n${UPDATE_GLSLANG_SOURCES_OUTPUT}")
 endif()
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glslang)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/config.hpp.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in"
     "${CMAKE_CURRENT_BINARY_DIR}/config.hpp"
 )
 
-file(GLOB_RECURSE MPVGL_SRC ${PROJECT_SOURCE_DIR}/src/MPVGL/*.cpp)
+file(GLOB_RECURSE MPVGL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/MPVGL/*.cpp)
 add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/lib
-    ${PROJECT_SOURCE_DIR}/lib/glm
-    ${PROJECT_SOURCE_DIR}/lib/glslang
-    ${PROJECT_SOURCE_DIR}/lib/glfw/include
-    ${PROJECT_SOURCE_DIR}/lib/vk-bootstrap/src
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/lib
+	${CMAKE_CURRENT_SOURCE_DIR}/lib/glm
+	${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang
+	${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include
+	${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap/src
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
