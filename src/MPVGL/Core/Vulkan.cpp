@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <unordered_map>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -27,34 +28,10 @@
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Graphics/Color.hpp"
-#include "MPVGL/IO/PPMLoader.hpp"
 
 #include "config.hpp"
 
 namespace mpvgl {
-
-namespace {
-
-const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, Color::literal::Red, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, Color::literal::Green, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, Color::literal::Blue, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, Color::literal::White, {0.0f, 1.0f}},
-
-    {{-0.5f, -0.5f, -0.5f}, Color::literal::Red, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, Color::literal::Green, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, Color::literal::Blue, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, Color::literal::White, {0.0f, 1.0f}},
-};
-
-// clang-format off
-const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-};
-// clang-format on
-
-};  // namespace
 
 VkFormat find_depth_format(Init &init, RenderData &data);
 
@@ -764,8 +741,39 @@ int create_texture_sampler(Init &init, RenderData &data) {
     return 0;
 }
 
+int load_model(Init &init, RenderData &data) {
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
+                          MODEL_PATH)) {
+        throw std::runtime_error(err);
+    }
+    for (auto const &shape : shapes) {
+        for (const auto &index : shape.mesh.indices) {
+            auto vertex =
+                Vertex{{attrib.vertices[3 * index.vertex_index + 0],
+                        attrib.vertices[3 * index.vertex_index + 1],
+                        attrib.vertices[3 * index.vertex_index + 2]},
+                       {255, 255, 255},
+                       {attrib.texcoords[2 * index.texcoord_index + 0],
+                        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}};
+            if (data.uniqueVertices.count(vertex) == 0) {
+                data.uniqueVertices[vertex] =
+                    static_cast<uint32_t>(data.vertices.size());
+                data.vertices.push_back(vertex);
+            }
+            data.indices.push_back(data.uniqueVertices.at(vertex));
+        };
+    };
+    return 0;
+}
+
 int create_vertex_buffer(Init &init, RenderData &data) {
-    VkDeviceSize bufferSize = sizeof(vertices.at(0)) * vertices.size();
+    VkDeviceSize bufferSize =
+        sizeof(data.vertices.at(0)) * data.vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -776,7 +784,7 @@ int create_vertex_buffer(Init &init, RenderData &data) {
 
     void *d;
     vkMapMemory(init.device, stagingBufferMemory, 0, bufferSize, 0, &d);
-    memcpy(d, vertices.data(), static_cast<size_t>(bufferSize));
+    memcpy(d, data.vertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(init.device, stagingBufferMemory);
 
     create_buffer(
@@ -792,7 +800,7 @@ int create_vertex_buffer(Init &init, RenderData &data) {
 }
 
 int create_index_buffer(Init &init, RenderData &data) {
-    VkDeviceSize bufferSize = sizeof(indices.at(0)) * indices.size();
+    VkDeviceSize bufferSize = sizeof(data.indices.at(0)) * data.indices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -803,7 +811,7 @@ int create_index_buffer(Init &init, RenderData &data) {
 
     void *d;
     vkMapMemory(init.device, stagingBufferMemory, 0, bufferSize, 0, &d);
-    memcpy(d, indices.data(), (size_t)bufferSize);
+    memcpy(d, data.indices.data(), (size_t)bufferSize);
     vkUnmapMemory(init.device, stagingBufferMemory);
 
     create_buffer(
@@ -1022,14 +1030,14 @@ int record_command_buffer(Init &init, RenderData &data,
     vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
 
     vkCmdBindIndexBuffer(command_buffer, data.index_buffer, 0,
-                         VK_INDEX_TYPE_UINT16);
+                         VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             data.pipeline_layout, 0, 1,
                             &data.descriptor_sets.at(image_index), 0, nullptr);
 
-    vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(indices.size()), 1,
-                     0, 0, 0);
+    vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(data.indices.size()),
+                     1, 0, 0, 0);
 
     init.disp.cmdEndRenderPass(command_buffer);
 

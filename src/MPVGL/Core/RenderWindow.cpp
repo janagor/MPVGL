@@ -1,5 +1,3 @@
-#include "MPVGL/Core/RenderWindow.hpp"
-
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -7,6 +5,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/RenderWindow.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -49,6 +48,8 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         throw std::runtime_error("Failed at `create_texture_image_view`.");
     if (0 != create_texture_sampler(init, render_data))
         throw std::runtime_error("Failed at `create_texture_sampler`.");
+    if (0 != load_model(init, render_data))
+        throw std::runtime_error("Failed at `load_model`.");
     if (0 != create_vertex_buffer(init, render_data))
         throw std::runtime_error("Failed at `create_vertex_buffer`.");
     if (0 != create_index_buffer(init, render_data))

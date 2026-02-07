@@ -35,6 +35,7 @@ int create_framebuffers(Init &init, RenderData &data);
 int create_texture_image(Init &init, RenderData &data);
 int create_texture_image_view(Init &init, RenderData &data);
 int create_texture_sampler(Init &init, RenderData &data);
+int load_model(Init &init, RenderData &data);
 int create_vertex_buffer(Init &init, RenderData &data);
 int create_index_buffer(Init &init, RenderData &data);
 int create_uniform_buffers(Init &init, RenderData &data);
