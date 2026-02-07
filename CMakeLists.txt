@@ -70,3 +70,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 )
 
 add_subdirectory(examples)
+
+file(GLOB_RECURSE ALL_SOURCE_FILES "src/*.cpp" "include/*.hpp")
+add_custom_target(format
+    COMMAND clang-format -i ${ALL_SOURCE_FILES}
+    COMMENT "Formatowanie kodu przy użyciu clang-format..."
+)
