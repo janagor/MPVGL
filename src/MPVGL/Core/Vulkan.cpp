@@ -12,6 +12,9 @@
 #include <stdexcept>
 #include <system_error>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
 #include <glm/glm.hpp>
 #include <VkBootstrap.h>
 #include <tl/expected.hpp>
