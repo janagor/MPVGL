@@ -7,31 +7,32 @@ project(MPVGL)
 
 find_package(Vulkan REQUIRED)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/expected)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw)
+execute_process(
+    COMMAND  env PYTHONPATH=. python3 update_glslang_sources.py
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang"
+    RESULT_VARIABLE UPDATE_GLSLANG_SOURCES_RESULT
+    OUTPUT_VARIABLE UPDATE_GLSLANG_SOURCES_OUTPUT
+    ERROR_VARIABLE UPDATE_GLSLANG_SOURCES_ERROR
+)
+if(NOT UPDATE_GLSLANG_SOURCES_RESULT EQUAL 0)
+    message( FATAL_ERROR
+        "update_glslang_sources.py failed:\n${UPDATE_GLSLANG_SOURCES_ERROR}"
+    )
+else()
+    message( STATUS
+        "update_glslang_sources.py succeeded:\n${UPDATE_GLSLANG_SOURCES_OUTPUT}"
+    )
+endif()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/expected)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap)
 
 add_compile_definitions(GLFW_INCLUDE_NONE)
 
-##
-set(GLSLANG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang")
-execute_process(
-  COMMAND  env PYTHONPATH=. python3 update_glslang_sources.py
-  WORKING_DIRECTORY ${GLSLANG_DIR}
-  RESULT_VARIABLE UPDATE_GLSLANG_SOURCES_RESULT
-  OUTPUT_VARIABLE UPDATE_GLSLANG_SOURCES_OUTPUT
-  ERROR_VARIABLE UPDATE_GLSLANG_SOURCES_ERROR
-)
-if(NOT UPDATE_GLSLANG_SOURCES_RESULT EQUAL 0)
-  message(FATAL_ERROR "update_glslang_sources.py failed:\n${UPDATE_GLSLANG_SOURCES_ERROR}")
-else()
-  message(STATUS "update_glslang_sources.py succeeded:\n${UPDATE_GLSLANG_SOURCES_OUTPUT}")
-endif()
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
-
 configure_file (
-	"${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in"
     "${CMAKE_CURRENT_BINARY_DIR}/config.hpp"
 )
 
@@ -40,8 +41,8 @@ add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
