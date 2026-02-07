@@ -1,6 +1,7 @@
-#define TINYOBJLOADER_IMPLEMENTATION
 #define GLM_FORCE_RADIANS
+#define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define TINYOBJLOADER_IMPLEMENTATION
 // clang-format off
 #include <chrono>
 #include <string>
@@ -12,15 +13,13 @@
 #include <stdexcept>
 #include <system_error>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-
 #include <glm/glm.hpp>
-#include <VkBootstrap.h>
 #include <tl/expected.hpp>
+#include <stb/stb_image.h>
 #include <vulkan/vulkan.h>
-#include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <vk-bootstrap/src/VkBootstrap.h>
+#include <tinyobjloader/tiny_obj_loader.h>
 
 #include <GLFW/glfw3.h>
 
