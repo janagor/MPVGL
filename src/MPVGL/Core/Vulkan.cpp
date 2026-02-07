@@ -682,15 +682,11 @@ int create_depth_resources(Init &init, RenderData &data) {
 }
 
 int create_texture_image(Init &init, RenderData &data) {
-  uint32_t texWidth, texHeight, texChannels;
-  auto rgb_pixels = PPMLoader::load("textures/output.ppm");
-  auto rgba_pixels = static_cast<Pixel::Map<Pixel::RGBA>>(rgb_pixels);
-  auto pixels_data = rgba_pixels.dataPtr();
-  texWidth = rgba_pixels.width();
-  texHeight = rgba_pixels.height();
-  texChannels = rgba_pixels.channels();
+  int texWidth, texHeight, texChannels;
+  stbi_uc *pixels = stbi_load("textures/output.ppm", &texWidth, &texHeight,
+                              &texChannels, STBI_rgb_alpha);
   VkDeviceSize imageSize = texWidth * texHeight * 4;
-  if (!pixels_data) {
+  if (!pixels) {
     std::cout << "failed to load texture image\n";
     return -1;  // failed to load texture image
   }
@@ -702,7 +698,7 @@ int create_texture_image(Init &init, RenderData &data) {
                 stagingBuffer, stagingBufferMemory);
   void *d;
   vkMapMemory(init.device, stagingBufferMemory, 0, imageSize, 0, &d);
-  memcpy(d, pixels_data, static_cast<size_t>(imageSize));
+  memcpy(d, pixels, static_cast<size_t>(imageSize));
   vkUnmapMemory(init.device, stagingBufferMemory);
   createImage(init, data, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
               VK_IMAGE_TILING_OPTIMAL,
