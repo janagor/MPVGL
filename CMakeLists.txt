@@ -28,6 +28,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/expected)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyobjloader)
+if(NOT TARGET glfw::glfw)
+    add_library(glfw::glfw ALIAS glfw)
+endif()
+if(NOT TARGET tinyobjloader::tinyobjloader)
+    add_library(tinyobjloader::tinyobjloader ALIAS tinyobjloader)
+endif()
 
 add_compile_definitions(GLFW_INCLUDE_NONE)
 
@@ -46,13 +53,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    glfw
     glm::glm
+    glfw::glfw
     tl::expected
     Vulkan::Vulkan
     glslang::SPIRV
     glslang::glslang
     vk-bootstrap::vk-bootstrap
+    tinyobjloader::tinyobjloader
     glslang::glslang-default-resource-limits
 )
 

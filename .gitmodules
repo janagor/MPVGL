@@ -13,3 +13,6 @@
 [submodule "lib/glslang"]
 	path = lib/glslang
 	url = https://github.com/KhronosGroup/glslang
+[submodule "lib/tinyobjloader"]
+	path = lib/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader
