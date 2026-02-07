@@ -683,8 +683,8 @@ int create_depth_resources(Init &init, RenderData &data) {
 
 int create_texture_image(Init &init, RenderData &data) {
   int texWidth, texHeight, texChannels;
-  stbi_uc *pixels = stbi_load("textures/output.ppm", &texWidth, &texHeight,
-                              &texChannels, STBI_rgb_alpha);
+  stbi_uc *pixels = stbi_load(TEXTURE_PATH, &texWidth, &texHeight, &texChannels,
+                              STBI_rgb_alpha);
   VkDeviceSize imageSize = texWidth * texHeight * 4;
   if (!pixels) {
     std::cout << "failed to load texture image\n";

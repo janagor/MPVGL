@@ -1,6 +1,11 @@
 #pragma once
 
-#define SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}"
 #define BUILD_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+#define SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}"
+
+#define MODULS_DIRECTORY "modules"
 #define SHADERS_DIRECTORY "shaders"
 #define TEXTURES_DIRECTORY "textures"
+
+#define MODEL_PATH SOURCE_DIRECTORY "/models/viking_room.obj"
+#define TEXTURE_PATH SOURCE_DIRECTORY "/textures/viking_room.png"
