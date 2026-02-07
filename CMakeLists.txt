@@ -59,17 +59,4 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     glslang::glslang-default-resource-limits
 )
 
-set(EXECUTABLE_NAME "main")
-
-add_executable(${EXECUTABLE_NAME}
-    main.cpp
-    config.hpp
-)
-
-target_link_libraries(${EXECUTABLE_NAME} PUBLIC
-    ${PROJECT_NAME}
-)
-
-target_include_directories(${EXECUTABLE_NAME} PUBLIC
-	${PROJECT_SOURCE_DIR}/include
-)
+add_subdirectory(examples)
