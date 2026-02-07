@@ -1,4 +1,4 @@
-#include <vulkan/vulkan_core.h>
+#define TINYOBJLOADER_IMPLEMENTATION
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 // clang-format off
@@ -12,13 +12,11 @@
 #include <stdexcept>
 #include <system_error>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-
 #include <glm/glm.hpp>
 #include <VkBootstrap.h>
 #include <tl/expected.hpp>
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
+#include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <GLFW/glfw3.h>
@@ -27,8 +25,8 @@
 #include "MPVGL/IO/PPMLoader.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
-#include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
+#include "MPVGL/Core/Vulkan/Initializers.hpp"
 
 #include "config.hpp"
 // clang-format on
