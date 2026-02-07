@@ -1,0 +1,12 @@
+CompileFlags:
+  Add:
+    - "-std=c++20"
+    - -Ibuild/
+    - -Iinclude/
+
+    - -Ilib/
+    - -Ilib/glm/
+    - -Ilib/glslang/
+    - -Ilib/glfw/include/
+    - -Ilib/tinyobjloader/
+    - -Ilib/vk-bootstrap/src/
