@@ -2,36 +2,35 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define TINYOBJLOADER_IMPLEMENTATION
-// clang-format off
+#include "MPVGL/Core/Vulkan.hpp"
+
 #include <chrono>
-#include <string>
-#include <vector>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include <system_error>
+#include <vector>
 
 #include <glm/glm.hpp>
-#include <tl/expected.hpp>
-#include <stb/stb_image.h>
-#include <vulkan/vulkan.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <vk-bootstrap/src/VkBootstrap.h>
+#include <stb/stb_image.h>
 #include <tinyobjloader/tiny_obj_loader.h>
+#include <tl/expected.hpp>
+#include <vk-bootstrap/src/VkBootstrap.h>
+#include <vulkan/vulkan.h>
 
 #include <GLFW/glfw3.h>
 
-#include "MPVGL/Core/Vulkan.hpp"
-#include "MPVGL/IO/PPMLoader.hpp"
-#include "MPVGL/Graphics/Color.hpp"
-#include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
+#include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
+#include "MPVGL/Graphics/Color.hpp"
+#include "MPVGL/IO/PPMLoader.hpp"
 
 #include "config.hpp"
-// clang-format on
 
 namespace mpvgl {
 

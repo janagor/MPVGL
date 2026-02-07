@@ -1,5 +1,4 @@
 #pragma once
-#include <glslang/Public/ShaderLang.h>
 
 #include <chrono>
 #include <filesystem>
@@ -9,6 +8,8 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+
+#include <glslang/Public/ShaderLang.h>
 
 #include "MPVGL/Core/Shader/ShaderCompiler.hpp"
 

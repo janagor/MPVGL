@@ -1,8 +1,8 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
 #include <string>
+
+#include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"

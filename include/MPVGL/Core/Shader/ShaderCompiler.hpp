@@ -1,13 +1,13 @@
 #pragma once
 
-#include <glslang/Public/ResourceLimits.h>
-#include <glslang/Public/ShaderLang.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
-
 #include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
+
+#include <glslang/Public/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
 
 namespace mpvgl {
 

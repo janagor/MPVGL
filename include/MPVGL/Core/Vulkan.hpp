@@ -1,14 +1,16 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <VkBootstrap.h>
 
 #include <cstdint>
-#include <glm/glm.hpp>
 #include <string>
-#include <tl/expected.hpp>
 #include <vector>
+
+#include <glm/glm.hpp>
+#include <tl/expected.hpp>
 #include <vulkan/vulkan.hpp>
+
+#include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Vulkan/Init.hpp"
 

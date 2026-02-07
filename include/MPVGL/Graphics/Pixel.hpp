@@ -12,8 +12,8 @@ namespace Pixel {
 // clang-format off
 template <typename Derived>
 struct Base; struct RGB; struct RGBA; struct Gray; struct GrayA;
-using PixelTypes = std::tuple<Gray, RGB, RGBA, GrayA>;
 // clang-format on
+using PixelTypes = std::tuple<Gray, RGB, RGBA, GrayA>;
 template <typename T>
 concept PixelLike = std::derived_from<T, Base<T>>;
 

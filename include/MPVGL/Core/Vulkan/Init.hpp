@@ -1,12 +1,12 @@
 #pragma once
+#include <array>
+#include <vector>
+
+#include <glm/glm.hpp>
+#include <vk-bootstrap/src/VkBootstrap.h>
+#include <vulkan/vulkan.h>
 
 #include <GLFW/glfw3.h>
-#include <VkBootstrap.h>
-
-#include <array>
-#include <glm/glm.hpp>
-#include <vector>
-#include <vulkan/vulkan.hpp>
 
 #include "MPVGL/Graphics/Color.hpp"
 
