@@ -42,6 +42,10 @@ configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in"
     "${CMAKE_CURRENT_BINARY_DIR}/config.hpp"
 )
+configure_file (
+    "${CMAKE_CURRENT_SOURCE_DIR}/.clangd.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
+)
 
 file(GLOB_RECURSE MPVGL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/MPVGL/*.cpp)
 add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC})
