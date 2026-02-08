@@ -2,7 +2,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "MPVGL/Core/Vulkan.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -26,6 +25,7 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/UniformBufferObject.hpp"
+#include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Instance.hpp"
