@@ -31,6 +31,7 @@
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Instance.hpp"
 #include "MPVGL/Core/Vulkan/PhysicalDevice.hpp"
+#include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 #include "config.hpp"
@@ -107,21 +108,14 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
 }
 
 tl::expected<void, std::error_code> create_swapchain(Vulkan::Init &init) {
-    vkb::SwapchainBuilder swapchain_builder{init.device};
-    int width, height;
-    glfwGetWindowSize(init.window, &width, &height);
-    auto swap_ret = swapchain_builder
-                        .set_desired_extent(static_cast<uint32_t>(width),
-                                            static_cast<uint32_t>(height))
-                        .set_old_swapchain(init.swapchain)
-                        .build();
-    if (!swap_ret) {
-        std::cout << swap_ret.error().message() << " " << swap_ret.vk_result()
-                  << "\n";
-        return tl::unexpected(swap_ret.error());
+    auto swapchain =
+        Swapchain::getSwapchain(init.device, init.window, init.swapchain);
+    if (!swapchain) {
+        // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
+        std::cout << swapchain.error().message() << "\n";
+        return tl::unexpected(swapchain.error());
     }
-    vkb::destroy_swapchain(init.swapchain);
-    init.swapchain = swap_ret.value();
+    init.swapchain = swapchain.value();
     return {};
 }
 
