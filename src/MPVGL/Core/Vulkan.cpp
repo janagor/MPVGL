@@ -26,6 +26,7 @@
 
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
+#include "MPVGL/Core/Vulkan/Device.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Instance.hpp"
@@ -94,14 +95,12 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
         return tl::unexpected(phys_device.error());
     }
 
-    vkb::DeviceBuilder device_builder{phys_device.value()};
-    auto device_ret = device_builder.build();
-    if (!device_ret) {
-        std::cout << device_ret.error().message() << "\n";
-        return tl::unexpected(device_ret.error());
+    auto device = Device::getDevice(phys_device.value());
+    if (!device) {
+        std::cout << device.error().message() << "\n";
+        return tl::unexpected(device.error());
     }
-    init.device = device_ret.value();
-
+    init.device = device.value();
     init.disp = init.device.make_table();
 
     return {};
