@@ -78,64 +78,68 @@ struct hash<mpvgl::Vertex> {
 }  // namespace std
 
 namespace mpvgl::vlk {
+struct Vulkan {
+    struct Init {
+        GLFWwindow *window;
+        vkb::Instance instance;
+        vkb::InstanceDispatchTable inst_disp;
+        VkSurfaceKHR surface;
+        vkb::Device device;
+        vkb::DispatchTable disp;
+        vkb::Swapchain swapchain;
+    };
 
-struct Init {
-    GLFWwindow *window;
-    vkb::Instance instance;
-    vkb::InstanceDispatchTable inst_disp;
-    VkSurfaceKHR surface;
-    vkb::Device device;
-    vkb::DispatchTable disp;
-    vkb::Swapchain swapchain;
+    struct RenderData {
+        VkQueue graphics_queue;
+        VkQueue present_queue;
+
+        std::vector<VkImage> swapchain_images;
+        std::vector<VkImageView> swapchain_image_views;
+        std::vector<VkFramebuffer> framebuffers;
+
+        VkRenderPass render_pass;
+
+        VkDescriptorSetLayout descriptor_set_layout;
+        VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
+
+        VkCommandPool command_pool;
+        std::vector<VkCommandBuffer> command_buffers;
+
+        std::vector<Vertex> vertices;
+        std::unordered_map<Vertex, uint32_t> uniqueVertices;
+        VkBuffer vertex_buffer;
+        VkDeviceMemory vertex_buffer_memory;
+
+        std::vector<uint32_t> indices;
+        VkBuffer index_buffer;
+        VkDeviceMemory index_buffer_memory;
+
+        VkImage depth_image;
+        VkDeviceMemory depth_image_memory;
+        VkImageView depth_image_view;
+
+        VkImage texture_image;
+        VkImageView texture_image_view;
+        VkSampler texture_sampler;
+        VkDeviceMemory texture_image_memory;
+
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void *> uniform_buffers_mapped;
+
+        VkDescriptorPool descriptor_pool;
+        std::vector<VkDescriptorSet> descriptor_sets;
+
+        std::vector<VkSemaphore> available_semaphores;
+        std::vector<VkSemaphore> finished_semaphore;
+        std::vector<VkFence> in_flight_fences;
+        std::vector<VkFence> image_in_flight;
+        size_t current_frame = 0;
+    };
+
+    Init init;
+    RenderData data;
 };
 
-struct RenderData {
-    VkQueue graphics_queue;
-    VkQueue present_queue;
-
-    std::vector<VkImage> swapchain_images;
-    std::vector<VkImageView> swapchain_image_views;
-    std::vector<VkFramebuffer> framebuffers;
-
-    VkRenderPass render_pass;
-
-    VkDescriptorSetLayout descriptor_set_layout;
-    VkPipelineLayout pipeline_layout;
-    VkPipeline graphics_pipeline;
-
-    VkCommandPool command_pool;
-    std::vector<VkCommandBuffer> command_buffers;
-
-    std::vector<Vertex> vertices;
-    std::unordered_map<Vertex, uint32_t> uniqueVertices;
-    VkBuffer vertex_buffer;
-    VkDeviceMemory vertex_buffer_memory;
-
-    std::vector<uint32_t> indices;
-    VkBuffer index_buffer;
-    VkDeviceMemory index_buffer_memory;
-
-    VkImage depth_image;
-    VkDeviceMemory depth_image_memory;
-    VkImageView depth_image_view;
-
-    VkImage texture_image;
-    VkImageView texture_image_view;
-    VkSampler texture_sampler;
-    VkDeviceMemory texture_image_memory;
-
-    std::vector<VkBuffer> uniform_buffers;
-    std::vector<VkDeviceMemory> uniform_buffers_memory;
-    std::vector<void *> uniform_buffers_mapped;
-
-    VkDescriptorPool descriptor_pool;
-    std::vector<VkDescriptorSet> descriptor_sets;
-
-    std::vector<VkSemaphore> available_semaphores;
-    std::vector<VkSemaphore> finished_semaphore;
-    std::vector<VkFence> in_flight_fences;
-    std::vector<VkFence> image_in_flight;
-    size_t current_frame = 0;
-};
-
-}  // namespace mpvgl
+}  // namespace mpvgl::vlk

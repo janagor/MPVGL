@@ -21,33 +21,33 @@ GLFWwindow *create_window_glfw(const char *window_name = "",
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator = nullptr);
-tl::expected<void, std::error_code> device_initialization(Init &init);
-tl::expected<void, std::error_code> create_swapchain(Init &init);
-tl::expected<void, std::error_code> get_queues(Init &init, RenderData &data);
-int create_render_pass(Init &init, RenderData &data);
+tl::expected<void, std::error_code> device_initialization(Vulkan::Init& init);
+tl::expected<void, std::error_code> create_swapchain(Vulkan::Init& init);
+tl::expected<void, std::error_code> get_queues(Vulkan& vulkan);
+int create_render_pass(Vulkan& vulkan);
 std::vector<char> readFile(const std::string &filename);
-VkShaderModule createShaderModule(Init &init, const std::vector<char> &code);
-int create_descriptor_set_layout(Init &init, RenderData &data);
-int create_graphics_pipeline(Init &init, RenderData &data);
-int create_command_pool(Init &init, RenderData &data);
-int create_depth_resources(Init &init, RenderData &data);
-int create_framebuffers(Init &init, RenderData &data);
-int create_texture_image(Init &init, RenderData &data);
-int create_texture_image_view(Init &init, RenderData &data);
-int create_texture_sampler(Init &init, RenderData &data);
-int load_model(Init &init, RenderData &data);
-int create_vertex_buffer(Init &init, RenderData &data);
-int create_index_buffer(Init &init, RenderData &data);
-int create_uniform_buffers(Init &init, RenderData &data);
-int create_descriptor_pool(Init &init, RenderData &data);
-int create_descriptor_sets(Init &init, RenderData &data);
-int create_command_buffers(Init &init, RenderData &data);
-int create_sync_objects(Init &init, RenderData &data);
-int recreate_swapchain(Init &init, RenderData &data);
-int record_command_buffer(Init &init, RenderData &data,
+VkShaderModule createShaderModule(Vulkan&vulkan, const std::vector<char> &code);
+int create_descriptor_set_layout(Vulkan& vulkan);
+int create_graphics_pipeline(Vulkan& vulkan);
+int create_command_pool(Vulkan& vulkan);
+int create_depth_resources(Vulkan& vulkan);
+int create_framebuffers(Vulkan& vulkan);
+int create_texture_image(Vulkan& vulkan);
+int create_texture_image_view(Vulkan& vulkan);
+int create_texture_sampler(Vulkan& vulkan);
+int load_model(Vulkan& vulkan);
+int create_vertex_buffer(Vulkan& vulkan);
+int create_index_buffer(Vulkan& vulkan);
+int create_uniform_buffers(Vulkan& vulkan);
+int create_descriptor_pool(Vulkan& vulkan);
+int create_descriptor_sets(Vulkan& vulkan);
+int create_command_buffers(Vulkan& vulkan);
+int create_sync_objects(Vulkan& vulkan);
+int recreate_swapchain(Vulkan& vulkan);
+int record_command_buffer(Vulkan&vulkan,
                           VkCommandBuffer command_buffer, uint32_t image_index);
-int draw_frame(Init &init, RenderData &data);
-int reloadShadersAndPipeline(Init &init, RenderData &data);
-void cleanup(Init &init, RenderData &data);
+int draw_frame(Vulkan& vulkan);
+int reloadShadersAndPipeline(Vulkan& vulkan);
+void cleanup(Vulkan& vulkan);
 
 }  // namespace mpvgl::vlk
