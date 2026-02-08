@@ -29,6 +29,7 @@
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Instance.hpp"
+#include "MPVGL/Core/Vulkan/PhysicalDevice.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 #include "config.hpp"
@@ -76,31 +77,24 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
 tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
     init.window = create_window_glfw("Vulkan Triangle", true);
 
-    auto instance_ret = Instance::getInstance();
-    if (!instance_ret) {
-        std::cout << instance_ret.error().message() << "\n";
-        return tl::unexpected(instance_ret.error());
+    auto instance = Instance::getInstance();
+    if (!instance) {
+        std::cout << instance.error().message() << "\n";
+        return tl::unexpected(instance.error());
     }
-    init.instance = instance_ret.value();
 
+    init.instance = instance.value();
     init.inst_disp = init.instance.make_table();
-
     init.surface = create_surface_glfw(init.instance, init.window);
 
-    vkb::PhysicalDeviceSelector phys_device_selector(init.instance);
-    auto phys_device_ret =
-        phys_device_selector.set_surface(init.surface).select();
-    if (!phys_device_ret) {
-        std::cout << phys_device_ret.error().message() << "\n";
-        return tl::unexpected(phys_device_ret.error());
+    auto phys_device =
+        PhysicalDevice::getPhysicalDevice(init.instance, init.surface);
+    if (!phys_device) {
+        std::cout << phys_device.error().message() << "\n";
+        return tl::unexpected(phys_device.error());
     }
-    vkb::PhysicalDevice physical_device = phys_device_ret.value();
 
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
-    physical_device.enable_features_if_present(deviceFeatures);
-
-    vkb::DeviceBuilder device_builder{physical_device};
+    vkb::DeviceBuilder device_builder{phys_device.value()};
     auto device_ret = device_builder.build();
     if (!device_ret) {
         std::cout << device_ret.error().message() << "\n";
