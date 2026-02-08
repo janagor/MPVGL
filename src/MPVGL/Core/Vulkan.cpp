@@ -27,6 +27,7 @@
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
+#include "MPVGL/Core/Vulkan/Instance.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 #include "config.hpp"
@@ -74,10 +75,7 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
 tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
     init.window = create_window_glfw("Vulkan Triangle", true);
 
-    vkb::InstanceBuilder instance_builder;
-    auto instance_ret = instance_builder.use_default_debug_messenger()
-                            .request_validation_layers()
-                            .build();
+    auto instance_ret = Instance::getInstance();
     if (!instance_ret) {
         std::cout << instance_ret.error().message() << "\n";
         return tl::unexpected(instance_ret.error());
