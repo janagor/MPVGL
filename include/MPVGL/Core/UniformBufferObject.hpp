@@ -12,4 +12,4 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 projection;
 };
 
-}  // namespace mpvgl
+}  // namespace mpvgl::vlk

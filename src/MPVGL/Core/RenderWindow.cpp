@@ -1,3 +1,5 @@
+#include "MPVGL/Core/RenderWindow.hpp"
+
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -5,7 +7,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include "MPVGL/Core/RenderWindow.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"

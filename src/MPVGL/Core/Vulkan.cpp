@@ -2,6 +2,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define TINYOBJLOADER_IMPLEMENTATION
+#include "MPVGL/Core/Vulkan.hpp"
+
 #include <chrono>
 #include <cstdint>
 #include <cstring>
@@ -24,7 +26,6 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/UniformBufferObject.hpp"
-#include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Instance.hpp"
@@ -84,8 +85,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
 
     init.inst_disp = init.instance.make_table();
 
-    init.surface =
-        create_surface_glfw(init.instance, init.window);
+    init.surface = create_surface_glfw(init.instance, init.window);
 
     vkb::PhysicalDeviceSelector phys_device_selector(init.instance);
     auto phys_device_ret =
