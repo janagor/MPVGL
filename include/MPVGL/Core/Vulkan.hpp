@@ -14,7 +14,7 @@
 
 #include "MPVGL/Core/Vulkan/Init.hpp"
 
-namespace mpvgl {
+namespace mpvgl::vlk {
 
 GLFWwindow *create_window_glfw(const char *window_name = "",
                                bool resize = true);
@@ -50,4 +50,4 @@ int draw_frame(Init &init, RenderData &data);
 int reloadShadersAndPipeline(Init &init, RenderData &data);
 void cleanup(Init &init, RenderData &data);
 
-}  // namespace mpvgl
+}  // namespace mpvgl::vlk

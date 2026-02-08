@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-namespace mpvgl {
+namespace mpvgl::vlk {
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;

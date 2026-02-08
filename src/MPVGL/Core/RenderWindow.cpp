@@ -24,45 +24,45 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
     shader_watcher.compileAll();
 
-    if (!device_initialization(init).has_value())
+    if (!vlk::device_initialization(init).has_value())
         throw std::runtime_error("Failed at `device_initialization`.");
-    if (!create_swapchain(init).has_value())
+    if (!vlk::create_swapchain(init).has_value())
         throw std::runtime_error("Failed at `create_swapchain`.");
-    if (!get_queues(init, render_data).has_value())
+    if (!vlk::get_queues(init, render_data).has_value())
         throw std::runtime_error("Failed at `get_queues`.");
-    if (0 != create_render_pass(init, render_data))
+    if (0 != vlk::create_render_pass(init, render_data))
         throw std::runtime_error("Failed at `create_render_pass`.");
-    if (0 != create_descriptor_set_layout(init, render_data))
+    if (0 != vlk::create_descriptor_set_layout(init, render_data))
         throw std::runtime_error("Failed at `create_descriptor_set_layout`.");
-    if (0 != create_graphics_pipeline(init, render_data))
+    if (0 != vlk::create_graphics_pipeline(init, render_data))
         throw std::runtime_error("Failed at `create_graphics_pipeline`.");
-    if (0 != create_command_pool(init, render_data))
+    if (0 != vlk::create_command_pool(init, render_data))
         throw std::runtime_error("Failed at `create_command_pool`.");
-    if (0 != create_depth_resources(init, render_data))
+    if (0 != vlk::create_depth_resources(init, render_data))
         throw std::runtime_error("Failed at `create_depth_resources`.");
-    if (0 != create_framebuffers(init, render_data))
+    if (0 != vlk::create_framebuffers(init, render_data))
         throw std::runtime_error("Failed at `create_framebuffers`.");
-    if (0 != create_texture_image(init, render_data))
+    if (0 != vlk::create_texture_image(init, render_data))
         throw std::runtime_error("Failed at `create_texture_image`.");
-    if (0 != create_texture_image_view(init, render_data))
+    if (0 != vlk::create_texture_image_view(init, render_data))
         throw std::runtime_error("Failed at `create_texture_image_view`.");
-    if (0 != create_texture_sampler(init, render_data))
+    if (0 != vlk::create_texture_sampler(init, render_data))
         throw std::runtime_error("Failed at `create_texture_sampler`.");
-    if (0 != load_model(init, render_data))
+    if (0 != vlk::load_model(init, render_data))
         throw std::runtime_error("Failed at `load_model`.");
-    if (0 != create_vertex_buffer(init, render_data))
+    if (0 != vlk::create_vertex_buffer(init, render_data))
         throw std::runtime_error("Failed at `create_vertex_buffer`.");
-    if (0 != create_index_buffer(init, render_data))
+    if (0 != vlk::create_index_buffer(init, render_data))
         throw std::runtime_error("Failed at `create_index_buffer`.");
-    if (0 != create_uniform_buffers(init, render_data))
+    if (0 != vlk::create_uniform_buffers(init, render_data))
         throw std::runtime_error("Failed at `create_uniform_buffers`.");
-    if (0 != create_descriptor_pool(init, render_data))
+    if (0 != vlk::create_descriptor_pool(init, render_data))
         throw std::runtime_error("Failed at `create_descriptor_pool`.");
-    if (0 != create_descriptor_sets(init, render_data))
+    if (0 != vlk::create_descriptor_sets(init, render_data))
         throw std::runtime_error("Failed at `create_descriptor_sets`.");
-    if (0 != create_command_buffers(init, render_data))
+    if (0 != vlk::create_command_buffers(init, render_data))
         throw std::runtime_error("Failed at `create_command_buffers`.");
-    if (0 != create_sync_objects(init, render_data))
+    if (0 != vlk::create_sync_objects(init, render_data))
         throw std::runtime_error("Failed at `create_sync_objects`.");
 }
 
@@ -75,13 +75,13 @@ int RenderWindow::draw() noexcept {
     int time = 0;
     while (!glfwWindowShouldClose(init.window)) {
         glfwPollEvents();
-        int res = draw_frame(init, render_data);
+        int res = vlk::draw_frame(init, render_data);
         if (res != 0) {
             std::cout << "failed to draw frame \n";
             return -1;
         }
         if (time++ >= 10'000) {
-            reloadShadersAndPipeline(init, render_data);
+            vlk::reloadShadersAndPipeline(init, render_data);
             time = 0;
         }
     }

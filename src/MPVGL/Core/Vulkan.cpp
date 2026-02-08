@@ -31,7 +31,7 @@
 
 #include "config.hpp"
 
-namespace mpvgl {
+namespace mpvgl::vlk {
 
 VkFormat find_depth_format(Init &init, RenderData &data);
 
@@ -203,7 +203,7 @@ int create_render_pass(Init &init, RenderData &data) {
 
     std::array<VkAttachmentDescription, 2> attachments = {color_attachment,
                                                           depth_attachment};
-    auto render_pass_info = vlk::initializers::renderPassCreateInfo(
+    auto render_pass_info = initializers::renderPassCreateInfo(
         attachments, {&subpass, 1}, {&dependency, 1}, 0);
 
     if (init.disp.createRenderPass(&render_pass_info, nullptr,
@@ -237,7 +237,7 @@ VkShaderModule createShaderModule(Init &init, const std::vector<char> &code) {
     std::span<const std::uint32_t> code_span{
         reinterpret_cast<const std::uint32_t *>(code.data()),
         code.size() / sizeof(std::uint32_t)};
-    auto create_info = vlk::initializers::shaderModuleCreateInfo(code_span);
+    auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
     VkShaderModule shaderModule;
     if (init.disp.createShaderModule(&create_info, nullptr, &shaderModule) !=
@@ -267,7 +267,7 @@ int create_descriptor_set_layout(Init &init, RenderData &data) {
     std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
         uboLayoutBinding, samplerLayoutBinding};
     auto layoutInfo =
-        vlk::initializers::descriptorSetLayoutCreateInfo(bindings);
+        initializers::descriptorSetLayoutCreateInfo(bindings);
     if (vkCreateDescriptorSetLayout(init.device, &layoutInfo, nullptr,
                                     &data.descriptor_set_layout) !=
         VK_SUCCESS) {
@@ -291,9 +291,9 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
         return -1;  // failed to create shader modules
     }
 
-    auto vertStageInfo = vlk::initializers::pipelineShaderStageCreateInfo(
+    auto vertStageInfo = initializers::pipelineShaderStageCreateInfo(
         VK_SHADER_STAGE_VERTEX_BIT, vert_module, "main");
-    auto fragStageInfo = vlk::initializers::pipelineShaderStageCreateInfo(
+    auto fragStageInfo = initializers::pipelineShaderStageCreateInfo(
         VK_SHADER_STAGE_FRAGMENT_BIT, frag_module, "main");
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertStageInfo,
                                                        fragStageInfo};
@@ -302,24 +302,24 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
     auto vertexInputInfo =
-        vlk::initializers::pipelineVertexInputStateCreateInfo(
+        initializers::pipelineVertexInputStateCreateInfo(
             {&bindingDescription, 1}, attributeDescriptions);
 
     auto inputAssembly =
-        vlk::initializers::pipelineInputAssemblyStateCreateInfo(
+        initializers::pipelineInputAssemblyStateCreateInfo(
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE);
 
     auto viewport_state =
-        vlk::initializers::pipelineViewportStateCreateInfo(1, 1);
+        initializers::pipelineViewportStateCreateInfo(1, 1);
 
-    auto rasterizer = vlk::initializers::pipelineRasterizationStateCreateInfo(
+    auto rasterizer = initializers::pipelineRasterizationStateCreateInfo(
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
         VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-    auto multisampling = vlk::initializers::pipelineMultisampleStateCreateInfo(
+    auto multisampling = initializers::pipelineMultisampleStateCreateInfo(
         VK_SAMPLE_COUNT_1_BIT);
 
-    auto depthStencil = vlk::initializers::pipelineDepthStencilStateCreateInfo(
+    auto depthStencil = initializers::pipelineDepthStencilStateCreateInfo(
         VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
     depthStencil.minDepthBounds = 0.0f;
     depthStencil.maxDepthBounds = 1.0f;
@@ -330,7 +330,7 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
-    auto colorBlending = vlk::initializers::pipelineColorBlendStateCreateInfo(
+    auto colorBlending = initializers::pipelineColorBlendStateCreateInfo(
         {&colorBlendAttachment, 1}, VK_FALSE, VK_LOGIC_OP_COPY);
     auto blendConstants = std::array{0.0f, 0.0f, 0.0f, 0.0f};
     std::copy(blendConstants.begin(), blendConstants.end(),
@@ -339,16 +339,16 @@ int create_graphics_pipeline(Init &init, RenderData &data) {
     std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
                                                  VK_DYNAMIC_STATE_SCISSOR};
     auto dynamicInfo =
-        vlk::initializers::pipelineDynamicStateCreateInfo(dynamicStates);
+        initializers::pipelineDynamicStateCreateInfo(dynamicStates);
 
-    auto pipelineLayoutInfo = vlk::initializers::pipelineLayoutCreateInfo(
+    auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
         {&data.descriptor_set_layout, 1}, {});
     if (vkCreatePipelineLayout(init.device, &pipelineLayoutInfo, nullptr,
                                &data.pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
-    auto pipelineInfo = vlk::initializers::graphicsPipelineCreateInfo();
+    auto pipelineInfo = initializers::graphicsPipelineCreateInfo();
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shader_stages;
     pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -385,7 +385,7 @@ int create_framebuffers(Init &init, RenderData &data) {
         std::array<VkImageView, 2> attachments = {
             data.swapchain_image_views.at(i), data.depth_image_view};
 
-        auto framebufferInfo = vlk::initializers::framebufferCreateInfo(
+        auto framebufferInfo = initializers::framebufferCreateInfo(
             data.render_pass, attachments, init.swapchain.extent, 1);
 
         if (init.disp.createFramebuffer(&framebufferInfo, nullptr,
@@ -398,7 +398,7 @@ int create_framebuffers(Init &init, RenderData &data) {
 }
 
 int create_command_pool(Init &init, RenderData &data) {
-    auto poolInfo = vlk::initializers::commandPoolCreateInfo(
+    auto poolInfo = initializers::commandPoolCreateInfo(
         init.device.get_queue_index(vkb::QueueType::graphics).value(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
@@ -432,7 +432,7 @@ static void create_buffer(Init &init, RenderData &data, VkDeviceSize size,
                           VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties, VkBuffer &buffer,
                           VkDeviceMemory &bufferMemory) {
-    auto bufferInfo = vlk::initializers::bufferCreateInfo(size, usage);
+    auto bufferInfo = initializers::bufferCreateInfo(size, usage);
     if (vkCreateBuffer(init.device, &bufferInfo, nullptr, &buffer) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create buffer!");
@@ -441,7 +441,7 @@ static void create_buffer(Init &init, RenderData &data, VkDeviceSize size,
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(init.device, buffer, &memRequirements);
 
-    auto allocInfo = vlk::initializers::memoryAllocateInfo(
+    auto allocInfo = initializers::memoryAllocateInfo(
         memRequirements.size,
         find_memory_type(init, data, memRequirements.memoryTypeBits,
                          properties));
@@ -455,13 +455,13 @@ static void create_buffer(Init &init, RenderData &data, VkDeviceSize size,
 }
 
 static VkCommandBuffer beginSingleTimeCommands(Init &init, RenderData &data) {
-    auto allocInfo = vlk::initializers::commandBufferAllocateInfo(
+    auto allocInfo = initializers::commandBufferAllocateInfo(
         data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(init.device, &allocInfo, &commandBuffer);
 
-    auto beginInfo = vlk::initializers::commandBufferBeginInfo(
+    auto beginInfo = initializers::commandBufferBeginInfo(
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
@@ -473,7 +473,7 @@ static void endSingleTimeCommands(Init &init, RenderData &data,
     vkEndCommandBuffer(commandBuffer);
 
     auto submitInfo =
-        vlk::initializers::submitInfo({}, {}, {&commandBuffer, 1}, {});
+        initializers::submitInfo({}, {}, {&commandBuffer, 1}, {});
     vkQueueSubmit(data.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(data.graphics_queue);
 
@@ -496,7 +496,7 @@ static void createImage(Init &init, RenderData &data, uint32_t width,
                         VkImageUsageFlags usage,
                         VkMemoryPropertyFlags properties, VkImage &image,
                         VkDeviceMemory &imageMemory) {
-    auto imageInfo = vlk::initializers::imageCreateInfo();
+    auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = width;
     imageInfo.extent.height = height;
@@ -517,7 +517,7 @@ static void createImage(Init &init, RenderData &data, uint32_t width,
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(init.device, image, &memRequirements);
 
-    auto allocInfo = vlk::initializers::memoryAllocateInfo(
+    auto allocInfo = initializers::memoryAllocateInfo(
         memRequirements.size,
         find_memory_type(init, data, memRequirements.memoryTypeBits,
                          properties));
@@ -541,7 +541,7 @@ static void transition_image_layout(Init &init, RenderData &data, VkImage image,
         .baseArrayLayer = 0,
         .layerCount = 1,
     };
-    auto barrier = vlk::initializers::imageMemoryBarrier(
+    auto barrier = initializers::imageMemoryBarrier(
         oldLayout, newLayout, image, subresourceRange);
 
     VkPipelineStageFlags sourceStage;
@@ -600,7 +600,7 @@ static VkImageView createImageView(Init &init, RenderData &data, VkImage image,
         .baseArrayLayer = 0,
         .layerCount = 1,
     };
-    auto viewInfo = vlk::initializers::imageViewCreateInfo(
+    auto viewInfo = initializers::imageViewCreateInfo(
         image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
 
     VkImageView imageView;
@@ -717,7 +717,7 @@ int create_texture_sampler(Init &init, RenderData &data) {
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(init.device.physical_device, &properties);
 
-    auto samplerInfo = vlk::initializers::samplerCreateInfo();
+    auto samplerInfo = initializers::samplerCreateInfo();
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR;
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -855,7 +855,7 @@ int create_descriptor_pool(Init &init, RenderData &data) {
     poolSizes[1].descriptorCount =
         static_cast<uint32_t>(data.framebuffers.size());
 
-    auto poolInfo = vlk::initializers::descriptorPoolCreateInfo(
+    auto poolInfo = initializers::descriptorPoolCreateInfo(
         poolSizes, data.framebuffers.size());
 
     if (vkCreateDescriptorPool(init.device, &poolInfo, nullptr,
@@ -869,7 +869,7 @@ int create_descriptor_pool(Init &init, RenderData &data) {
 int create_descriptor_sets(Init &init, RenderData &data) {
     std::vector<VkDescriptorSetLayout> layouts(data.framebuffers.size(),
                                                data.descriptor_set_layout);
-    auto allocInfo = vlk::initializers::descriptorSetAllocateInfo(
+    auto allocInfo = initializers::descriptorSetAllocateInfo(
         data.descriptor_pool, layouts);
 
     data.descriptor_sets.resize(data.framebuffers.size());
@@ -891,10 +891,10 @@ int create_descriptor_sets(Init &init, RenderData &data) {
         imageInfo.sampler = data.texture_sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{
-            vlk::initializers::writeDescriptorSet(
+            initializers::writeDescriptorSet(
                 data.descriptor_sets.at(i), 0, 0,
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, {&bufferInfo, 1}),
-            vlk::initializers::writeDescriptorSet(
+            initializers::writeDescriptorSet(
                 data.descriptor_sets.at(i), 1, 0,
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, {&imageInfo, 1})};
         vkUpdateDescriptorSets(init.device,
@@ -906,7 +906,7 @@ int create_descriptor_sets(Init &init, RenderData &data) {
 
 int create_command_buffers(Init &init, RenderData &data) {
     data.command_buffers.resize(data.framebuffers.size());
-    auto allocInfo = vlk::initializers::commandBufferAllocateInfo(
+    auto allocInfo = initializers::commandBufferAllocateInfo(
         data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         static_cast<std::uint32_t>(data.command_buffers.size()));
     if (init.disp.allocateCommandBuffers(
@@ -924,9 +924,9 @@ int create_sync_objects(Init &init, RenderData &data) {
     data.in_flight_fences.resize(init.swapchain.image_count, VK_NULL_HANDLE);
     data.image_in_flight.resize(init.swapchain.image_count, VK_NULL_HANDLE);
 
-    auto semaphoreInfo = vlk::initializers::semaphoreCreateInfo();
+    auto semaphoreInfo = initializers::semaphoreCreateInfo();
     auto fenceInfo =
-        vlk::initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+        initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
     for (size_t i = 0; i < init.swapchain.image_count; ++i) {
         if (init.disp.createSemaphore(&semaphoreInfo, nullptr,
@@ -992,7 +992,7 @@ int recreate_swapchain(Init &init, RenderData &data) {
 int record_command_buffer(Init &init, RenderData &data,
                           VkCommandBuffer command_buffer,
                           uint32_t image_index) {
-    auto beginInfo = vlk::initializers::commandBufferBeginInfo();
+    auto beginInfo = initializers::commandBufferBeginInfo();
     if (init.disp.beginCommandBuffer(command_buffer, &beginInfo) !=
         VK_SUCCESS) {
         return -1;  // failed to begin recording command buffer
@@ -1002,7 +1002,7 @@ int record_command_buffer(Init &init, RenderData &data,
     clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
     clearValues[1].depthStencil = {1.0f, 0};
 
-    auto renderPassInfo = vlk::initializers::renderPassBeginInfo(
+    auto renderPassInfo = initializers::renderPassBeginInfo(
         data.render_pass, data.framebuffers.at(image_index),
         VkRect2D{VkOffset2D{0, 0}, init.swapchain.extent}, clearValues);
 
@@ -1108,7 +1108,7 @@ int draw_frame(Init &init, RenderData &data) {
     auto *commandBuffers = &data.command_buffers.at(data.current_frame);
     auto *signal_semaphores = &data.finished_semaphore.at(image_index);
 
-    auto submitInfo = vlk::initializers::submitInfo(
+    auto submitInfo = initializers::submitInfo(
         {wait_semaphores, 1}, {wait_stages, 1}, {commandBuffers, 1},
         {signal_semaphores, 1});
 
@@ -1121,7 +1121,7 @@ int draw_frame(Init &init, RenderData &data) {
     }
 
     auto swapchainKRH = static_cast<VkSwapchainKHR>(init.swapchain);
-    auto presentInfoKHR = vlk::initializers::presentInfoKHR(
+    auto presentInfoKHR = initializers::presentInfoKHR(
         {signal_semaphores, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
     result = init.disp.queuePresentKHR(data.present_queue, &presentInfoKHR);

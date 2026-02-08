@@ -77,7 +77,7 @@ struct hash<mpvgl::Vertex> {
 
 }  // namespace std
 
-namespace mpvgl {
+namespace mpvgl::vlk {
 
 struct Init {
     GLFWwindow *window;
