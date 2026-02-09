@@ -1,5 +1,7 @@
 #pragma once
+
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include <array>
 #include <unordered_map>
 #include <vector>
@@ -9,7 +11,6 @@
 #include <vk-bootstrap/src/VkBootstrap.h>
 #include <vulkan/vulkan.h>
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Vulkan/Texture.hpp"

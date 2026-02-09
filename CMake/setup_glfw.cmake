@@ -1,0 +1,6 @@
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw)
+if(NOT TARGET glfw::glfw)
+    add_library(glfw::glfw ALIAS glfw)
+endif()
+add_compile_definitions(GLFW_INCLUDE_VULKAN)
+add_compile_definitions(GLFW_INCLUDE_NONE)
