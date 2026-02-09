@@ -11,6 +11,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 namespace mpvgl {
@@ -119,10 +120,7 @@ struct Vulkan {
         VkDeviceMemory depth_image_memory;
         VkImageView depth_image_view;
 
-        VkImage texture_image;
-        VkImageView texture_image_view;
-        VkSampler texture_sampler;
-        VkDeviceMemory texture_image_memory;
+        Texture texture;
 
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;

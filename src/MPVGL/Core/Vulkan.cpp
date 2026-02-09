@@ -676,16 +676,16 @@ int create_texture_image(Vulkan &vulkan) {
     createImage(vulkan, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.texture_image,
-                vulkan.data.texture_image_memory);
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.texture.image,
+                vulkan.data.texture.imageMemory);
 
-    transition_image_layout(vulkan, vulkan.data.texture_image,
+    transition_image_layout(vulkan, vulkan.data.texture.image,
                             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copy_buffer_to_image(vulkan, stagingBuffer, vulkan.data.texture_image,
+    copy_buffer_to_image(vulkan, stagingBuffer, vulkan.data.texture.image,
                          static_cast<uint32_t>(texWidth),
                          static_cast<uint32_t>(texHeight));
-    transition_image_layout(vulkan, vulkan.data.texture_image,
+    transition_image_layout(vulkan, vulkan.data.texture.image,
                             VK_FORMAT_R8G8B8A8_SRGB,
                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -695,8 +695,8 @@ int create_texture_image(Vulkan &vulkan) {
 }
 
 int create_texture_image_view(Vulkan &vulkan) {
-    vulkan.data.texture_image_view =
-        createImageView(vulkan, vulkan.data.texture_image,
+    vulkan.data.texture.imageView =
+        createImageView(vulkan, vulkan.data.texture.image,
                         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     return 0;
 }
@@ -723,7 +723,7 @@ int create_texture_sampler(Vulkan &vulkan) {
     // samplerInfo.minLod = 0.0f;
     // samplerInfo.maxLod = 0.0f;
     if (vkCreateSampler(vulkan.init.device, &samplerInfo, nullptr,
-                        &vulkan.data.texture_sampler) != VK_SUCCESS) {
+                        &vulkan.data.texture.sampler) != VK_SUCCESS) {
         std::cout << "failed to create texture sampler!\n";
         return -1;  // failed to create texture sampler!
     }
@@ -882,8 +882,8 @@ int create_descriptor_sets(Vulkan &vulkan) {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vulkan.data.texture_image_view;
-        imageInfo.sampler = vulkan.data.texture_sampler;
+        imageInfo.imageView = vulkan.data.texture.imageView;
+        imageInfo.sampler = vulkan.data.texture.sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{
             initializers::writeDescriptorSet(
@@ -1180,11 +1180,11 @@ void cleanup(Vulkan &vulkan) {
                                            nullptr);
     vulkan.init.disp.destroyRenderPass(vulkan.data.render_pass, nullptr);
 
-    vkDestroyImageView(vulkan.init.device, vulkan.data.texture_image_view,
+    vkDestroyImageView(vulkan.init.device, vulkan.data.texture.imageView,
                        nullptr);
-    vkDestroyImage(vulkan.init.device, vulkan.data.texture_image, nullptr);
-    vkDestroySampler(vulkan.init.device, vulkan.data.texture_sampler, nullptr);
-    vkFreeMemory(vulkan.init.device, vulkan.data.texture_image_memory, nullptr);
+    vkDestroyImage(vulkan.init.device, vulkan.data.texture.image, nullptr);
+    vkDestroySampler(vulkan.init.device, vulkan.data.texture.sampler, nullptr);
+    vkFreeMemory(vulkan.init.device, vulkan.data.texture.imageMemory, nullptr);
 
     for (size_t i = 0; i < vulkan.data.framebuffers.size(); i++) {
         vkDestroyBuffer(vulkan.init.device, vulkan.data.uniform_buffers.at(i),
