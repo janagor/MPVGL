@@ -38,8 +38,6 @@
 
 namespace mpvgl::vlk {
 
-VkFormat find_depth_format(Vulkan &vulkan);
-
 GLFWwindow *create_window_glfw(const char *window_name, bool resize) {
     glfwSetErrorCallback([](int error, const char *description) {
         fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
@@ -87,7 +85,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
 
     init.instance = instance.value();
     init.inst_disp = init.instance.make_table();
-    init.surface = create_surface_glfw(init.instance, init.window);
+    init.surface = create_surface_glfw(init.instance, init.window, nullptr);
 
     auto phys_device =
         PhysicalDevice::getPhysicalDevice(init.instance, init.surface);
@@ -398,7 +396,7 @@ int create_command_pool(Vulkan &vulkan) {
     return 0;
 }
 
-static uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
+uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
                                  VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(vulkan.init.device.physical_device,
@@ -415,7 +413,7 @@ static uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-static void create_buffer(Vulkan &vulkan, VkDeviceSize size,
+void create_buffer(Vulkan &vulkan, VkDeviceSize size,
                           VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties, VkBuffer &buffer,
                           VkDeviceMemory &bufferMemory) {
@@ -440,7 +438,7 @@ static void create_buffer(Vulkan &vulkan, VkDeviceSize size,
     vkBindBufferMemory(vulkan.init.device, buffer, bufferMemory, 0);
 }
 
-static VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
+VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
@@ -454,7 +452,7 @@ static VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
     return commandBuffer;
 }
 
-static void endSingleTimeCommands(Vulkan &vulkan,
+void endSingleTimeCommands(Vulkan &vulkan,
                                   VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
@@ -466,7 +464,7 @@ static void endSingleTimeCommands(Vulkan &vulkan,
                          &commandBuffer);
 }
 
-static void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
+void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
                         VkDeviceSize size) {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(vulkan);
 
@@ -477,7 +475,7 @@ static void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
-static void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
+void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
                         VkFormat format, VkImageTiling tiling,
                         VkImageUsageFlags usage,
                         VkMemoryPropertyFlags properties, VkImage &image,
@@ -515,7 +513,7 @@ static void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
     vkBindImageMemory(vulkan.init.device, image, imageMemory, 0);
 }
 
-static void transition_image_layout(Vulkan &vulkan, VkImage image,
+void transition_image_layout(Vulkan &vulkan, VkImage image,
                                     VkFormat format, VkImageLayout oldLayout,
                                     VkImageLayout newLayout) {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(vulkan);
@@ -576,7 +574,7 @@ void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
-static VkImageView createImageView(Vulkan &vulkan, VkImage image,
+VkImageView createImageView(Vulkan &vulkan, VkImage image,
                                    VkFormat format,
                                    VkImageAspectFlags aspectFlags) {
     auto subresourceRange = VkImageSubresourceRange{
@@ -598,7 +596,7 @@ static VkImageView createImageView(Vulkan &vulkan, VkImage image,
     return imageView;
 }
 
-static int create_image_views(Vulkan &vulkan) {
+int create_image_views(Vulkan &vulkan) {
     vulkan.data.swapchain_image_views.resize(
         vulkan.data.swapchain_images.size());
     for (uint32_t i = 0; i < vulkan.data.swapchain_images.size(); ++i) {
@@ -608,7 +606,7 @@ static int create_image_views(Vulkan &vulkan) {
     }
     return 0;
 }
-static VkFormat find_supported_format(Vulkan &vulkan,
+VkFormat find_supported_format(Vulkan &vulkan,
                                       const std::vector<VkFormat> &candidates,
                                       VkImageTiling tiling,
                                       VkFormatFeatureFlags features) {
@@ -634,7 +632,7 @@ VkFormat find_depth_format(Vulkan &vulkan) {
         VK_IMAGE_TILING_OPTIMAL,
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
-static bool has_stencil_component(VkFormat format) {
+bool has_stencil_component(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
            format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
@@ -943,7 +941,7 @@ int create_sync_objects(Vulkan &vulkan) {
     return 0;
 }
 
-static void cleanupSwapChain(Vulkan &vulkan) {
+void cleanupSwapChain(Vulkan &vulkan) {
     if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
         vulkan.init.disp.destroyImageView(vulkan.data.depth_image_view,
                                           nullptr);
