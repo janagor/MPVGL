@@ -8,6 +8,7 @@ struct Vulkan;
 
 struct Texture {
     Texture(Vulkan& vulkan);
+    uint32_t mipLevels;
     VkImage image;
     VkImageView imageView;
     VkSampler sampler;

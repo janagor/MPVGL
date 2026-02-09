@@ -12,7 +12,8 @@
 namespace mpvgl::vlk {
 
 Texture::Texture(Vulkan& vulkan)
-    : image(VK_NULL_HANDLE),
+    : mipLevels(0),
+      image(VK_NULL_HANDLE),
       imageView(VK_NULL_HANDLE),
       sampler(VK_NULL_HANDLE),
       imageMemory(VK_NULL_HANDLE),

@@ -327,14 +327,14 @@ int create_depth_resources(Vulkan &vulkan) {
     VkFormat depthFormat = find_depth_format(vulkan);
 
     createImage(vulkan, vulkan.init.swapchain.extent.width,
-                vulkan.init.swapchain.extent.height, depthFormat,
+                vulkan.init.swapchain.extent.height, 1, depthFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.depth_image,
                 vulkan.data.depth_image_memory);
     vulkan.data.depth_image_view =
         createImageView(vulkan, vulkan.data.depth_image, depthFormat,
-                        VK_IMAGE_ASPECT_DEPTH_BIT);
+                        VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     return 0;
 }
 
@@ -342,6 +342,10 @@ int create_texture_image(Vulkan &vulkan) {
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels = stbi_load(TEXTURE_PATH, &texWidth, &texHeight,
                                 &texChannels, STBI_rgb_alpha);
+    vulkan.data.texture.mipLevels =
+        static_cast<uint32_t>(
+            std::floor(std::log2(std::max(texWidth, texHeight)))) +
+        1;
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     if (!pixels) {
         std::cout << "failed to load texture image\n";
@@ -357,31 +361,32 @@ int create_texture_image(Vulkan &vulkan) {
     vkMapMemory(vulkan.init.device, stagingBufferMemory, 0, imageSize, 0, &d);
     memcpy(d, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(vulkan.init.device, stagingBufferMemory);
-    createImage(vulkan, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+    createImage(vulkan, texWidth, texHeight, vulkan.data.texture.mipLevels,
+                VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.texture.image,
                 vulkan.data.texture.imageMemory);
-
     transition_image_layout(vulkan, vulkan.data.texture.image,
                             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            vulkan.data.texture.mipLevels);
     copy_buffer_to_image(vulkan, stagingBuffer, vulkan.data.texture.image,
                          static_cast<uint32_t>(texWidth),
                          static_cast<uint32_t>(texHeight));
-    transition_image_layout(vulkan, vulkan.data.texture.image,
-                            VK_FORMAT_R8G8B8A8_SRGB,
-                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkDestroyBuffer(vulkan.init.device, stagingBuffer, nullptr);
     vkFreeMemory(vulkan.init.device, stagingBufferMemory, nullptr);
+
+    generateMipmaps(vulkan, vulkan.data.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
+                    texWidth, texHeight, vulkan.data.texture.mipLevels);
+
     return 0;
 }
 
 int create_texture_image_view(Vulkan &vulkan) {
-    vulkan.data.texture.imageView =
-        createImageView(vulkan, vulkan.data.texture.image,
-                        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    vulkan.data.texture.imageView = createImageView(
+        vulkan, vulkan.data.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT, vulkan.data.texture.mipLevels);
     return 0;
 }
 
@@ -393,19 +398,19 @@ int create_texture_sampler(Vulkan &vulkan) {
     auto samplerInfo = initializers::samplerCreateInfo();
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.mipLodBias = 0.0f;
     samplerInfo.anisotropyEnable = VK_FALSE;
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    // samplerInfo.mipLodBias = 0.0f;
-    // samplerInfo.minLod = 0.0f;
-    // samplerInfo.maxLod = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
     if (vkCreateSampler(vulkan.init.device, &samplerInfo, nullptr,
                         &vulkan.data.texture.sampler) != VK_SUCCESS) {
         std::cout << "failed to create texture sampler!\n";
