@@ -18,6 +18,8 @@
 
 namespace mpvgl {
 
+struct Texture;
+
 struct Vertex {
     Vertex(glm::vec3 pos, Color color, glm::vec2 texCoord)
         : pos(pos),
@@ -81,7 +83,9 @@ struct hash<mpvgl::Vertex> {
 }  // namespace std
 
 namespace mpvgl::vlk {
+
 struct Vulkan {
+    Vulkan();
     struct Init {
         GLFWwindow *window;
         vkb::Instance instance;
@@ -93,6 +97,7 @@ struct Vulkan {
     };
 
     struct RenderData {
+        RenderData(Vulkan &vulkan);
         VkQueue graphics_queue;
         VkQueue present_queue;
 
