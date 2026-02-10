@@ -90,8 +90,8 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
 uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
                           VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(vulkan.device.physical_device,
-                                        &memProperties);
+    vulkan.instDisp.getPhysicalDeviceMemoryProperties(
+        vulkan.device.physical_device, &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
         if ((typeFilter & (1 << i)) &&
@@ -108,24 +108,24 @@ void create_buffer(Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
                    VkMemoryPropertyFlags properties, VkBuffer &buffer,
                    VkDeviceMemory &bufferMemory) {
     auto bufferInfo = initializers::bufferCreateInfo(size, usage);
-    if (vkCreateBuffer(vulkan.device, &bufferInfo, nullptr, &buffer) !=
+    if (vulkan.devDisp.createBuffer(&bufferInfo, nullptr, &buffer) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create buffer!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(vulkan.device, buffer, &memRequirements);
+    vulkan.devDisp.getBufferMemoryRequirements(buffer, &memRequirements);
 
     auto allocInfo = initializers::memoryAllocateInfo(
         memRequirements.size,
         find_memory_type(vulkan, memRequirements.memoryTypeBits, properties));
 
-    if (vkAllocateMemory(vulkan.device, &allocInfo, nullptr, &bufferMemory) !=
+    if (vulkan.devDisp.allocateMemory(&allocInfo, nullptr, &bufferMemory) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory!");
     }
 
-    vkBindBufferMemory(vulkan.device, buffer, bufferMemory, 0);
+    vulkan.devDisp.bindBufferMemory(buffer, bufferMemory, 0);
 }
 
 VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
@@ -133,24 +133,24 @@ VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(vulkan.device, &allocInfo, &commandBuffer);
+    vulkan.devDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
 
     auto beginInfo = initializers::commandBufferBeginInfo(
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    vulkan.devDisp.beginCommandBuffer(commandBuffer, &beginInfo);
 
     return commandBuffer;
 }
 
 void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer) {
-    vkEndCommandBuffer(commandBuffer);
+    vulkan.devDisp.endCommandBuffer(commandBuffer);
 
     auto submitInfo = initializers::submitInfo({}, {}, {&commandBuffer, 1}, {});
-    vkQueueSubmit(vulkan.data.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(vulkan.data.graphics_queue);
-
-    vkFreeCommandBuffers(vulkan.device, vulkan.data.command_pool, 1,
-                         &commandBuffer);
+    vulkan.devDisp.queueSubmit(vulkan.data.graphics_queue, 1, &submitInfo,
+                               VK_NULL_HANDLE);
+    vulkan.devDisp.queueWaitIdle(vulkan.data.graphics_queue);
+    vulkan.devDisp.freeCommandBuffers(vulkan.data.command_pool, 1,
+                                      &commandBuffer);
 }
 
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -159,7 +159,8 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vulkan.devDisp.cmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1,
+                                 &copyRegion);
 
     endSingleTimeCommands(vulkan, commandBuffer);
 }
@@ -182,23 +183,22 @@ void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(vulkan.device, &imageInfo, nullptr, &image) !=
-        VK_SUCCESS) {
+    if (vulkan.devDisp.createImage(&imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(vulkan.device, image, &memRequirements);
+    vulkan.devDisp.getImageMemoryRequirements(image, &memRequirements);
 
     auto allocInfo = initializers::memoryAllocateInfo(
         memRequirements.size,
         find_memory_type(vulkan, memRequirements.memoryTypeBits, properties));
 
-    if (vkAllocateMemory(vulkan.device, &allocInfo, nullptr, &imageMemory) !=
+    if (vulkan.devDisp.allocateMemory(&allocInfo, nullptr, &imageMemory) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
-    vkBindImageMemory(vulkan.device, image, imageMemory, 0);
+    vulkan.devDisp.bindImageMemory(image, imageMemory, 0);
 }
 
 void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
@@ -236,17 +236,17 @@ void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
-
-    vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0,
-                         nullptr, 0, nullptr, 1, &barrier);
+    vulkan.devDisp.cmdPipelineBarrier(commandBuffer, sourceStage,
+                                      destinationStage, 0, 0, nullptr, 0,
+                                      nullptr, 1, &barrier);
 
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
                      int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(vulkan.device.physical_device,
-                                        imageFormat, &formatProperties);
+    vulkan.instDisp.getPhysicalDeviceFormatProperties(
+        vulkan.device.physical_device, imageFormat, &formatProperties);
     if (!(formatProperties.optimalTilingFeatures &
           VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         throw std::runtime_error(
@@ -273,9 +273,10 @@ void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                             nullptr, 1, &barrier);
+        vulkan.devDisp.cmdPipelineBarrier(commandBuffer,
+                                          VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                          VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                                          nullptr, 0, nullptr, 1, &barrier);
         VkImageBlit blit{};
         blit.srcOffsets[0] = {0, 0, 0};
         blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
@@ -290,7 +291,7 @@ void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
         blit.dstSubresource.mipLevel = i;
         blit.dstSubresource.baseArrayLayer = 0;
         blit.dstSubresource.layerCount = 1;
-        vkCmdBlitImage(
+        vulkan.devDisp.cmdBlitImage(
             commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
@@ -298,9 +299,10 @@ void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
-                             nullptr, 0, nullptr, 1, &barrier);
+        vulkan.devDisp.cmdPipelineBarrier(
+            commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+            &barrier);
         if (mipWidth > 1) mipWidth /= 2;
         if (mipHeight > 1) mipHeight /= 2;
     }
@@ -311,9 +313,10 @@ void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
-                         0, nullptr, 1, &barrier);
+    vulkan.devDisp.cmdPipelineBarrier(commandBuffer,
+                                      VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                      0, nullptr, 0, nullptr, 1, &barrier);
 
     endSingleTimeCommands(vulkan, commandBuffer);
 }
@@ -331,8 +334,9 @@ void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
     region.imageSubresource.layerCount = 1;
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {width, height, 1};
-    vkCmdCopyBufferToImage(commandBuffer, buffer, image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vulkan.devDisp.cmdCopyBufferToImage(commandBuffer, buffer, image,
+                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                                        &region);
 
     endSingleTimeCommands(vulkan, commandBuffer);
 }
@@ -351,7 +355,7 @@ VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
         image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
 
     VkImageView imageView;
-    if (vkCreateImageView(vulkan.device, &viewInfo, nullptr, &imageView) !=
+    if (vulkan.devDisp.createImageView(&viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create image view!");
     }
@@ -376,8 +380,8 @@ VkFormat find_supported_format(Vulkan &vulkan,
                                VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(vulkan.device.physical_device,
-                                            format, &props);
+        vulkan.instDisp.getPhysicalDeviceFormatProperties(
+            vulkan.device.physical_device, format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR &&
             (props.linearTilingFeatures & features) == features) {
             return format;
@@ -486,19 +490,20 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
 
     VkBuffer vertexBuffers[] = {vulkan.data.vertex_buffer};
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+    vulkan.devDisp.cmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers,
+                                        offsets);
 
-    vkCmdBindIndexBuffer(command_buffer, vulkan.data.index_buffer, 0,
-                         VK_INDEX_TYPE_UINT32);
+    vulkan.devDisp.cmdBindIndexBuffer(command_buffer, vulkan.data.index_buffer,
+                                      0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vulkan.data.pipeline_layout, 0, 1,
-                            &vulkan.data.descriptor_sets.at(image_index), 0,
-                            nullptr);
+    vulkan.devDisp.cmdBindDescriptorSets(
+        command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        vulkan.data.pipeline_layout, 0, 1,
+        &vulkan.data.descriptor_sets.at(image_index), 0, nullptr);
 
-    vkCmdDrawIndexed(command_buffer,
-                     static_cast<uint32_t>(vulkan.data.indices.size()), 1, 0, 0,
-                     0);
+    vulkan.devDisp.cmdDrawIndexed(
+        command_buffer, static_cast<uint32_t>(vulkan.data.indices.size()), 1, 0,
+        0, 0);
 
     vulkan.devDisp.cmdEndRenderPass(command_buffer);
 

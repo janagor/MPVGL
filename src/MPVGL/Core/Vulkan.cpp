@@ -176,8 +176,8 @@ int create_descriptor_set_layout(Vulkan &vulkan) {
     std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
         uboLayoutBinding, samplerLayoutBinding};
     auto layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
-    if (vkCreateDescriptorSetLayout(vulkan.device, &layoutInfo, nullptr,
-                                    &vulkan.data.descriptor_set_layout) !=
+    if (vulkan.devDisp.createDescriptorSetLayout(
+            &layoutInfo, nullptr, &vulkan.data.descriptor_set_layout) !=
         VK_SUCCESS) {
         std::cout << "failed to create descriptor set layout!\n";
         return -1;  // failed to create descriptor set layout
@@ -248,8 +248,9 @@ int create_graphics_pipeline(Vulkan &vulkan) {
 
     auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
         {&vulkan.data.descriptor_set_layout, 1}, {});
-    if (vkCreatePipelineLayout(vulkan.device, &pipelineLayoutInfo, nullptr,
-                               &vulkan.data.pipeline_layout) != VK_SUCCESS) {
+    if (vulkan.devDisp.createPipelineLayout(&pipelineLayoutInfo, nullptr,
+                                            &vulkan.data.pipeline_layout) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -352,9 +353,9 @@ int create_texture_image(Vulkan &vulkan) {
                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                   stagingBuffer, stagingBufferMemory);
     void *d;
-    vkMapMemory(vulkan.device, stagingBufferMemory, 0, imageSize, 0, &d);
+    vulkan.devDisp.mapMemory(stagingBufferMemory, 0, imageSize, 0, &d);
     memcpy(d, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(vulkan.device, stagingBufferMemory);
+    vulkan.devDisp.unmapMemory(stagingBufferMemory);
     createImage(vulkan, texWidth, texHeight, vulkan.data.texture.mipLevels,
                 VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -368,8 +369,8 @@ int create_texture_image(Vulkan &vulkan) {
     copy_buffer_to_image(vulkan, stagingBuffer, vulkan.data.texture.image,
                          static_cast<uint32_t>(texWidth),
                          static_cast<uint32_t>(texHeight));
-    vkDestroyBuffer(vulkan.device, stagingBuffer, nullptr);
-    vkFreeMemory(vulkan.device, stagingBufferMemory, nullptr);
+    vulkan.devDisp.destroyBuffer(stagingBuffer, nullptr);
+    vulkan.devDisp.freeMemory(stagingBufferMemory, nullptr);
 
     generateMipmaps(vulkan, vulkan.data.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
                     texWidth, texHeight, vulkan.data.texture.mipLevels);
@@ -386,7 +387,8 @@ int create_texture_image_view(Vulkan &vulkan) {
 
 int create_texture_sampler(Vulkan &vulkan) {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(vulkan.device.physical_device, &properties);
+    vulkan.instDisp.getPhysicalDeviceProperties(vulkan.device.physical_device,
+                                                &properties);
 
     auto samplerInfo = initializers::samplerCreateInfo();
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -404,8 +406,9 @@ int create_texture_sampler(Vulkan &vulkan) {
     samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    if (vkCreateSampler(vulkan.device, &samplerInfo, nullptr,
-                        &vulkan.data.texture.sampler) != VK_SUCCESS) {
+    if (vulkan.devDisp.createSampler(&samplerInfo, nullptr,
+                                     &vulkan.data.texture.sampler) !=
+        VK_SUCCESS) {
         std::cout << "failed to create texture sampler!\n";
         return -1;  // failed to create texture sampler!
     }
@@ -455,9 +458,9 @@ int create_vertex_buffer(Vulkan &vulkan) {
                   stagingBuffer, stagingBufferMemory);
 
     void *d;
-    vkMapMemory(vulkan.device, stagingBufferMemory, 0, bufferSize, 0, &d);
+    vulkan.devDisp.mapMemory(stagingBufferMemory, 0, bufferSize, 0, &d);
     memcpy(d, vulkan.data.vertices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(vulkan.device, stagingBufferMemory);
+    vulkan.devDisp.unmapMemory(stagingBufferMemory);
 
     create_buffer(
         vulkan, bufferSize,
@@ -466,8 +469,8 @@ int create_vertex_buffer(Vulkan &vulkan) {
         vulkan.data.vertex_buffer_memory);
 
     copy_buffer(vulkan, stagingBuffer, vulkan.data.vertex_buffer, bufferSize);
-    vkDestroyBuffer(vulkan.device, stagingBuffer, nullptr);
-    vkFreeMemory(vulkan.device, stagingBufferMemory, nullptr);
+    vulkan.devDisp.destroyBuffer(stagingBuffer, nullptr);
+    vulkan.devDisp.freeMemory(stagingBufferMemory, nullptr);
     return 0;
 }
 
@@ -483,9 +486,9 @@ int create_index_buffer(Vulkan &vulkan) {
                   stagingBuffer, stagingBufferMemory);
 
     void *d;
-    vkMapMemory(vulkan.device, stagingBufferMemory, 0, bufferSize, 0, &d);
+    vulkan.devDisp.mapMemory(stagingBufferMemory, 0, bufferSize, 0, &d);
     memcpy(d, vulkan.data.indices.data(), (size_t)bufferSize);
-    vkUnmapMemory(vulkan.device, stagingBufferMemory);
+    vulkan.devDisp.unmapMemory(stagingBufferMemory);
 
     create_buffer(
         vulkan, bufferSize,
@@ -495,8 +498,8 @@ int create_index_buffer(Vulkan &vulkan) {
 
     copy_buffer(vulkan, stagingBuffer, vulkan.data.index_buffer, bufferSize);
 
-    vkDestroyBuffer(vulkan.device, stagingBuffer, nullptr);
-    vkFreeMemory(vulkan.device, stagingBufferMemory, nullptr);
+    vulkan.devDisp.destroyBuffer(stagingBuffer, nullptr);
+    vulkan.devDisp.freeMemory(stagingBufferMemory, nullptr);
     return 0;
 }
 
@@ -513,8 +516,9 @@ int create_uniform_buffers(Vulkan &vulkan) {
                       vulkan.data.uniform_buffers.at(i),
                       vulkan.data.uniform_buffers_memory.at(i));
 
-        vkMapMemory(vulkan.device, vulkan.data.uniform_buffers_memory.at(i), 0,
-                    bufferSize, 0, &vulkan.data.uniform_buffers_mapped.at(i));
+        vulkan.devDisp.mapMemory(vulkan.data.uniform_buffers_memory.at(i), 0,
+                                 bufferSize, 0,
+                                 &vulkan.data.uniform_buffers_mapped.at(i));
     }
     return 0;
 }
@@ -531,8 +535,8 @@ int create_descriptor_pool(Vulkan &vulkan) {
     auto poolInfo = initializers::descriptorPoolCreateInfo(
         poolSizes, vulkan.data.framebuffers.size());
 
-    if (vkCreateDescriptorPool(vulkan.device, &poolInfo, nullptr,
-                               &vulkan.data.descriptor_pool) != VK_SUCCESS) {
+    if (vulkan.devDisp.createDescriptorPool(
+            &poolInfo, nullptr, &vulkan.data.descriptor_pool) != VK_SUCCESS) {
         std::cout << "failed to create descriptor pool\n";
         return -1;
     }
@@ -546,9 +550,8 @@ int create_descriptor_sets(Vulkan &vulkan) {
         vulkan.data.descriptor_pool, layouts);
 
     vulkan.data.descriptor_sets.resize(vulkan.data.framebuffers.size());
-    if (vkAllocateDescriptorSets(vulkan.device, &allocInfo,
-                                 vulkan.data.descriptor_sets.data()) !=
-        VK_SUCCESS) {
+    if (vulkan.devDisp.allocateDescriptorSets(
+            &allocInfo, vulkan.data.descriptor_sets.data()) != VK_SUCCESS) {
         std::cout << "failed to allocate descriptor sets\n";
         return -1;
     }
@@ -571,9 +574,9 @@ int create_descriptor_sets(Vulkan &vulkan) {
             initializers::writeDescriptorSet(
                 vulkan.data.descriptor_sets.at(i), 1, 0,
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, {&imageInfo, 1})};
-        vkUpdateDescriptorSets(vulkan.device,
-                               static_cast<uint32_t>(descriptorWrites.size()),
-                               descriptorWrites.data(), 0, nullptr);
+        vulkan.devDisp.updateDescriptorSets(
+            static_cast<uint32_t>(descriptorWrites.size()),
+            descriptorWrites.data(), 0, nullptr);
     }
     return 0;
 }
@@ -695,7 +698,7 @@ int draw_frame(Vulkan &vulkan) {
 }
 
 int reloadShadersAndPipeline(Vulkan &vulkan) {
-    vkQueueWaitIdle(vulkan.data.graphics_queue);
+    vulkan.devDisp.queueWaitIdle(vulkan.data.graphics_queue);
 
     vulkan.devDisp.destroyPipeline(vulkan.data.graphics_pipeline, nullptr);
     vulkan.devDisp.destroyPipelineLayout(vulkan.data.pipeline_layout, nullptr);
@@ -721,29 +724,28 @@ void cleanup(Vulkan &vulkan) {
     vulkan.devDisp.destroyPipelineLayout(vulkan.data.pipeline_layout, nullptr);
     vulkan.devDisp.destroyRenderPass(vulkan.data.render_pass, nullptr);
 
-    vkDestroyImageView(vulkan.device, vulkan.data.texture.imageView, nullptr);
-    vkDestroyImage(vulkan.device, vulkan.data.texture.image, nullptr);
-    vkDestroySampler(vulkan.device, vulkan.data.texture.sampler, nullptr);
-    vkFreeMemory(vulkan.device, vulkan.data.texture.imageMemory, nullptr);
+    vulkan.devDisp.destroyImageView(vulkan.data.texture.imageView, nullptr);
+    vulkan.devDisp.destroyImage(vulkan.data.texture.image, nullptr);
+    vulkan.devDisp.destroySampler(vulkan.data.texture.sampler, nullptr);
+    vulkan.devDisp.freeMemory(vulkan.data.texture.imageMemory, nullptr);
 
     for (size_t i = 0; i < vulkan.data.framebuffers.size(); i++) {
-        vkDestroyBuffer(vulkan.device, vulkan.data.uniform_buffers.at(i),
-                        nullptr);
-        vkFreeMemory(vulkan.device, vulkan.data.uniform_buffers_memory.at(i),
-                     nullptr);
+        vulkan.devDisp.destroyBuffer(vulkan.data.uniform_buffers.at(i),
+                                     nullptr);
+        vulkan.devDisp.freeMemory(vulkan.data.uniform_buffers_memory.at(i),
+                                  nullptr);
     }
 
-    vkDestroyDescriptorPool(vulkan.device, vulkan.data.descriptor_pool,
-                            nullptr);
+    vulkan.devDisp.destroyDescriptorPool(vulkan.data.descriptor_pool, nullptr);
 
-    vkDestroyDescriptorSetLayout(vulkan.device,
-                                 vulkan.data.descriptor_set_layout, nullptr);
+    vulkan.devDisp.destroyDescriptorSetLayout(vulkan.data.descriptor_set_layout,
+                                              nullptr);
 
-    vkDestroyBuffer(vulkan.device, vulkan.data.vertex_buffer, nullptr);
-    vkFreeMemory(vulkan.device, vulkan.data.vertex_buffer_memory, nullptr);
+    vulkan.devDisp.destroyBuffer(vulkan.data.vertex_buffer, nullptr);
+    vulkan.devDisp.freeMemory(vulkan.data.vertex_buffer_memory, nullptr);
 
-    vkDestroyBuffer(vulkan.device, vulkan.data.index_buffer, nullptr);
-    vkFreeMemory(vulkan.device, vulkan.data.index_buffer_memory, nullptr);
+    vulkan.devDisp.destroyBuffer(vulkan.data.index_buffer, nullptr);
+    vulkan.devDisp.freeMemory(vulkan.data.index_buffer_memory, nullptr);
 
     vkb::destroy_device(vulkan.device);
     vkb::destroy_surface(vulkan.instance, vulkan.surface);
