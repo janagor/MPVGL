@@ -41,10 +41,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
     init.window = create_window_glfw("Vulkan Triangle", true);
 
     auto instance = InstanceBuilder::getInstance();
-    if (!instance) {
-        std::cout << instance.error().message() << "\n";
-        return tl::unexpected(instance.error());
-    }
+    if (!instance) return tl::unexpected(instance.error());
 
     init.instance = instance.value();
     init.inst_disp = init.instance.make_table();
@@ -52,16 +49,10 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
 
     auto phys_device =
         PhysicalDeviceBuilder::getPhysicalDevice(init.instance, init.surface);
-    if (!phys_device) {
-        std::cout << phys_device.error().message() << "\n";
-        return tl::unexpected(phys_device.error());
-    }
+    if (!phys_device) return tl::unexpected(phys_device.error());
 
     auto device = DeviceBuilder::getDevice(phys_device.value());
-    if (!device) {
-        std::cout << device.error().message() << "\n";
-        return tl::unexpected(device.error());
-    }
+    if (!device) return tl::unexpected(device.error());
     init.device = device.value();
     init.disp = init.device.make_table();
 
@@ -71,11 +62,8 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
 tl::expected<void, std::error_code> create_swapchain(Vulkan::Init &init) {
     auto swapchain = SwapchainBuilder::getSwapchain(init.device, init.window,
                                                     init.swapchain);
-    if (!swapchain) {
-        // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
-        std::cout << swapchain.error().message() << "\n";
-        return tl::unexpected(swapchain.error());
-    }
+    // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
+    if (!swapchain) return tl::unexpected(swapchain.error());
     init.swapchain = swapchain.value();
     return {};
 }
