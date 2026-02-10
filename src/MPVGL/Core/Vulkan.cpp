@@ -44,7 +44,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
     if (!instance) return tl::unexpected(instance.error());
 
     vulkan.instance = instance.value();
-    vulkan.instanceDispatchTable = vulkan.instance.make_table();
+    vulkan.instDisp = vulkan.instance.make_table();
     vulkan.surface =
         create_surface_glfw(vulkan.instance, vulkan.window, nullptr);
 
@@ -55,7 +55,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
     auto device = DeviceBuilder::getDevice(phys_device.value());
     if (!device) return tl::unexpected(device.error());
     vulkan.device = device.value();
-    vulkan.dispatchTable = vulkan.device.make_table();
+    vulkan.devDisp = vulkan.device.make_table();
 
     return {};
 }
@@ -148,8 +148,8 @@ int create_render_pass(Vulkan &vulkan) {
     auto render_pass_info = initializers::renderPassCreateInfo(
         attachments, {&subpass, 1}, {&dependency, 1}, 0);
 
-    if (vulkan.dispatchTable.createRenderPass(&render_pass_info, nullptr,
-                                              &vulkan.data.render_pass) !=
+    if (vulkan.devDisp.createRenderPass(&render_pass_info, nullptr,
+                                        &vulkan.data.render_pass) !=
         VK_SUCCESS) {
         std::cout << "failed to create render pass\n";
         return -1;  // failed to create render pass!
@@ -269,15 +269,15 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vulkan.dispatchTable.createGraphicsPipelines(
+    if (vulkan.devDisp.createGraphicsPipelines(
             VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
             &vulkan.data.graphics_pipeline) != VK_SUCCESS) {
         std::cout << "failed to create pipline\n";
         return -1;  // failed to create graphics pipeline
     }
 
-    vulkan.dispatchTable.destroyShaderModule(frag_module, nullptr);
-    vulkan.dispatchTable.destroyShaderModule(vert_module, nullptr);
+    vulkan.devDisp.destroyShaderModule(frag_module, nullptr);
+    vulkan.devDisp.destroyShaderModule(vert_module, nullptr);
     return 0;
 }
 
@@ -295,8 +295,8 @@ int create_framebuffers(Vulkan &vulkan) {
         auto framebufferInfo = initializers::framebufferCreateInfo(
             vulkan.data.render_pass, attachments, vulkan.swapchain.extent, 1);
 
-        if (vulkan.dispatchTable.createFramebuffer(
-                &framebufferInfo, nullptr, &vulkan.data.framebuffers.at(i)) !=
+        if (vulkan.devDisp.createFramebuffer(&framebufferInfo, nullptr,
+                                             &vulkan.data.framebuffers.at(i)) !=
             VK_SUCCESS) {
             return -1;  // failed to create framebuffer
         }
@@ -309,7 +309,7 @@ int create_command_pool(Vulkan &vulkan) {
         vulkan.device.get_queue_index(vkb::QueueType::graphics).value(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-    if (vulkan.dispatchTable.createCommandPool(
+    if (vulkan.devDisp.createCommandPool(
             &poolInfo, nullptr, &vulkan.data.command_pool) != VK_SUCCESS) {
         std::cout << "failed to create command pool\n";
         return -1;  // failed to create command pool
@@ -583,7 +583,7 @@ int create_command_buffers(Vulkan &vulkan) {
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         static_cast<std::uint32_t>(vulkan.data.command_buffers.size()));
-    if (vulkan.dispatchTable.allocateCommandBuffers(
+    if (vulkan.devDisp.allocateCommandBuffers(
             &allocInfo, vulkan.data.command_buffers.data()) != VK_SUCCESS) {
         return -1;  // failed to allocate command buffers;
     }
@@ -606,14 +606,14 @@ int create_sync_objects(Vulkan &vulkan) {
         initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
     for (size_t i = 0; i < vulkan.swapchain.image_count; ++i) {
-        if (vulkan.dispatchTable.createSemaphore(
+        if (vulkan.devDisp.createSemaphore(
                 &semaphoreInfo, nullptr,
                 &vulkan.data.available_semaphores.at(i)) != VK_SUCCESS ||
-            vulkan.dispatchTable.createSemaphore(
+            vulkan.devDisp.createSemaphore(
                 &semaphoreInfo, nullptr,
                 &vulkan.data.finished_semaphore.at(i)) != VK_SUCCESS ||
-            vulkan.dispatchTable.createFence(
-                &fenceInfo, nullptr, &vulkan.data.in_flight_fences.at(i)) !=
+            vulkan.devDisp.createFence(&fenceInfo, nullptr,
+                                       &vulkan.data.in_flight_fences.at(i)) !=
                 VK_SUCCESS) {
             std::cout << "failed to create sync objects\n";
             return -1;  // failed to create synchronization objects for a frame
@@ -623,12 +623,12 @@ int create_sync_objects(Vulkan &vulkan) {
 }
 
 int draw_frame(Vulkan &vulkan) {
-    vulkan.dispatchTable.waitForFences(
+    vulkan.devDisp.waitForFences(
         1, &vulkan.data.in_flight_fences.at(vulkan.data.current_frame), VK_TRUE,
         UINT64_MAX);
 
     uint32_t image_index = 0;
-    VkResult result = vulkan.dispatchTable.acquireNextImageKHR(
+    VkResult result = vulkan.devDisp.acquireNextImageKHR(
         vulkan.swapchain, UINT64_MAX,
         vulkan.data.available_semaphores.at(vulkan.data.current_frame),
         VK_NULL_HANDLE, &image_index);
@@ -642,7 +642,7 @@ int draw_frame(Vulkan &vulkan) {
     }
 
     if (vulkan.data.image_in_flight.at(image_index) != VK_NULL_HANDLE) {
-        vulkan.dispatchTable.waitForFences(
+        vulkan.devDisp.waitForFences(
             1, &vulkan.data.image_in_flight.at(image_index), VK_TRUE,
             UINT64_MAX);
     }
@@ -666,9 +666,9 @@ int draw_frame(Vulkan &vulkan) {
         initializers::submitInfo({wait_semaphores, 1}, {wait_stages, 1},
                                  {commandBuffers, 1}, {signal_semaphores, 1});
 
-    vulkan.dispatchTable.resetFences(
+    vulkan.devDisp.resetFences(
         1, &vulkan.data.in_flight_fences.at(vulkan.data.current_frame));
-    if (vulkan.dispatchTable.queueSubmit(
+    if (vulkan.devDisp.queueSubmit(
             vulkan.data.graphics_queue, 1, &submitInfo,
             vulkan.data.in_flight_fences.at(vulkan.data.current_frame)) !=
         VK_SUCCESS) {
@@ -680,8 +680,8 @@ int draw_frame(Vulkan &vulkan) {
     auto presentInfoKHR = initializers::presentInfoKHR(
         {signal_semaphores, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
-    result = vulkan.dispatchTable.queuePresentKHR(vulkan.data.present_queue,
-                                                  &presentInfoKHR);
+    result = vulkan.devDisp.queuePresentKHR(vulkan.data.present_queue,
+                                            &presentInfoKHR);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         return recreate_swapchain(vulkan);
     } else if (result != VK_SUCCESS) {
@@ -697,10 +697,8 @@ int draw_frame(Vulkan &vulkan) {
 int reloadShadersAndPipeline(Vulkan &vulkan) {
     vkQueueWaitIdle(vulkan.data.graphics_queue);
 
-    vulkan.dispatchTable.destroyPipeline(vulkan.data.graphics_pipeline,
-                                         nullptr);
-    vulkan.dispatchTable.destroyPipelineLayout(vulkan.data.pipeline_layout,
-                                               nullptr);
+    vulkan.devDisp.destroyPipeline(vulkan.data.graphics_pipeline, nullptr);
+    vulkan.devDisp.destroyPipelineLayout(vulkan.data.pipeline_layout, nullptr);
 
     return create_graphics_pipeline(vulkan);
 }
@@ -709,21 +707,19 @@ void cleanup(Vulkan &vulkan) {
     cleanupSwapChain(vulkan);
 
     for (size_t i = 0; i < vulkan.swapchain.image_count; ++i) {
-        vulkan.dispatchTable.destroySemaphore(
-            vulkan.data.finished_semaphore.at(i), nullptr);
-        vulkan.dispatchTable.destroySemaphore(
-            vulkan.data.available_semaphores.at(i), nullptr);
-        vulkan.dispatchTable.destroyFence(vulkan.data.in_flight_fences.at(i),
-                                          nullptr);
+        vulkan.devDisp.destroySemaphore(vulkan.data.finished_semaphore.at(i),
+                                        nullptr);
+        vulkan.devDisp.destroySemaphore(vulkan.data.available_semaphores.at(i),
+                                        nullptr);
+        vulkan.devDisp.destroyFence(vulkan.data.in_flight_fences.at(i),
+                                    nullptr);
     }
 
-    vulkan.dispatchTable.destroyCommandPool(vulkan.data.command_pool, nullptr);
+    vulkan.devDisp.destroyCommandPool(vulkan.data.command_pool, nullptr);
 
-    vulkan.dispatchTable.destroyPipeline(vulkan.data.graphics_pipeline,
-                                         nullptr);
-    vulkan.dispatchTable.destroyPipelineLayout(vulkan.data.pipeline_layout,
-                                               nullptr);
-    vulkan.dispatchTable.destroyRenderPass(vulkan.data.render_pass, nullptr);
+    vulkan.devDisp.destroyPipeline(vulkan.data.graphics_pipeline, nullptr);
+    vulkan.devDisp.destroyPipelineLayout(vulkan.data.pipeline_layout, nullptr);
+    vulkan.devDisp.destroyRenderPass(vulkan.data.render_pass, nullptr);
 
     vkDestroyImageView(vulkan.device, vulkan.data.texture.imageView, nullptr);
     vkDestroyImage(vulkan.device, vulkan.data.texture.image, nullptr);

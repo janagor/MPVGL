@@ -79,8 +79,8 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
     VkShaderModule shaderModule;
-    if (vulkan.dispatchTable.createShaderModule(&create_info, nullptr,
-                                                &shaderModule) != VK_SUCCESS) {
+    if (vulkan.devDisp.createShaderModule(&create_info, nullptr,
+                                          &shaderModule) != VK_SUCCESS) {
         return VK_NULL_HANDLE;  // failed to create shader module
     }
 
@@ -405,15 +405,13 @@ bool has_stencil_component(VkFormat format) {
 
 void cleanupSwapChain(Vulkan &vulkan) {
     if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
-        vulkan.dispatchTable.destroyImageView(vulkan.data.depth_image_view,
-                                              nullptr);
-        vulkan.dispatchTable.destroyImage(vulkan.data.depth_image, nullptr);
-        vulkan.dispatchTable.freeMemory(vulkan.data.depth_image_memory,
-                                        nullptr);
+        vulkan.devDisp.destroyImageView(vulkan.data.depth_image_view, nullptr);
+        vulkan.devDisp.destroyImage(vulkan.data.depth_image, nullptr);
+        vulkan.devDisp.freeMemory(vulkan.data.depth_image_memory, nullptr);
     }
 
     for (auto framebuffer : vulkan.data.framebuffers) {
-        vulkan.dispatchTable.destroyFramebuffer(framebuffer, nullptr);
+        vulkan.devDisp.destroyFramebuffer(framebuffer, nullptr);
     }
 
     vulkan.swapchain.destroy_image_views(vulkan.data.swapchain_image_views);
@@ -422,19 +420,17 @@ void cleanupSwapChain(Vulkan &vulkan) {
 }
 
 int recreate_swapchain(Vulkan &vulkan) {
-    vulkan.dispatchTable.deviceWaitIdle();
+    vulkan.devDisp.deviceWaitIdle();
 
     if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
-        vulkan.dispatchTable.destroyImageView(vulkan.data.depth_image_view,
-                                              nullptr);
-        vulkan.dispatchTable.destroyImage(vulkan.data.depth_image, nullptr);
-        vulkan.dispatchTable.freeMemory(vulkan.data.depth_image_memory,
-                                        nullptr);
+        vulkan.devDisp.destroyImageView(vulkan.data.depth_image_view, nullptr);
+        vulkan.devDisp.destroyImage(vulkan.data.depth_image, nullptr);
+        vulkan.devDisp.freeMemory(vulkan.data.depth_image_memory, nullptr);
     }
 
-    vulkan.dispatchTable.destroyCommandPool(vulkan.data.command_pool, nullptr);
+    vulkan.devDisp.destroyCommandPool(vulkan.data.command_pool, nullptr);
     for (auto framebuffer : vulkan.data.framebuffers) {
-        vulkan.dispatchTable.destroyFramebuffer(framebuffer, nullptr);
+        vulkan.devDisp.destroyFramebuffer(framebuffer, nullptr);
     }
 
     vulkan.swapchain.destroy_image_views(vulkan.data.swapchain_image_views);
@@ -455,7 +451,7 @@ int recreate_swapchain(Vulkan &vulkan) {
 int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
                           uint32_t image_index) {
     auto beginInfo = initializers::commandBufferBeginInfo();
-    if (vulkan.dispatchTable.beginCommandBuffer(command_buffer, &beginInfo) !=
+    if (vulkan.devDisp.beginCommandBuffer(command_buffer, &beginInfo) !=
         VK_SUCCESS) {
         return -1;  // failed to begin recording command buffer
     }
@@ -468,11 +464,11 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
         vulkan.data.render_pass, vulkan.data.framebuffers.at(image_index),
         VkRect2D{VkOffset2D{0, 0}, vulkan.swapchain.extent}, clearValues);
 
-    vulkan.dispatchTable.cmdBeginRenderPass(command_buffer, &renderPassInfo,
-                                            VK_SUBPASS_CONTENTS_INLINE);
-    vulkan.dispatchTable.cmdBindPipeline(command_buffer,
-                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                         vulkan.data.graphics_pipeline);
+    vulkan.devDisp.cmdBeginRenderPass(command_buffer, &renderPassInfo,
+                                      VK_SUBPASS_CONTENTS_INLINE);
+    vulkan.devDisp.cmdBindPipeline(command_buffer,
+                                   VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                   vulkan.data.graphics_pipeline);
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -481,12 +477,12 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
     viewport.height = (float)vulkan.swapchain.extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vulkan.dispatchTable.cmdSetViewport(command_buffer, 0, 1, &viewport);
+    vulkan.devDisp.cmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
     scissor.extent = vulkan.swapchain.extent;
-    vulkan.dispatchTable.cmdSetScissor(command_buffer, 0, 1, &scissor);
+    vulkan.devDisp.cmdSetScissor(command_buffer, 0, 1, &scissor);
 
     VkBuffer vertexBuffers[] = {vulkan.data.vertex_buffer};
     VkDeviceSize offsets[] = {0};
@@ -504,9 +500,9 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
                      static_cast<uint32_t>(vulkan.data.indices.size()), 1, 0, 0,
                      0);
 
-    vulkan.dispatchTable.cmdEndRenderPass(command_buffer);
+    vulkan.devDisp.cmdEndRenderPass(command_buffer);
 
-    if (vulkan.dispatchTable.endCommandBuffer(command_buffer) != VK_SUCCESS) {
+    if (vulkan.devDisp.endCommandBuffer(command_buffer) != VK_SUCCESS) {
         std::cout << "failed to record command buffer\n";
         return -1;  // failed to record command buffer!
     }

@@ -88,10 +88,10 @@ struct Vulkan {
     Vulkan();
     GLFWwindow *window;
     vkb::Instance instance;
-    vkb::InstanceDispatchTable instanceDispatchTable;
-    VkSurfaceKHR surface;
+    vkb::InstanceDispatchTable instDisp;
     vkb::Device device;
-    vkb::DispatchTable dispatchTable;
+    vkb::DispatchTable devDisp;
+    VkSurfaceKHR surface;
     vkb::Swapchain swapchain;
 
     struct RenderData {
