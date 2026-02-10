@@ -30,8 +30,8 @@ int reloadShadersAndPipeline(Vulkan &vulkan);
 void cleanup(Vulkan &vulkan);
 
 // TODO: remove from public api
-tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init);
-tl::expected<void, std::error_code> create_swapchain(Vulkan::Init &init);
+tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan);
+tl::expected<void, std::error_code> create_swapchain(Vulkan &vulkan);
 tl::expected<void, std::error_code> get_queues(Vulkan &vulkan);
 
 }  // namespace mpvgl::vlk

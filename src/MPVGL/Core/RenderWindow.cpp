@@ -70,7 +70,7 @@ int RenderWindow::draw() noexcept {
         [&](std::stop_token st) { shader_watcher.run(st); });
 
     int time = 0;
-    while (!glfwWindowShouldClose(vulkan.init.window)) {
+    while (!glfwWindowShouldClose(vulkan.window)) {
         glfwPollEvents();
         int res = vlk::draw_frame(vulkan);
         if (res != 0) {
@@ -82,7 +82,7 @@ int RenderWindow::draw() noexcept {
             time = 0;
         }
     }
-    vulkan.init.disp.deviceWaitIdle();
+    vulkan.dispatchTable.deviceWaitIdle();
     return 0;
 }
 

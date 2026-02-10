@@ -86,15 +86,13 @@ namespace mpvgl::vlk {
 
 struct Vulkan {
     Vulkan();
-    struct Init {
-        GLFWwindow *window;
-        vkb::Instance instance;
-        vkb::InstanceDispatchTable inst_disp;
-        VkSurfaceKHR surface;
-        vkb::Device device;
-        vkb::DispatchTable disp;
-        vkb::Swapchain swapchain;
-    };
+    GLFWwindow *window;
+    vkb::Instance instance;
+    vkb::InstanceDispatchTable instanceDispachTable;
+    VkSurfaceKHR surface;
+    vkb::Device device;
+    vkb::DispatchTable dispatchTable;
+    vkb::Swapchain swapchain;
 
     struct RenderData {
         RenderData(Vulkan &vulkan);
@@ -143,7 +141,6 @@ struct Vulkan {
         size_t current_frame = 0;
     };
 
-    Init init;
     RenderData data;
 };
 

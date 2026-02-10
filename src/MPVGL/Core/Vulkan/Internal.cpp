@@ -79,8 +79,8 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
     VkShaderModule shaderModule;
-    if (vulkan.init.disp.createShaderModule(&create_info, nullptr,
-                                            &shaderModule) != VK_SUCCESS) {
+    if (vulkan.dispatchTable.createShaderModule(&create_info, nullptr,
+                                                &shaderModule) != VK_SUCCESS) {
         return VK_NULL_HANDLE;  // failed to create shader module
     }
 
@@ -90,7 +90,7 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
 uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
                           VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(vulkan.init.device.physical_device,
+    vkGetPhysicalDeviceMemoryProperties(vulkan.device.physical_device,
                                         &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
@@ -108,24 +108,24 @@ void create_buffer(Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
                    VkMemoryPropertyFlags properties, VkBuffer &buffer,
                    VkDeviceMemory &bufferMemory) {
     auto bufferInfo = initializers::bufferCreateInfo(size, usage);
-    if (vkCreateBuffer(vulkan.init.device, &bufferInfo, nullptr, &buffer) !=
+    if (vkCreateBuffer(vulkan.device, &bufferInfo, nullptr, &buffer) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create buffer!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(vulkan.init.device, buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(vulkan.device, buffer, &memRequirements);
 
     auto allocInfo = initializers::memoryAllocateInfo(
         memRequirements.size,
         find_memory_type(vulkan, memRequirements.memoryTypeBits, properties));
 
-    if (vkAllocateMemory(vulkan.init.device, &allocInfo, nullptr,
-                         &bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(vulkan.device, &allocInfo, nullptr, &bufferMemory) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory!");
     }
 
-    vkBindBufferMemory(vulkan.init.device, buffer, bufferMemory, 0);
+    vkBindBufferMemory(vulkan.device, buffer, bufferMemory, 0);
 }
 
 VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
@@ -133,7 +133,7 @@ VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(vulkan.init.device, &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(vulkan.device, &allocInfo, &commandBuffer);
 
     auto beginInfo = initializers::commandBufferBeginInfo(
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -149,7 +149,7 @@ void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer) {
     vkQueueSubmit(vulkan.data.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(vulkan.data.graphics_queue);
 
-    vkFreeCommandBuffers(vulkan.init.device, vulkan.data.command_pool, 1,
+    vkFreeCommandBuffers(vulkan.device, vulkan.data.command_pool, 1,
                          &commandBuffer);
 }
 
@@ -182,23 +182,23 @@ void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(vulkan.init.device, &imageInfo, nullptr, &image) !=
+    if (vkCreateImage(vulkan.device, &imageInfo, nullptr, &image) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(vulkan.init.device, image, &memRequirements);
+    vkGetImageMemoryRequirements(vulkan.device, image, &memRequirements);
 
     auto allocInfo = initializers::memoryAllocateInfo(
         memRequirements.size,
         find_memory_type(vulkan, memRequirements.memoryTypeBits, properties));
 
-    if (vkAllocateMemory(vulkan.init.device, &allocInfo, nullptr,
-                         &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(vulkan.device, &allocInfo, nullptr, &imageMemory) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
-    vkBindImageMemory(vulkan.init.device, image, imageMemory, 0);
+    vkBindImageMemory(vulkan.device, image, imageMemory, 0);
 }
 
 void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
@@ -245,7 +245,7 @@ void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
 void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
                      int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(vulkan.init.device.physical_device,
+    vkGetPhysicalDeviceFormatProperties(vulkan.device.physical_device,
                                         imageFormat, &formatProperties);
     if (!(formatProperties.optimalTilingFeatures &
           VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
@@ -351,7 +351,7 @@ VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
         image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
 
     VkImageView imageView;
-    if (vkCreateImageView(vulkan.init.device, &viewInfo, nullptr, &imageView) !=
+    if (vkCreateImageView(vulkan.device, &viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create image view!");
     }
@@ -365,7 +365,7 @@ int create_image_views(Vulkan &vulkan) {
     for (uint32_t i = 0; i < vulkan.data.swapchain_images.size(); ++i) {
         vulkan.data.swapchain_image_views.at(i) = createImageView(
             vulkan, vulkan.data.swapchain_images.at(i),
-            vulkan.init.swapchain.image_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+            vulkan.swapchain.image_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
     return 0;
 }
@@ -376,7 +376,7 @@ VkFormat find_supported_format(Vulkan &vulkan,
                                VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(vulkan.init.device.physical_device,
+        vkGetPhysicalDeviceFormatProperties(vulkan.device.physical_device,
                                             format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR &&
             (props.linearTilingFeatures & features) == features) {
@@ -405,44 +405,44 @@ bool has_stencil_component(VkFormat format) {
 
 void cleanupSwapChain(Vulkan &vulkan) {
     if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
-        vulkan.init.disp.destroyImageView(vulkan.data.depth_image_view,
-                                          nullptr);
-        vulkan.init.disp.destroyImage(vulkan.data.depth_image, nullptr);
-        vulkan.init.disp.freeMemory(vulkan.data.depth_image_memory, nullptr);
+        vulkan.dispatchTable.destroyImageView(vulkan.data.depth_image_view,
+                                              nullptr);
+        vulkan.dispatchTable.destroyImage(vulkan.data.depth_image, nullptr);
+        vulkan.dispatchTable.freeMemory(vulkan.data.depth_image_memory,
+                                        nullptr);
     }
 
     for (auto framebuffer : vulkan.data.framebuffers) {
-        vulkan.init.disp.destroyFramebuffer(framebuffer, nullptr);
+        vulkan.dispatchTable.destroyFramebuffer(framebuffer, nullptr);
     }
 
-    vulkan.init.swapchain.destroy_image_views(
-        vulkan.data.swapchain_image_views);
+    vulkan.swapchain.destroy_image_views(vulkan.data.swapchain_image_views);
 
-    vkb::destroy_swapchain(vulkan.init.swapchain);
+    vkb::destroy_swapchain(vulkan.swapchain);
 }
 
 int recreate_swapchain(Vulkan &vulkan) {
-    vulkan.init.disp.deviceWaitIdle();
+    vulkan.dispatchTable.deviceWaitIdle();
 
     if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
-        vulkan.init.disp.destroyImageView(vulkan.data.depth_image_view,
-                                          nullptr);
-        vulkan.init.disp.destroyImage(vulkan.data.depth_image, nullptr);
-        vulkan.init.disp.freeMemory(vulkan.data.depth_image_memory, nullptr);
+        vulkan.dispatchTable.destroyImageView(vulkan.data.depth_image_view,
+                                              nullptr);
+        vulkan.dispatchTable.destroyImage(vulkan.data.depth_image, nullptr);
+        vulkan.dispatchTable.freeMemory(vulkan.data.depth_image_memory,
+                                        nullptr);
     }
 
-    vulkan.init.disp.destroyCommandPool(vulkan.data.command_pool, nullptr);
+    vulkan.dispatchTable.destroyCommandPool(vulkan.data.command_pool, nullptr);
     for (auto framebuffer : vulkan.data.framebuffers) {
-        vulkan.init.disp.destroyFramebuffer(framebuffer, nullptr);
+        vulkan.dispatchTable.destroyFramebuffer(framebuffer, nullptr);
     }
 
-    vulkan.init.swapchain.destroy_image_views(
-        vulkan.data.swapchain_image_views);
+    vulkan.swapchain.destroy_image_views(vulkan.data.swapchain_image_views);
     vulkan.data.framebuffers.clear();
     vulkan.data.swapchain_image_views.clear();
 
-    if (!create_swapchain(vulkan.init).has_value()) return -1;
-    vulkan.data.swapchain_images = vulkan.init.swapchain.get_images().value();
+    if (!create_swapchain(vulkan).has_value()) return -1;
+    vulkan.data.swapchain_images = vulkan.swapchain.get_images().value();
     if (0 != create_depth_resources(vulkan)) return -1;
     if (0 != create_image_views(vulkan)) return -1;
     if (0 != create_framebuffers(vulkan)) return -1;
@@ -455,7 +455,7 @@ int recreate_swapchain(Vulkan &vulkan) {
 int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
                           uint32_t image_index) {
     auto beginInfo = initializers::commandBufferBeginInfo();
-    if (vulkan.init.disp.beginCommandBuffer(command_buffer, &beginInfo) !=
+    if (vulkan.dispatchTable.beginCommandBuffer(command_buffer, &beginInfo) !=
         VK_SUCCESS) {
         return -1;  // failed to begin recording command buffer
     }
@@ -466,27 +466,27 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
 
     auto renderPassInfo = initializers::renderPassBeginInfo(
         vulkan.data.render_pass, vulkan.data.framebuffers.at(image_index),
-        VkRect2D{VkOffset2D{0, 0}, vulkan.init.swapchain.extent}, clearValues);
+        VkRect2D{VkOffset2D{0, 0}, vulkan.swapchain.extent}, clearValues);
 
-    vulkan.init.disp.cmdBeginRenderPass(command_buffer, &renderPassInfo,
-                                        VK_SUBPASS_CONTENTS_INLINE);
-    vulkan.init.disp.cmdBindPipeline(command_buffer,
-                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                     vulkan.data.graphics_pipeline);
+    vulkan.dispatchTable.cmdBeginRenderPass(command_buffer, &renderPassInfo,
+                                            VK_SUBPASS_CONTENTS_INLINE);
+    vulkan.dispatchTable.cmdBindPipeline(command_buffer,
+                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                         vulkan.data.graphics_pipeline);
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)vulkan.init.swapchain.extent.width;
-    viewport.height = (float)vulkan.init.swapchain.extent.height;
+    viewport.width = (float)vulkan.swapchain.extent.width;
+    viewport.height = (float)vulkan.swapchain.extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vulkan.init.disp.cmdSetViewport(command_buffer, 0, 1, &viewport);
+    vulkan.dispatchTable.cmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
-    scissor.extent = vulkan.init.swapchain.extent;
-    vulkan.init.disp.cmdSetScissor(command_buffer, 0, 1, &scissor);
+    scissor.extent = vulkan.swapchain.extent;
+    vulkan.dispatchTable.cmdSetScissor(command_buffer, 0, 1, &scissor);
 
     VkBuffer vertexBuffers[] = {vulkan.data.vertex_buffer};
     VkDeviceSize offsets[] = {0};
@@ -504,9 +504,9 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
                      static_cast<uint32_t>(vulkan.data.indices.size()), 1, 0, 0,
                      0);
 
-    vulkan.init.disp.cmdEndRenderPass(command_buffer);
+    vulkan.dispatchTable.cmdEndRenderPass(command_buffer);
 
-    if (vulkan.init.disp.endCommandBuffer(command_buffer) != VK_SUCCESS) {
+    if (vulkan.dispatchTable.endCommandBuffer(command_buffer) != VK_SUCCESS) {
         std::cout << "failed to record command buffer\n";
         return -1;  // failed to record command buffer!
     }
@@ -527,11 +527,10 @@ int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image) {
     ubo.view =
         glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                     glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.projection =
-        glm::perspective(glm::radians(45.0f),
-                         vulkan.init.swapchain.extent.width /
-                             (float)vulkan.init.swapchain.extent.height,
-                         0.1f, 10.0f);
+    ubo.projection = glm::perspective(
+        glm::radians(45.0f),
+        vulkan.swapchain.extent.width / (float)vulkan.swapchain.extent.height,
+        0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 
     memcpy(vulkan.data.uniform_buffers_mapped.at(current_image), &ubo,
