@@ -7,9 +7,7 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init);
-tl::expected<void, std::error_code> create_swapchain(Vulkan::Init &init);
-tl::expected<void, std::error_code> get_queues(Vulkan &vulkan);
+tl::expected<void, std::error_code> bootstrap(Vulkan &vulkan);
 int create_render_pass(Vulkan &vulkan);
 int create_descriptor_set_layout(Vulkan &vulkan);
 int create_graphics_pipeline(Vulkan &vulkan);
@@ -30,5 +28,10 @@ int create_sync_objects(Vulkan &vulkan);
 int draw_frame(Vulkan &vulkan);
 int reloadShadersAndPipeline(Vulkan &vulkan);
 void cleanup(Vulkan &vulkan);
+
+// TODO: remove from public api
+tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init);
+tl::expected<void, std::error_code> create_swapchain(Vulkan::Init &init);
+tl::expected<void, std::error_code> get_queues(Vulkan &vulkan);
 
 }  // namespace mpvgl::vlk

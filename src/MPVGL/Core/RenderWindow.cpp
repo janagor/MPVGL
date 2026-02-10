@@ -23,17 +23,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
     shader_watcher.compileAll();
 
-    if (auto result = vlk::device_initialization(vulkan.init);
-        !result.has_value()) {
+    if (auto result = vlk::bootstrap(vulkan); !result.has_value()) {
         std::cout << result.error().message() << "\n";
-        throw std::runtime_error("Failed at `device_initialization`.");
+        throw std::runtime_error("Failed .");
     }
-    if (auto result = vlk::create_swapchain(vulkan.init); !result.has_value()) {
-        std::cout << result.error().message() << "\n";
-        throw std::runtime_error("Failed at `create_swapchain`.");
-    }
-    if (!vlk::get_queues(vulkan).has_value())
-        throw std::runtime_error("Failed at `get_queues`.");
     if (0 != vlk::create_render_pass(vulkan))
         throw std::runtime_error("Failed at `create_render_pass`.");
     if (0 != vlk::create_descriptor_set_layout(vulkan))

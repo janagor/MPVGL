@@ -87,6 +87,12 @@ tl::expected<void, std::error_code> get_queues(Vulkan &vulkan) {
     return {};
 }
 
+tl::expected<void, std::error_code> bootstrap(Vulkan &vulkan) {
+    return device_initialization(vulkan.init)
+        .and_then([&] { return create_swapchain(vulkan.init); })
+        .and_then([&] { return get_queues(vulkan); });
+}
+
 int create_render_pass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
         .format = vulkan.init.swapchain.image_format,
