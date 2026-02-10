@@ -9,7 +9,7 @@
 
 namespace mpvgl::vlk {
 
-struct Instance {
+struct InstanceBuilder {
     static tl::expected<vkb::Instance, std::error_code> getInstance() {
         vkb::InstanceBuilder instance_builder;
         auto instance_ret = instance_builder.use_default_debug_messenger()

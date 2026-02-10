@@ -8,7 +8,7 @@
 
 namespace mpvgl::vlk {
 
-struct Swapchain {
+struct SwapchainBuilder {
     static tl::expected<vkb::Swapchain, std::error_code> getSwapchain(
         vkb::Device const& device, GLFWwindow* window,
         vkb::Swapchain& oldSwapchain) {

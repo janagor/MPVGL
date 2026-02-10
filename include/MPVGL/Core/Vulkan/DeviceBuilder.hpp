@@ -6,7 +6,7 @@
 
 namespace mpvgl::vlk {
 
-struct Device {
+struct DeviceBuilder {
     static tl::expected<vkb::Device, std::error_code> getDevice(
         vkb::PhysicalDevice& physicalDevice) {
         vkb::DeviceBuilder device_builder{physicalDevice};

@@ -24,13 +24,13 @@
 
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
-#include "MPVGL/Core/Vulkan/Device.hpp"
+#include "MPVGL/Core/Vulkan/DeviceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
-#include "MPVGL/Core/Vulkan/Instance.hpp"
+#include "MPVGL/Core/Vulkan/InstanceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
-#include "MPVGL/Core/Vulkan/PhysicalDevice.hpp"
-#include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/PhysicalDeviceBuilder.hpp"
+#include "MPVGL/Core/Vulkan/SwapchainBuilder.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 #include "config.hpp"
@@ -40,7 +40,7 @@ namespace mpvgl::vlk {
 tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
     init.window = create_window_glfw("Vulkan Triangle", true);
 
-    auto instance = Instance::getInstance();
+    auto instance = InstanceBuilder::getInstance();
     if (!instance) {
         std::cout << instance.error().message() << "\n";
         return tl::unexpected(instance.error());
@@ -51,13 +51,13 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
     init.surface = create_surface_glfw(init.instance, init.window, nullptr);
 
     auto phys_device =
-        PhysicalDevice::getPhysicalDevice(init.instance, init.surface);
+        PhysicalDeviceBuilder::getPhysicalDevice(init.instance, init.surface);
     if (!phys_device) {
         std::cout << phys_device.error().message() << "\n";
         return tl::unexpected(phys_device.error());
     }
 
-    auto device = Device::getDevice(phys_device.value());
+    auto device = DeviceBuilder::getDevice(phys_device.value());
     if (!device) {
         std::cout << device.error().message() << "\n";
         return tl::unexpected(device.error());
@@ -69,8 +69,8 @@ tl::expected<void, std::error_code> device_initialization(Vulkan::Init &init) {
 }
 
 tl::expected<void, std::error_code> create_swapchain(Vulkan::Init &init) {
-    auto swapchain =
-        Swapchain::getSwapchain(init.device, init.window, init.swapchain);
+    auto swapchain = SwapchainBuilder::getSwapchain(init.device, init.window,
+                                                    init.swapchain);
     if (!swapchain) {
         // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
         std::cout << swapchain.error().message() << "\n";
