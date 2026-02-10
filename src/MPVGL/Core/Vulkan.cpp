@@ -44,7 +44,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
     if (!instance) return tl::unexpected(instance.error());
 
     vulkan.instance = instance.value();
-    vulkan.instanceDispachTable = vulkan.instance.make_table();
+    vulkan.instanceDispatchTable = vulkan.instance.make_table();
     vulkan.surface =
         create_surface_glfw(vulkan.instance, vulkan.window, nullptr);
 
