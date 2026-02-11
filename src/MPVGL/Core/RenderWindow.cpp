@@ -82,7 +82,7 @@ int RenderWindow::draw() noexcept {
             time = 0;
         }
     }
-    vulkan.devDisp.deviceWaitIdle();
+    vulkan.logDevDisp.deviceWaitIdle();
     return 0;
 }
 

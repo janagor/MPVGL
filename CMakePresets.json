@@ -15,14 +15,20 @@
       "name": "dev",
       "configurePreset": "dev",
       "jobs": 12
+    },
+    {
+      "name": "format",
+      "configurePreset": "dev",
+      "targets": ["format"]
     }
   ],
   "workflowPresets": [
     {
       "name": "dev",
       "steps": [
-        { "type": "configure", "name": "dev" },
-        { "type": "build",     "name": "dev" }
+        { "type": "configure", "name": "dev"    },
+        { "type": "build",     "name": "format" },
+        { "type": "build",     "name": "dev"    }
       ]
     }
   ]

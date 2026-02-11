@@ -52,5 +52,5 @@ add_subdirectory(examples)
 file(GLOB_RECURSE ALL_SOURCE_FILES "src/*.cpp" "include/*.hpp")
 add_custom_target(format
     COMMAND clang-format -i ${ALL_SOURCE_FILES}
-    COMMENT "Formatowanie code..."
+    COMMENT "Code formatting..."
 )
