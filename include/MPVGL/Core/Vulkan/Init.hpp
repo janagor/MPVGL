@@ -84,20 +84,28 @@ struct hash<mpvgl::Vertex> {
 
 namespace mpvgl::vlk {
 
-struct Vulkan {
-    Vulkan();
-    GLFWwindow *window;
+struct DeviceContext {
+    GLFWwindow *window{nullptr};
     vkb::Instance instance;
     vkb::InstanceDispatchTable instDisp;
+
     vkb::Device logicalDevice;
     vkb::DispatchTable logDevDisp;
+
+    VkQueue graphicsQueue{VK_NULL_HANDLE};
+    VkQueue presentQueue{VK_NULL_HANDLE};
+    std::uint32_t graphicsQueueIndex{0};
+    std::uint32_t presentQueueIndex{0};
+};
+
+struct Vulkan {
+    Vulkan();
+    DeviceContext deviceContext;
     VkSurfaceKHR surface;
     vkb::Swapchain swapchain;
 
     struct RenderData {
         RenderData(Vulkan &vulkan);
-        VkQueue graphics_queue;
-        VkQueue present_queue;
 
         std::vector<VkImage> swapchain_images;
         std::vector<VkImageView> swapchain_image_views;
