@@ -13,6 +13,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
@@ -113,6 +114,7 @@ struct SwapchainContext {
 
 struct SceneContext {
     SceneContext(Vulkan &vulkan);
+
     std::vector<Vertex> vertices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
     VkBuffer vertexBuffer;
@@ -123,6 +125,8 @@ struct SceneContext {
     VkDeviceMemory indexBufferMemory;
 
     Texture texture;
+
+    Camera camera{glm::vec3(2.0f, 2.0f, 2.0f)};
 };
 
 struct PipelineContext {

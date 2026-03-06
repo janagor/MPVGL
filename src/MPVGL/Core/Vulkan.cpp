@@ -182,8 +182,8 @@ int create_descriptor_set_layout(Vulkan &vulkan) {
         uboLayoutBinding, samplerLayoutBinding};
     auto layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
     if (vulkan.deviceContext.logDevDisp.createDescriptorSetLayout(
-            &layoutInfo, nullptr, &vulkan.pipelineContext.descriptorSetLayout) !=
-        VK_SUCCESS) {
+            &layoutInfo, nullptr,
+            &vulkan.pipelineContext.descriptorSetLayout) != VK_SUCCESS) {
         std::cout << "failed to create descriptor set layout!\n";
         return -1;  // failed to create descriptor set layout
     }

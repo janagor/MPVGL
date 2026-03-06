@@ -7,6 +7,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -552,13 +553,11 @@ int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image) {
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
                             glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view =
-        glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                    glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = vulkan.sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
-        glm::radians(45.0f),
+        glm::radians(vulkan.sceneContext.camera.Zoom),
         vulkan.swapchainContext.swapchain.extent.width /
-            (float)vulkan.swapchainContext.swapchain.extent.height,
+            static_cast<float>(vulkan.swapchainContext.swapchain.extent.height),
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 
