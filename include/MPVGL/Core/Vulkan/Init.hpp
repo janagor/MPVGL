@@ -98,20 +98,28 @@ struct DeviceContext {
     std::uint32_t presentQueueIndex{0};
 };
 
+struct SwapchainContext {
+    vkb::Swapchain swapchain;
+    std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapchainImageViews;
+
+    VkImage depthImage{VK_NULL_HANDLE};
+    VkDeviceMemory depthImageMemory{VK_NULL_HANDLE};
+    VkImageView depthImageView{VK_NULL_HANDLE};
+
+    VkRenderPass renderPass{VK_NULL_HANDLE};
+    std::vector<VkFramebuffer> framebuffers;
+};
+
 struct Vulkan {
     Vulkan();
     DeviceContext deviceContext;
+    SwapchainContext swapchainContext;
+
     VkSurfaceKHR surface;
-    vkb::Swapchain swapchain;
 
     struct RenderData {
         RenderData(Vulkan &vulkan);
-
-        std::vector<VkImage> swapchain_images;
-        std::vector<VkImageView> swapchain_image_views;
-        std::vector<VkFramebuffer> framebuffers;
-
-        VkRenderPass render_pass;
 
         VkDescriptorSetLayout descriptor_set_layout;
         VkPipelineLayout pipeline_layout;
@@ -128,10 +136,6 @@ struct Vulkan {
         std::vector<uint32_t> indices;
         VkBuffer index_buffer;
         VkDeviceMemory index_buffer_memory;
-
-        VkImage depth_image;
-        VkDeviceMemory depth_image_memory;
-        VkImageView depth_image_view;
 
         Texture texture;
 

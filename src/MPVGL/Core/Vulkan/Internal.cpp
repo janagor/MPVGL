@@ -371,12 +371,14 @@ VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
 }
 
 int create_image_views(Vulkan &vulkan) {
-    vulkan.data.swapchain_image_views.resize(
-        vulkan.data.swapchain_images.size());
-    for (uint32_t i = 0; i < vulkan.data.swapchain_images.size(); ++i) {
-        vulkan.data.swapchain_image_views.at(i) = createImageView(
-            vulkan, vulkan.data.swapchain_images.at(i),
-            vulkan.swapchain.image_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    vulkan.swapchainContext.swapchainImageViews.resize(
+        vulkan.swapchainContext.swapchainImages.size());
+    for (uint32_t i = 0; i < vulkan.swapchainContext.swapchainImages.size();
+         ++i) {
+        vulkan.swapchainContext.swapchainImageViews.at(i) = createImageView(
+            vulkan, vulkan.swapchainContext.swapchainImages.at(i),
+            vulkan.swapchainContext.swapchain.image_format,
+            VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
     return 0;
 }
@@ -415,50 +417,53 @@ bool has_stencil_component(VkFormat format) {
 }
 
 void cleanupSwapChain(Vulkan &vulkan) {
-    if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
+    if (vulkan.swapchainContext.depthImageView != VK_NULL_HANDLE) {
         vulkan.deviceContext.logDevDisp.destroyImageView(
-            vulkan.data.depth_image_view, nullptr);
-        vulkan.deviceContext.logDevDisp.destroyImage(vulkan.data.depth_image,
-                                                     nullptr);
+            vulkan.swapchainContext.depthImageView, nullptr);
+        vulkan.deviceContext.logDevDisp.destroyImage(
+            vulkan.swapchainContext.depthImage, nullptr);
         vulkan.deviceContext.logDevDisp.freeMemory(
-            vulkan.data.depth_image_memory, nullptr);
+            vulkan.swapchainContext.depthImageMemory, nullptr);
     }
 
-    for (auto framebuffer : vulkan.data.framebuffers) {
+    for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
         vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
                                                            nullptr);
     }
 
-    vulkan.swapchain.destroy_image_views(vulkan.data.swapchain_image_views);
+    vulkan.swapchainContext.swapchain.destroy_image_views(
+        vulkan.swapchainContext.swapchainImageViews);
 
-    vkb::destroy_swapchain(vulkan.swapchain);
+    vkb::destroy_swapchain(vulkan.swapchainContext.swapchain);
 }
 
 int recreate_swapchain(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.deviceWaitIdle();
 
-    if (vulkan.data.depth_image_view != VK_NULL_HANDLE) {
+    if (vulkan.swapchainContext.depthImageView != VK_NULL_HANDLE) {
         vulkan.deviceContext.logDevDisp.destroyImageView(
-            vulkan.data.depth_image_view, nullptr);
-        vulkan.deviceContext.logDevDisp.destroyImage(vulkan.data.depth_image,
-                                                     nullptr);
+            vulkan.swapchainContext.depthImageView, nullptr);
+        vulkan.deviceContext.logDevDisp.destroyImage(
+            vulkan.swapchainContext.depthImage, nullptr);
         vulkan.deviceContext.logDevDisp.freeMemory(
-            vulkan.data.depth_image_memory, nullptr);
+            vulkan.swapchainContext.depthImageMemory, nullptr);
     }
 
     vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
                                                        nullptr);
-    for (auto framebuffer : vulkan.data.framebuffers) {
+    for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
         vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
                                                            nullptr);
     }
 
-    vulkan.swapchain.destroy_image_views(vulkan.data.swapchain_image_views);
-    vulkan.data.framebuffers.clear();
-    vulkan.data.swapchain_image_views.clear();
+    vulkan.swapchainContext.swapchain.destroy_image_views(
+        vulkan.swapchainContext.swapchainImageViews);
+    vulkan.swapchainContext.framebuffers.clear();
+    vulkan.swapchainContext.swapchainImageViews.clear();
 
     if (!create_swapchain(vulkan).has_value()) return -1;
-    vulkan.data.swapchain_images = vulkan.swapchain.get_images().value();
+    vulkan.swapchainContext.swapchainImages =
+        vulkan.swapchainContext.swapchain.get_images().value();
     if (0 != create_depth_resources(vulkan)) return -1;
     if (0 != create_image_views(vulkan)) return -1;
     if (0 != create_framebuffers(vulkan)) return -1;
@@ -481,8 +486,10 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
     clearValues[1].depthStencil = {1.0f, 0};
 
     auto renderPassInfo = initializers::renderPassBeginInfo(
-        vulkan.data.render_pass, vulkan.data.framebuffers.at(image_index),
-        VkRect2D{VkOffset2D{0, 0}, vulkan.swapchain.extent}, clearValues);
+        vulkan.swapchainContext.renderPass,
+        vulkan.swapchainContext.framebuffers.at(image_index),
+        VkRect2D{VkOffset2D{0, 0}, vulkan.swapchainContext.swapchain.extent},
+        clearValues);
 
     vulkan.deviceContext.logDevDisp.cmdBeginRenderPass(
         command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -493,8 +500,8 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)vulkan.swapchain.extent.width;
-    viewport.height = (float)vulkan.swapchain.extent.height;
+    viewport.width = (float)vulkan.swapchainContext.swapchain.extent.width;
+    viewport.height = (float)vulkan.swapchainContext.swapchain.extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vulkan.deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1,
@@ -502,7 +509,7 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
-    scissor.extent = vulkan.swapchain.extent;
+    scissor.extent = vulkan.swapchainContext.swapchain.extent;
     vulkan.deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1,
                                                   &scissor);
 
@@ -549,7 +556,8 @@ int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image) {
                     glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.projection = glm::perspective(
         glm::radians(45.0f),
-        vulkan.swapchain.extent.width / (float)vulkan.swapchain.extent.height,
+        vulkan.swapchainContext.swapchain.extent.width /
+            (float)vulkan.swapchainContext.swapchain.extent.height,
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 

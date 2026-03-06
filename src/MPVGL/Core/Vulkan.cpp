@@ -65,10 +65,10 @@ tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
 tl::expected<void, std::error_code> create_swapchain(Vulkan &vulkan) {
     auto swapchain = SwapchainBuilder::getSwapchain(
         vulkan.deviceContext.logicalDevice, vulkan.deviceContext.window,
-        vulkan.swapchain);
+        vulkan.swapchainContext.swapchain);
     // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
     if (!swapchain) return tl::unexpected(swapchain.error());
-    vulkan.swapchain = swapchain.value();
+    vulkan.swapchainContext.swapchain = swapchain.value();
     return {};
 }
 
@@ -101,7 +101,7 @@ tl::expected<void, std::error_code> bootstrap(Vulkan &vulkan) {
 
 int create_render_pass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
-        .format = vulkan.swapchain.image_format,
+        .format = vulkan.swapchainContext.swapchain.image_format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -154,7 +154,7 @@ int create_render_pass(Vulkan &vulkan) {
         attachments, {&subpass, 1}, {&dependency, 1}, 0);
 
     if (vulkan.deviceContext.logDevDisp.createRenderPass(
-            &render_pass_info, nullptr, &vulkan.data.render_pass) !=
+            &render_pass_info, nullptr, &vulkan.swapchainContext.renderPass) !=
         VK_SUCCESS) {
         std::cout << "failed to create render pass\n";
         return -1;  // failed to create render pass!
@@ -271,7 +271,7 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicInfo;
     pipelineInfo.layout = vulkan.data.pipeline_layout;
-    pipelineInfo.renderPass = vulkan.data.render_pass;
+    pipelineInfo.renderPass = vulkan.swapchainContext.renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -288,21 +288,25 @@ int create_graphics_pipeline(Vulkan &vulkan) {
 }
 
 int create_framebuffers(Vulkan &vulkan) {
-    vulkan.data.swapchain_images = vulkan.swapchain.get_images().value();
-    vulkan.data.swapchain_image_views =
-        vulkan.swapchain.get_image_views().value();
+    vulkan.swapchainContext.swapchainImages =
+        vulkan.swapchainContext.swapchain.get_images().value();
+    vulkan.swapchainContext.swapchainImageViews =
+        vulkan.swapchainContext.swapchain.get_image_views().value();
 
-    vulkan.data.framebuffers.resize(vulkan.data.swapchain_image_views.size());
-    for (size_t i = 0; i < vulkan.data.swapchain_image_views.size(); ++i) {
+    vulkan.swapchainContext.framebuffers.resize(
+        vulkan.swapchainContext.swapchainImageViews.size());
+    for (size_t i = 0; i < vulkan.swapchainContext.swapchainImageViews.size();
+         ++i) {
         std::array<VkImageView, 2> attachments = {
-            vulkan.data.swapchain_image_views.at(i),
-            vulkan.data.depth_image_view};
+            vulkan.swapchainContext.swapchainImageViews.at(i),
+            vulkan.swapchainContext.depthImageView};
 
         auto framebufferInfo = initializers::framebufferCreateInfo(
-            vulkan.data.render_pass, attachments, vulkan.swapchain.extent, 1);
+            vulkan.swapchainContext.renderPass, attachments,
+            vulkan.swapchainContext.swapchain.extent, 1);
 
         if (vulkan.deviceContext.logDevDisp.createFramebuffer(
-                &framebufferInfo, nullptr, &vulkan.data.framebuffers.at(i)) !=
+                &framebufferInfo, nullptr, &vulkan.swapchainContext.framebuffers.at(i)) !=
             VK_SUCCESS) {
             return -1;  // failed to create framebuffer
         }
@@ -328,14 +332,14 @@ int create_command_pool(Vulkan &vulkan) {
 int create_depth_resources(Vulkan &vulkan) {
     VkFormat depthFormat = find_depth_format(vulkan);
 
-    createImage(vulkan, vulkan.swapchain.extent.width,
-                vulkan.swapchain.extent.height, 1, depthFormat,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.depth_image,
-                vulkan.data.depth_image_memory);
-    vulkan.data.depth_image_view =
-        createImageView(vulkan, vulkan.data.depth_image, depthFormat,
+    createImage(
+        vulkan, vulkan.swapchainContext.swapchain.extent.width,
+        vulkan.swapchainContext.swapchain.extent.height, 1, depthFormat,
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.swapchainContext.depthImage,
+        vulkan.swapchainContext.depthImageMemory);
+    vulkan.swapchainContext.depthImageView =
+        createImageView(vulkan, vulkan.swapchainContext.depthImage, depthFormat,
                         VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     return 0;
 }
@@ -515,11 +519,14 @@ int create_index_buffer(Vulkan &vulkan) {
 
 int create_uniform_buffers(Vulkan &vulkan) {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-    vulkan.data.uniform_buffers.resize(vulkan.swapchain.image_count);
-    vulkan.data.uniform_buffers_memory.resize(vulkan.swapchain.image_count);
-    vulkan.data.uniform_buffers_mapped.resize(vulkan.swapchain.image_count);
+    vulkan.data.uniform_buffers.resize(
+        vulkan.swapchainContext.swapchain.image_count);
+    vulkan.data.uniform_buffers_memory.resize(
+        vulkan.swapchainContext.swapchain.image_count);
+    vulkan.data.uniform_buffers_mapped.resize(
+        vulkan.swapchainContext.swapchain.image_count);
 
-    for (size_t i = 0; i < vulkan.swapchain.image_count; ++i) {
+    for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
         create_buffer(vulkan, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -537,13 +544,13 @@ int create_descriptor_pool(Vulkan &vulkan) {
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount =
-        static_cast<uint32_t>(vulkan.data.framebuffers.size());
+        static_cast<uint32_t>(vulkan.swapchainContext.framebuffers.size());
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount =
-        static_cast<uint32_t>(vulkan.data.framebuffers.size());
+        static_cast<uint32_t>(vulkan.swapchainContext.framebuffers.size());
 
     auto poolInfo = initializers::descriptorPoolCreateInfo(
-        poolSizes, vulkan.data.framebuffers.size());
+        poolSizes, vulkan.swapchainContext.framebuffers.size());
 
     if (vulkan.deviceContext.logDevDisp.createDescriptorPool(
             &poolInfo, nullptr, &vulkan.data.descriptor_pool) != VK_SUCCESS) {
@@ -555,18 +562,20 @@ int create_descriptor_pool(Vulkan &vulkan) {
 
 int create_descriptor_sets(Vulkan &vulkan) {
     std::vector<VkDescriptorSetLayout> layouts(
-        vulkan.data.framebuffers.size(), vulkan.data.descriptor_set_layout);
+        vulkan.swapchainContext.framebuffers.size(),
+        vulkan.data.descriptor_set_layout);
     auto allocInfo = initializers::descriptorSetAllocateInfo(
         vulkan.data.descriptor_pool, layouts);
 
-    vulkan.data.descriptor_sets.resize(vulkan.data.framebuffers.size());
+    vulkan.data.descriptor_sets.resize(
+        vulkan.swapchainContext.framebuffers.size());
     if (vulkan.deviceContext.logDevDisp.allocateDescriptorSets(
             &allocInfo, vulkan.data.descriptor_sets.data()) != VK_SUCCESS) {
         std::cout << "failed to allocate descriptor sets\n";
         return -1;
     }
 
-    for (size_t i = 0; i < vulkan.swapchain.image_count; ++i) {
+    for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = vulkan.data.uniform_buffers.at(i);
         bufferInfo.offset = 0;
@@ -592,7 +601,8 @@ int create_descriptor_sets(Vulkan &vulkan) {
 }
 
 int create_command_buffers(Vulkan &vulkan) {
-    vulkan.data.command_buffers.resize(vulkan.data.framebuffers.size());
+    vulkan.data.command_buffers.resize(
+        vulkan.swapchainContext.framebuffers.size());
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         static_cast<std::uint32_t>(vulkan.data.command_buffers.size()));
@@ -605,20 +615,20 @@ int create_command_buffers(Vulkan &vulkan) {
 
 int create_sync_objects(Vulkan &vulkan) {
     // TODO:
-    vulkan.data.available_semaphores.resize(vulkan.swapchain.image_count,
-                                            VK_NULL_HANDLE);
-    vulkan.data.finished_semaphore.resize(vulkan.swapchain.image_count,
-                                          VK_NULL_HANDLE);
-    vulkan.data.in_flight_fences.resize(vulkan.swapchain.image_count,
-                                        VK_NULL_HANDLE);
-    vulkan.data.image_in_flight.resize(vulkan.swapchain.image_count,
-                                       VK_NULL_HANDLE);
+    vulkan.data.available_semaphores.resize(
+        vulkan.swapchainContext.swapchain.image_count, VK_NULL_HANDLE);
+    vulkan.data.finished_semaphore.resize(
+        vulkan.swapchainContext.swapchain.image_count, VK_NULL_HANDLE);
+    vulkan.data.in_flight_fences.resize(
+        vulkan.swapchainContext.swapchain.image_count, VK_NULL_HANDLE);
+    vulkan.data.image_in_flight.resize(
+        vulkan.swapchainContext.swapchain.image_count, VK_NULL_HANDLE);
 
     auto semaphoreInfo = initializers::semaphoreCreateInfo();
     auto fenceInfo =
         initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
-    for (size_t i = 0; i < vulkan.swapchain.image_count; ++i) {
+    for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
         if (vulkan.deviceContext.logDevDisp.createSemaphore(
                 &semaphoreInfo, nullptr,
                 &vulkan.data.available_semaphores.at(i)) != VK_SUCCESS ||
@@ -642,7 +652,7 @@ int draw_frame(Vulkan &vulkan) {
 
     uint32_t image_index = 0;
     VkResult result = vulkan.deviceContext.logDevDisp.acquireNextImageKHR(
-        vulkan.swapchain, UINT64_MAX,
+        vulkan.swapchainContext.swapchain, UINT64_MAX,
         vulkan.data.available_semaphores.at(vulkan.data.current_frame),
         VK_NULL_HANDLE, &image_index);
 
@@ -689,7 +699,8 @@ int draw_frame(Vulkan &vulkan) {
         return -1;  //"failed to submit draw command buffer
     }
 
-    auto swapchainKRH = static_cast<VkSwapchainKHR>(vulkan.swapchain);
+    auto swapchainKRH =
+        static_cast<VkSwapchainKHR>(vulkan.swapchainContext.swapchain);
     auto presentInfoKHR = initializers::presentInfoKHR(
         {signal_semaphores, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
@@ -703,7 +714,7 @@ int draw_frame(Vulkan &vulkan) {
     }
 
     vulkan.data.current_frame =
-        (vulkan.data.current_frame + 1) % vulkan.data.framebuffers.size();
+        (vulkan.data.current_frame + 1) % vulkan.swapchainContext.framebuffers.size();
     return 0;
 }
 
@@ -722,7 +733,7 @@ int reloadShadersAndPipeline(Vulkan &vulkan) {
 void cleanup(Vulkan &vulkan) {
     cleanupSwapChain(vulkan);
 
-    for (size_t i = 0; i < vulkan.swapchain.image_count; ++i) {
+    for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
         vulkan.deviceContext.logDevDisp.destroySemaphore(
             vulkan.data.finished_semaphore.at(i), nullptr);
         vulkan.deviceContext.logDevDisp.destroySemaphore(
@@ -738,7 +749,7 @@ void cleanup(Vulkan &vulkan) {
         vulkan.data.graphics_pipeline, nullptr);
     vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
         vulkan.data.pipeline_layout, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyRenderPass(vulkan.data.render_pass,
+    vulkan.deviceContext.logDevDisp.destroyRenderPass(vulkan.swapchainContext.renderPass,
                                                       nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyImageView(
@@ -750,7 +761,7 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.freeMemory(vulkan.data.texture.imageMemory,
                                                nullptr);
 
-    for (size_t i = 0; i < vulkan.data.framebuffers.size(); i++) {
+    for (size_t i = 0; i < vulkan.swapchainContext.framebuffers.size(); i++) {
         vulkan.deviceContext.logDevDisp.destroyBuffer(
             vulkan.data.uniform_buffers.at(i), nullptr);
         vulkan.deviceContext.logDevDisp.freeMemory(
