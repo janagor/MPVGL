@@ -111,33 +111,37 @@ struct SwapchainContext {
     std::vector<VkFramebuffer> framebuffers;
 };
 
+struct SceneContext {
+    SceneContext(Vulkan &vulkan);
+    std::vector<Vertex> vertices;
+    std::unordered_map<Vertex, uint32_t> uniqueVertices;
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
+
+    std::vector<uint32_t> indices;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+
+    Texture texture;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
+};
+
 struct Vulkan {
     Vulkan();
     DeviceContext deviceContext;
     SwapchainContext swapchainContext;
+    SceneContext sceneContext;
 
     VkSurfaceKHR surface;
 
     struct RenderData {
-        RenderData(Vulkan &vulkan);
-
-        VkDescriptorSetLayout descriptor_set_layout;
-        VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
+        RenderData();
 
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
-
-        std::vector<Vertex> vertices;
-        std::unordered_map<Vertex, uint32_t> uniqueVertices;
-        VkBuffer vertex_buffer;
-        VkDeviceMemory vertex_buffer_memory;
-
-        std::vector<uint32_t> indices;
-        VkBuffer index_buffer;
-        VkDeviceMemory index_buffer_memory;
-
-        Texture texture;
 
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;

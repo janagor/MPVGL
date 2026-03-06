@@ -2,7 +2,8 @@
 
 namespace mpvgl::vlk {
 
-Vulkan::RenderData::RenderData(Vulkan &vulkan) : texture(vulkan) {}
+SceneContext::SceneContext(Vulkan &vulkan) : texture(vulkan) {}
+Vulkan::RenderData::RenderData() {}
 
-Vulkan::Vulkan() : data(*this) {}
+Vulkan::Vulkan() : data(), sceneContext(*this) {}
 }  // namespace mpvgl::vlk

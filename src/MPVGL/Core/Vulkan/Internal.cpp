@@ -495,7 +495,7 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
         command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vulkan.deviceContext.logDevDisp.cmdBindPipeline(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.data.graphics_pipeline);
+        vulkan.sceneContext.graphicsPipeline);
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -513,22 +513,23 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
     vulkan.deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1,
                                                   &scissor);
 
-    VkBuffer vertexBuffers[] = {vulkan.data.vertex_buffer};
+    VkBuffer vertexBuffers[] = {vulkan.sceneContext.vertexBuffer};
     VkDeviceSize offsets[] = {0};
     vulkan.deviceContext.logDevDisp.cmdBindVertexBuffers(
         command_buffer, 0, 1, vertexBuffers, offsets);
 
     vulkan.deviceContext.logDevDisp.cmdBindIndexBuffer(
-        command_buffer, vulkan.data.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        command_buffer, vulkan.sceneContext.indexBuffer, 0,
+        VK_INDEX_TYPE_UINT32);
 
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.data.pipeline_layout, 0, 1,
+        vulkan.sceneContext.pipelineLayout, 0, 1,
         &vulkan.data.descriptor_sets.at(image_index), 0, nullptr);
 
     vulkan.deviceContext.logDevDisp.cmdDrawIndexed(
-        command_buffer, static_cast<uint32_t>(vulkan.data.indices.size()), 1, 0,
-        0, 0);
+        command_buffer,
+        static_cast<uint32_t>(vulkan.sceneContext.indices.size()), 1, 0, 0, 0);
 
     vulkan.deviceContext.logDevDisp.cmdEndRenderPass(command_buffer);
 

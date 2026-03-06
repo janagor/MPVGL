@@ -182,7 +182,7 @@ int create_descriptor_set_layout(Vulkan &vulkan) {
         uboLayoutBinding, samplerLayoutBinding};
     auto layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
     if (vulkan.deviceContext.logDevDisp.createDescriptorSetLayout(
-            &layoutInfo, nullptr, &vulkan.data.descriptor_set_layout) !=
+            &layoutInfo, nullptr, &vulkan.sceneContext.descriptorSetLayout) !=
         VK_SUCCESS) {
         std::cout << "failed to create descriptor set layout!\n";
         return -1;  // failed to create descriptor set layout
@@ -252,10 +252,10 @@ int create_graphics_pipeline(Vulkan &vulkan) {
         initializers::pipelineDynamicStateCreateInfo(dynamicStates);
 
     auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
-        {&vulkan.data.descriptor_set_layout, 1}, {});
+        {&vulkan.sceneContext.descriptorSetLayout, 1}, {});
     if (vulkan.deviceContext.logDevDisp.createPipelineLayout(
-            &pipelineLayoutInfo, nullptr, &vulkan.data.pipeline_layout) !=
-        VK_SUCCESS) {
+            &pipelineLayoutInfo, nullptr,
+            &vulkan.sceneContext.pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -270,14 +270,14 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicInfo;
-    pipelineInfo.layout = vulkan.data.pipeline_layout;
+    pipelineInfo.layout = vulkan.sceneContext.pipelineLayout;
     pipelineInfo.renderPass = vulkan.swapchainContext.renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     if (vulkan.deviceContext.logDevDisp.createGraphicsPipelines(
             VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-            &vulkan.data.graphics_pipeline) != VK_SUCCESS) {
+            &vulkan.sceneContext.graphicsPipeline) != VK_SUCCESS) {
         std::cout << "failed to create pipline\n";
         return -1;  // failed to create graphics pipeline
     }
@@ -306,8 +306,8 @@ int create_framebuffers(Vulkan &vulkan) {
             vulkan.swapchainContext.swapchain.extent, 1);
 
         if (vulkan.deviceContext.logDevDisp.createFramebuffer(
-                &framebufferInfo, nullptr, &vulkan.swapchainContext.framebuffers.at(i)) !=
-            VK_SUCCESS) {
+                &framebufferInfo, nullptr,
+                &vulkan.swapchainContext.framebuffers.at(i)) != VK_SUCCESS) {
             return -1;  // failed to create framebuffer
         }
     }
@@ -348,7 +348,7 @@ int create_texture_image(Vulkan &vulkan) {
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels = stbi_load(TEXTURE_PATH, &texWidth, &texHeight,
                                 &texChannels, STBI_rgb_alpha);
-    vulkan.data.texture.mipLevels =
+    vulkan.sceneContext.texture.mipLevels =
         static_cast<uint32_t>(
             std::floor(std::log2(std::max(texWidth, texHeight)))) +
         1;
@@ -368,32 +368,34 @@ int create_texture_image(Vulkan &vulkan) {
                                               0, &d);
     memcpy(d, pixels, static_cast<size_t>(imageSize));
     vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
-    createImage(vulkan, texWidth, texHeight, vulkan.data.texture.mipLevels,
-                VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.texture.image,
-                vulkan.data.texture.imageMemory);
-    transition_image_layout(vulkan, vulkan.data.texture.image,
+    createImage(
+        vulkan, texWidth, texHeight, vulkan.sceneContext.texture.mipLevels,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.sceneContext.texture.image,
+        vulkan.sceneContext.texture.imageMemory);
+    transition_image_layout(vulkan, vulkan.sceneContext.texture.image,
                             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            vulkan.data.texture.mipLevels);
-    copy_buffer_to_image(vulkan, stagingBuffer, vulkan.data.texture.image,
-                         static_cast<uint32_t>(texWidth),
-                         static_cast<uint32_t>(texHeight));
+                            vulkan.sceneContext.texture.mipLevels);
+    copy_buffer_to_image(
+        vulkan, stagingBuffer, vulkan.sceneContext.texture.image,
+        static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
     vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
 
-    generateMipmaps(vulkan, vulkan.data.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
-                    texWidth, texHeight, vulkan.data.texture.mipLevels);
+    generateMipmaps(vulkan, vulkan.sceneContext.texture.image,
+                    VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight,
+                    vulkan.sceneContext.texture.mipLevels);
 
     return 0;
 }
 
 int create_texture_image_view(Vulkan &vulkan) {
-    vulkan.data.texture.imageView = createImageView(
-        vulkan, vulkan.data.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_ASPECT_COLOR_BIT, vulkan.data.texture.mipLevels);
+    vulkan.sceneContext.texture.imageView = createImageView(
+        vulkan, vulkan.sceneContext.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT, vulkan.sceneContext.texture.mipLevels);
     return 0;
 }
 
@@ -419,7 +421,7 @@ int create_texture_sampler(Vulkan &vulkan) {
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     if (vulkan.deviceContext.logDevDisp.createSampler(
-            &samplerInfo, nullptr, &vulkan.data.texture.sampler) !=
+            &samplerInfo, nullptr, &vulkan.sceneContext.texture.sampler) !=
         VK_SUCCESS) {
         std::cout << "failed to create texture sampler!\n";
         return -1;  // failed to create texture sampler!
@@ -446,21 +448,21 @@ int load_model(Vulkan &vulkan) {
                        {255, 255, 255},
                        {attrib.texcoords[2 * index.texcoord_index + 0],
                         1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}};
-            if (vulkan.data.uniqueVertices.count(vertex) == 0) {
-                vulkan.data.uniqueVertices[vertex] =
-                    static_cast<uint32_t>(vulkan.data.vertices.size());
-                vulkan.data.vertices.push_back(vertex);
+            if (vulkan.sceneContext.uniqueVertices.count(vertex) == 0) {
+                vulkan.sceneContext.uniqueVertices[vertex] =
+                    static_cast<uint32_t>(vulkan.sceneContext.vertices.size());
+                vulkan.sceneContext.vertices.push_back(vertex);
             }
-            vulkan.data.indices.push_back(
-                vulkan.data.uniqueVertices.at(vertex));
+            vulkan.sceneContext.indices.push_back(
+                vulkan.sceneContext.uniqueVertices.at(vertex));
         };
     };
     return 0;
 }
 
 int create_vertex_buffer(Vulkan &vulkan) {
-    VkDeviceSize bufferSize =
-        sizeof(vulkan.data.vertices.at(0)) * vulkan.data.vertices.size();
+    VkDeviceSize bufferSize = sizeof(vulkan.sceneContext.vertices.at(0)) *
+                              vulkan.sceneContext.vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -472,24 +474,26 @@ int create_vertex_buffer(Vulkan &vulkan) {
     void *d;
     vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0,
                                               bufferSize, 0, &d);
-    memcpy(d, vulkan.data.vertices.data(), static_cast<size_t>(bufferSize));
+    memcpy(d, vulkan.sceneContext.vertices.data(),
+           static_cast<size_t>(bufferSize));
     vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
 
     create_buffer(
         vulkan, bufferSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.vertex_buffer,
-        vulkan.data.vertex_buffer_memory);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.sceneContext.vertexBuffer,
+        vulkan.sceneContext.vertexBufferMemory);
 
-    copy_buffer(vulkan, stagingBuffer, vulkan.data.vertex_buffer, bufferSize);
+    copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.vertexBuffer,
+                bufferSize);
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
     vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
     return 0;
 }
 
 int create_index_buffer(Vulkan &vulkan) {
-    VkDeviceSize bufferSize =
-        sizeof(vulkan.data.indices.at(0)) * vulkan.data.indices.size();
+    VkDeviceSize bufferSize = sizeof(vulkan.sceneContext.indices.at(0)) *
+                              vulkan.sceneContext.indices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -501,16 +505,17 @@ int create_index_buffer(Vulkan &vulkan) {
     void *d;
     vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0,
                                               bufferSize, 0, &d);
-    memcpy(d, vulkan.data.indices.data(), (size_t)bufferSize);
+    memcpy(d, vulkan.sceneContext.indices.data(), (size_t)bufferSize);
     vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
 
     create_buffer(
         vulkan, bufferSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.data.index_buffer,
-        vulkan.data.index_buffer_memory);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.sceneContext.indexBuffer,
+        vulkan.sceneContext.indexBufferMemory);
 
-    copy_buffer(vulkan, stagingBuffer, vulkan.data.index_buffer, bufferSize);
+    copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.indexBuffer,
+                bufferSize);
 
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
     vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
@@ -563,7 +568,7 @@ int create_descriptor_pool(Vulkan &vulkan) {
 int create_descriptor_sets(Vulkan &vulkan) {
     std::vector<VkDescriptorSetLayout> layouts(
         vulkan.swapchainContext.framebuffers.size(),
-        vulkan.data.descriptor_set_layout);
+        vulkan.sceneContext.descriptorSetLayout);
     auto allocInfo = initializers::descriptorSetAllocateInfo(
         vulkan.data.descriptor_pool, layouts);
 
@@ -583,8 +588,8 @@ int create_descriptor_sets(Vulkan &vulkan) {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vulkan.data.texture.imageView;
-        imageInfo.sampler = vulkan.data.texture.sampler;
+        imageInfo.imageView = vulkan.sceneContext.texture.imageView;
+        imageInfo.sampler = vulkan.sceneContext.texture.sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{
             initializers::writeDescriptorSet(
@@ -713,8 +718,8 @@ int draw_frame(Vulkan &vulkan) {
         return -1;
     }
 
-    vulkan.data.current_frame =
-        (vulkan.data.current_frame + 1) % vulkan.swapchainContext.framebuffers.size();
+    vulkan.data.current_frame = (vulkan.data.current_frame + 1) %
+                                vulkan.swapchainContext.framebuffers.size();
     return 0;
 }
 
@@ -723,9 +728,9 @@ int reloadShadersAndPipeline(Vulkan &vulkan) {
         vulkan.deviceContext.graphicsQueue);
 
     vulkan.deviceContext.logDevDisp.destroyPipeline(
-        vulkan.data.graphics_pipeline, nullptr);
+        vulkan.sceneContext.graphicsPipeline, nullptr);
     vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
-        vulkan.data.pipeline_layout, nullptr);
+        vulkan.sceneContext.pipelineLayout, nullptr);
 
     return create_graphics_pipeline(vulkan);
 }
@@ -746,20 +751,20 @@ void cleanup(Vulkan &vulkan) {
                                                        nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyPipeline(
-        vulkan.data.graphics_pipeline, nullptr);
+        vulkan.sceneContext.graphicsPipeline, nullptr);
     vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
-        vulkan.data.pipeline_layout, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyRenderPass(vulkan.swapchainContext.renderPass,
-                                                      nullptr);
+        vulkan.sceneContext.pipelineLayout, nullptr);
+    vulkan.deviceContext.logDevDisp.destroyRenderPass(
+        vulkan.swapchainContext.renderPass, nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyImageView(
-        vulkan.data.texture.imageView, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyImage(vulkan.data.texture.image,
-                                                 nullptr);
-    vulkan.deviceContext.logDevDisp.destroySampler(vulkan.data.texture.sampler,
-                                                   nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(vulkan.data.texture.imageMemory,
-                                               nullptr);
+        vulkan.sceneContext.texture.imageView, nullptr);
+    vulkan.deviceContext.logDevDisp.destroyImage(
+        vulkan.sceneContext.texture.image, nullptr);
+    vulkan.deviceContext.logDevDisp.destroySampler(
+        vulkan.sceneContext.texture.sampler, nullptr);
+    vulkan.deviceContext.logDevDisp.freeMemory(
+        vulkan.sceneContext.texture.imageMemory, nullptr);
 
     for (size_t i = 0; i < vulkan.swapchainContext.framebuffers.size(); i++) {
         vulkan.deviceContext.logDevDisp.destroyBuffer(
@@ -772,17 +777,17 @@ void cleanup(Vulkan &vulkan) {
         vulkan.data.descriptor_pool, nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
-        vulkan.data.descriptor_set_layout, nullptr);
+        vulkan.sceneContext.descriptorSetLayout, nullptr);
 
-    vulkan.deviceContext.logDevDisp.destroyBuffer(vulkan.data.vertex_buffer,
-                                                  nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(vulkan.data.vertex_buffer_memory,
-                                               nullptr);
+    vulkan.deviceContext.logDevDisp.destroyBuffer(
+        vulkan.sceneContext.vertexBuffer, nullptr);
+    vulkan.deviceContext.logDevDisp.freeMemory(
+        vulkan.sceneContext.vertexBufferMemory, nullptr);
 
-    vulkan.deviceContext.logDevDisp.destroyBuffer(vulkan.data.index_buffer,
-                                                  nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(vulkan.data.index_buffer_memory,
-                                               nullptr);
+    vulkan.deviceContext.logDevDisp.destroyBuffer(
+        vulkan.sceneContext.indexBuffer, nullptr);
+    vulkan.deviceContext.logDevDisp.freeMemory(
+        vulkan.sceneContext.indexBufferMemory, nullptr);
 
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);
     vkb::destroy_surface(vulkan.deviceContext.instance, vulkan.surface);
