@@ -495,7 +495,7 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
         command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vulkan.deviceContext.logDevDisp.cmdBindPipeline(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.sceneContext.graphicsPipeline);
+        vulkan.pipelineContext.graphicsPipeline);
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -524,7 +524,7 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
 
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.sceneContext.pipelineLayout, 0, 1,
+        vulkan.pipelineContext.pipelineLayout, 0, 1,
         &vulkan.data.descriptor_sets.at(image_index), 0, nullptr);
 
     vulkan.deviceContext.logDevDisp.cmdDrawIndexed(

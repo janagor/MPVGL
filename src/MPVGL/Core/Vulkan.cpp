@@ -182,7 +182,7 @@ int create_descriptor_set_layout(Vulkan &vulkan) {
         uboLayoutBinding, samplerLayoutBinding};
     auto layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
     if (vulkan.deviceContext.logDevDisp.createDescriptorSetLayout(
-            &layoutInfo, nullptr, &vulkan.sceneContext.descriptorSetLayout) !=
+            &layoutInfo, nullptr, &vulkan.pipelineContext.descriptorSetLayout) !=
         VK_SUCCESS) {
         std::cout << "failed to create descriptor set layout!\n";
         return -1;  // failed to create descriptor set layout
@@ -252,10 +252,10 @@ int create_graphics_pipeline(Vulkan &vulkan) {
         initializers::pipelineDynamicStateCreateInfo(dynamicStates);
 
     auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
-        {&vulkan.sceneContext.descriptorSetLayout, 1}, {});
+        {&vulkan.pipelineContext.descriptorSetLayout, 1}, {});
     if (vulkan.deviceContext.logDevDisp.createPipelineLayout(
             &pipelineLayoutInfo, nullptr,
-            &vulkan.sceneContext.pipelineLayout) != VK_SUCCESS) {
+            &vulkan.pipelineContext.pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -270,14 +270,14 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicInfo;
-    pipelineInfo.layout = vulkan.sceneContext.pipelineLayout;
+    pipelineInfo.layout = vulkan.pipelineContext.pipelineLayout;
     pipelineInfo.renderPass = vulkan.swapchainContext.renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     if (vulkan.deviceContext.logDevDisp.createGraphicsPipelines(
             VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-            &vulkan.sceneContext.graphicsPipeline) != VK_SUCCESS) {
+            &vulkan.pipelineContext.graphicsPipeline) != VK_SUCCESS) {
         std::cout << "failed to create pipline\n";
         return -1;  // failed to create graphics pipeline
     }
@@ -568,7 +568,7 @@ int create_descriptor_pool(Vulkan &vulkan) {
 int create_descriptor_sets(Vulkan &vulkan) {
     std::vector<VkDescriptorSetLayout> layouts(
         vulkan.swapchainContext.framebuffers.size(),
-        vulkan.sceneContext.descriptorSetLayout);
+        vulkan.pipelineContext.descriptorSetLayout);
     auto allocInfo = initializers::descriptorSetAllocateInfo(
         vulkan.data.descriptor_pool, layouts);
 
@@ -728,9 +728,9 @@ int reloadShadersAndPipeline(Vulkan &vulkan) {
         vulkan.deviceContext.graphicsQueue);
 
     vulkan.deviceContext.logDevDisp.destroyPipeline(
-        vulkan.sceneContext.graphicsPipeline, nullptr);
+        vulkan.pipelineContext.graphicsPipeline, nullptr);
     vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
-        vulkan.sceneContext.pipelineLayout, nullptr);
+        vulkan.pipelineContext.pipelineLayout, nullptr);
 
     return create_graphics_pipeline(vulkan);
 }
@@ -751,9 +751,9 @@ void cleanup(Vulkan &vulkan) {
                                                        nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyPipeline(
-        vulkan.sceneContext.graphicsPipeline, nullptr);
+        vulkan.pipelineContext.graphicsPipeline, nullptr);
     vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
-        vulkan.sceneContext.pipelineLayout, nullptr);
+        vulkan.pipelineContext.pipelineLayout, nullptr);
     vulkan.deviceContext.logDevDisp.destroyRenderPass(
         vulkan.swapchainContext.renderPass, nullptr);
 
@@ -777,7 +777,7 @@ void cleanup(Vulkan &vulkan) {
         vulkan.data.descriptor_pool, nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
-        vulkan.sceneContext.descriptorSetLayout, nullptr);
+        vulkan.pipelineContext.descriptorSetLayout, nullptr);
 
     vulkan.deviceContext.logDevDisp.destroyBuffer(
         vulkan.sceneContext.vertexBuffer, nullptr);

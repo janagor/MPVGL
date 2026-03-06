@@ -123,7 +123,9 @@ struct SceneContext {
     VkDeviceMemory indexBufferMemory;
 
     Texture texture;
+};
 
+struct PipelineContext {
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
@@ -134,6 +136,7 @@ struct Vulkan {
     DeviceContext deviceContext;
     SwapchainContext swapchainContext;
     SceneContext sceneContext;
+    PipelineContext pipelineContext;
 
     VkSurfaceKHR surface;
 
