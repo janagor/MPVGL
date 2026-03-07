@@ -21,8 +21,9 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
 std::vector<char> readFile(const std::string &filename);
 VkShaderModule createShaderModule(Vulkan &vulkan,
                                   const std::vector<char> &code);
-uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
-                          VkMemoryPropertyFlags properties);
+tl::expected<uint32_t, Error> findMemoryType(Vulkan &vulkan,
+                                             uint32_t typeFilter,
+                                             VkMemoryPropertyFlags properties);
 tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
                                        VkBufferUsageFlags usage,
                                        VkMemoryPropertyFlags properties,

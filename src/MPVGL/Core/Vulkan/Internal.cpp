@@ -91,8 +91,8 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
     return shaderModule;
 }
 
-uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
-                          VkMemoryPropertyFlags properties) {
+tl::expected<std::uint32_t, Error> findMemoryType(
+    Vulkan &vulkan, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     vulkan.deviceContext.instDisp.getPhysicalDeviceMemoryProperties(
         vulkan.deviceContext.logicalDevice.physical_device, &memProperties);
@@ -104,8 +104,8 @@ uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
             return i;
         }
     }
-
-    throw std::runtime_error("failed to find suitable memory type!");
+    return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                 "Failed to find suitable Memory Type"};
 }
 
 tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
@@ -124,9 +124,13 @@ tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
     vulkan.deviceContext.logDevDisp.getBufferMemoryRequirements(
         buffer, &memRequirements);
 
-    auto allocInfo = initializers::memoryAllocateInfo(
-        memRequirements.size,
-        find_memory_type(vulkan, memRequirements.memoryTypeBits, properties));
+    auto memoryType =
+        findMemoryType(vulkan, memRequirements.memoryTypeBits, properties);
+    if (!memoryType.has_value()) {
+        return tl::unexpected<Error>{memoryType.error()};
+    }
+    auto allocInfo = initializers::memoryAllocateInfo(memRequirements.size,
+                                                      memoryType.value());
 
     if (vulkan.deviceContext.logDevDisp.allocateMemory(
             &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
@@ -209,9 +213,13 @@ tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
     vulkan.deviceContext.logDevDisp.getImageMemoryRequirements(
         image, &memRequirements);
 
-    auto allocInfo = initializers::memoryAllocateInfo(
-        memRequirements.size,
-        find_memory_type(vulkan, memRequirements.memoryTypeBits, properties));
+    auto memoryType =
+        findMemoryType(vulkan, memRequirements.memoryTypeBits, properties);
+    if (!memoryType.has_value()) {
+        return tl::unexpected<Error>{memoryType.error()};
+    }
+    auto allocInfo = initializers::memoryAllocateInfo(memRequirements.size,
+                                                      memoryType.value());
 
     if (vulkan.deviceContext.logDevDisp.allocateMemory(
             &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
