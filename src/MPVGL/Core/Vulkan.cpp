@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <system_error>
 #include <unordered_map>
@@ -447,7 +446,7 @@ tl::expected<void, Error> createTextureSampler(Vulkan &vulkan) {
     return {};
 }
 
-int load_model(Vulkan &vulkan) {
+tl::expected<void, Error> loadModel(Vulkan &vulkan) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -455,7 +454,8 @@ int load_model(Vulkan &vulkan) {
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
                           MODEL_PATH)) {
-        throw std::runtime_error(err);
+        return tl::unexpected{
+            Error{EngineError::VulkanRuntimeError, "Failed to load Model"}};
     }
     for (auto const &shape : shapes) {
         for (const auto &index : shape.mesh.indices) {
@@ -475,7 +475,7 @@ int load_model(Vulkan &vulkan) {
                 vulkan.sceneContext.uniqueVertices.at(vertex));
         };
     };
-    return 0;
+    return {};
 }
 
 int create_vertex_buffer(Vulkan &vulkan) {

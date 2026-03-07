@@ -18,7 +18,7 @@ tl::expected<void, Error> createFramebuffers(Vulkan &vulkan);
 tl::expected<void, Error> createTextureImage(Vulkan &vulkan);
 tl::expected<void, Error> createTextureImageView(Vulkan &vulkan);
 tl::expected<void, Error> createTextureSampler(Vulkan &vulkan);
-int load_model(Vulkan &vulkan);
+tl::expected<void, Error> loadModel(Vulkan &vulkan);
 int create_vertex_buffer(Vulkan &vulkan);
 int create_index_buffer(Vulkan &vulkan);
 int create_uniform_buffers(Vulkan &vulkan);
