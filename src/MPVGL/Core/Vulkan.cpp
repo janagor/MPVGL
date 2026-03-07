@@ -304,8 +304,7 @@ tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyShaderModule(vert_module, nullptr);
     return {};
 }
-
-int create_framebuffers(Vulkan &vulkan) {
+tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
     vulkan.swapchainContext.swapchainImages =
         vulkan.swapchainContext.swapchain.get_images().value();
     vulkan.swapchainContext.swapchainImageViews =
@@ -326,10 +325,11 @@ int create_framebuffers(Vulkan &vulkan) {
         if (vulkan.deviceContext.logDevDisp.createFramebuffer(
                 &framebufferInfo, nullptr,
                 &vulkan.swapchainContext.framebuffers.at(i)) != VK_SUCCESS) {
-            return -1;  // failed to create framebuffer
+            return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                        "Failed to create Framebuffers"}};
         }
     }
-    return 0;
+    return {};
 }
 
 tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
