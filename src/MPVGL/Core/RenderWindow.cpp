@@ -62,8 +62,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_texture_sampler(vulkan))
-        throw std::runtime_error("Failed at `create_texture_sampler`.");
+    if (auto result = vlk::createTextureSampler(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::load_model(vulkan))
         throw std::runtime_error("Failed at `load_model`.");
     if (0 != vlk::create_vertex_buffer(vulkan))

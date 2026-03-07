@@ -417,7 +417,7 @@ tl::expected<void, Error> createTextureImageView(Vulkan &vulkan) {
     return {};
 }
 
-int create_texture_sampler(Vulkan &vulkan) {
+tl::expected<void, Error> createTextureSampler(Vulkan &vulkan) {
     VkPhysicalDeviceProperties properties{};
     vulkan.deviceContext.instDisp.getPhysicalDeviceProperties(
         vulkan.deviceContext.logicalDevice.physical_device, &properties);
@@ -441,10 +441,10 @@ int create_texture_sampler(Vulkan &vulkan) {
     if (vulkan.deviceContext.logDevDisp.createSampler(
             &samplerInfo, nullptr, &vulkan.sceneContext.texture.sampler) !=
         VK_SUCCESS) {
-        std::cout << "failed to create texture sampler!\n";
-        return -1;  // failed to create texture sampler!
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Texture Sampler"}};
     }
-    return 0;
+    return {};
 }
 
 int load_model(Vulkan &vulkan) {
