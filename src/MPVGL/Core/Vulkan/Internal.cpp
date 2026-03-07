@@ -215,7 +215,8 @@ tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
 
     if (vulkan.deviceContext.logDevDisp.allocateMemory(
             &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate image memory!");
+        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                     "Failed to allocate Image Memory"};
     }
     vulkan.deviceContext.logDevDisp.bindImageMemory(image, imageMemory, 0);
     return {};
