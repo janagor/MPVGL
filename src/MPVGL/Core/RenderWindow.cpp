@@ -23,80 +23,29 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
     shader_watcher.compileAll();
 
-    if (auto result = vlk::bootstrap(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createRenderPass(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createDescriptorSetLayout(vulkan);
-        !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createGraphicsPipeline(vulkan);
-        !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createCommandPool(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createDepthResources(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createFramebuffers(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createTextureImage(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createTextureImageView(vulkan);
-        !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createTextureSampler(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::loadModel(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createVertexBuffer(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createIndexBuffer(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createUniformBuffers(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createDescriptorPool(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createDescriptorSets(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createCommandBuffers(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
-    }
-    if (auto result = vlk::createSyncObjects(vulkan); !result.has_value()) {
-        std::cout << result.error().message << "\n";
-        throw std::runtime_error("Failed .");
+    auto result =
+        vlk::bootstrap(vulkan)
+            .and_then([&] { return vlk::createRenderPass(vulkan); })
+            .and_then([&] { return vlk::createDescriptorSetLayout(vulkan); })
+            .and_then([&] { return vlk::createGraphicsPipeline(vulkan); })
+            .and_then([&] { return vlk::createCommandPool(vulkan); })
+            .and_then([&] { return vlk::createDepthResources(vulkan); })
+            .and_then([&] { return vlk::createFramebuffers(vulkan); })
+            .and_then([&] { return vlk::createTextureImage(vulkan); })
+            .and_then([&] { return vlk::createTextureImageView(vulkan); })
+            .and_then([&] { return vlk::createTextureSampler(vulkan); })
+            .and_then([&] { return vlk::loadModel(vulkan); })
+            .and_then([&] { return vlk::createVertexBuffer(vulkan); })
+            .and_then([&] { return vlk::createIndexBuffer(vulkan); })
+            .and_then([&] { return vlk::createUniformBuffers(vulkan); })
+            .and_then([&] { return vlk::createDescriptorPool(vulkan); })
+            .and_then([&] { return vlk::createDescriptorSets(vulkan); })
+            .and_then([&] { return vlk::createCommandBuffers(vulkan); })
+            .and_then([&] { return vlk::createSyncObjects(vulkan); });
+    if (!result.has_value()) {
+        std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
+                  << result.error().message << "\n";
+        throw std::runtime_error("Engine crash: " + result.error().message);
     }
 }
 
