@@ -738,7 +738,7 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
     vulkan.data.image_in_flight.at(image_index) =
         vulkan.data.in_flight_fences.at(vulkan.data.current_frame);
 
-    update_uniform_buffer(vulkan, vulkan.data.current_frame);
+    updateUniformBuffer(vulkan, vulkan.data.current_frame);
     if (auto result = recordCommandBuffer(
             vulkan, vulkan.data.command_buffers.at(vulkan.data.current_frame),
             image_index);

@@ -598,7 +598,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     return {};
 }
 
-int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image) {
+void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
     static auto start_time = std::chrono::high_resolution_clock::now();
 
     auto current_time = std::chrono::high_resolution_clock::now();
@@ -619,7 +619,6 @@ int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image) {
 
     memcpy(vulkan.data.uniform_buffers_mapped.at(current_image), &ubo,
            sizeof(ubo));
-    return 0;
 }
 
 }  // namespace mpvgl::vlk

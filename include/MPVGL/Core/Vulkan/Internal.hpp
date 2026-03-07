@@ -66,6 +66,6 @@ tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan);
 tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
                                               VkCommandBuffer command_buffer,
                                               uint32_t image_index);
-int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image);
+void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image);
 
 }  // namespace mpvgl::vlk
