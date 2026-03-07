@@ -179,7 +179,7 @@ tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     return {};
 }
 
-int create_descriptor_set_layout(Vulkan &vulkan) {
+tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorCount = 1;
@@ -201,11 +201,11 @@ int create_descriptor_set_layout(Vulkan &vulkan) {
     if (vulkan.deviceContext.logDevDisp.createDescriptorSetLayout(
             &layoutInfo, nullptr,
             &vulkan.pipelineContext.descriptorSetLayout) != VK_SUCCESS) {
-        std::cout << "failed to create descriptor set layout!\n";
-        return -1;  // failed to create descriptor set layout
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Descriptor Set Layout"}};
     }
 
-    return 0;
+    return {};
 }
 
 int create_graphics_pipeline(Vulkan &vulkan) {
