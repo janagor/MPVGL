@@ -95,7 +95,7 @@ tl::expected<void, Error> get_queues(Vulkan &vulkan) {
         vulkan.deviceContext.graphicsQueue = std::move(gq.value());
     } else {
         return tl::unexpected{
-            Error{gq.error(), "Failed to get graphics queue"}};
+            Error{gq.error(), "Failed to get Graphics Queue"}};
     }
 
     if (auto pq = vulkan.deviceContext.logicalDevice.get_queue(
@@ -103,7 +103,7 @@ tl::expected<void, Error> get_queues(Vulkan &vulkan) {
         pq.has_value()) {
         vulkan.deviceContext.presentQueue = std::move(pq.value());
     } else {
-        return tl::unexpected(Error{pq.error(), "Failed to get present queue"});
+        return tl::unexpected(Error{pq.error(), "Failed to get Present Queue"});
     }
 
     return {};
