@@ -211,22 +211,24 @@ tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
-    auto vert_code =
+    auto vertCode =
         readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv");
-    auto frag_code =
+    if (!vertCode.has_value()) return tl::unexpected<Error>{vertCode.error()};
+    auto fragCode =
         readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv");
+    if (!fragCode.has_value()) return tl::unexpected<Error>{fragCode.error()};
 
-    auto vert_module = createShaderModule(vulkan, vert_code);
-    auto frag_module = createShaderModule(vulkan, frag_code);
-    if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE) {
+    auto vertModule = createShaderModule(vulkan, vertCode.value());
+    auto fragModule = createShaderModule(vulkan, fragCode.value());
+    if (vertModule == VK_NULL_HANDLE || fragModule == VK_NULL_HANDLE) {
         return tl::unexpected{
             Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
     }
 
     auto vertStageInfo = initializers::pipelineShaderStageCreateInfo(
-        VK_SHADER_STAGE_VERTEX_BIT, vert_module, "main");
+        VK_SHADER_STAGE_VERTEX_BIT, vertModule, "main");
     auto fragStageInfo = initializers::pipelineShaderStageCreateInfo(
-        VK_SHADER_STAGE_FRAGMENT_BIT, frag_module, "main");
+        VK_SHADER_STAGE_FRAGMENT_BIT, fragModule, "main");
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertStageInfo,
                                                        fragStageInfo};
 
@@ -302,8 +304,8 @@ tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
                                     "Failed to create Graphics Pipeline"}};
     }
 
-    vulkan.deviceContext.logDevDisp.destroyShaderModule(frag_module, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyShaderModule(vert_module, nullptr);
+    vulkan.deviceContext.logDevDisp.destroyShaderModule(fragModule, nullptr);
+    vulkan.deviceContext.logDevDisp.destroyShaderModule(vertModule, nullptr);
     return {};
 }
 tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {

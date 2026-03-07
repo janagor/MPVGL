@@ -18,7 +18,7 @@ tl::expected<GLFWwindow *, Error> createWindow(const char *window_name,
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator);
-std::vector<char> readFile(const std::string &filename);
+tl::expected<std::vector<char>, Error> readFile(const std::string &filename);
 VkShaderModule createShaderModule(Vulkan &vulkan,
                                   const std::vector<char> &code);
 tl::expected<uint32_t, Error> findMemoryType(Vulkan &vulkan,
