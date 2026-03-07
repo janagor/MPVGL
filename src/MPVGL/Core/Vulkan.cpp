@@ -688,8 +688,6 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
                                     "`VK_ERROR_OUT_OF_DATE_KHR`. Error " +
                                         std::to_string(res)}};
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        std::cout << "failed to acquire swapchain image. Error " << result
-                  << "\n";
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
                   "Failed to acquire Swapchain Image. Error " +
