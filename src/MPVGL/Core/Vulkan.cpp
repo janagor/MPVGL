@@ -410,11 +410,11 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
     return {};
 }
 
-int create_texture_image_view(Vulkan &vulkan) {
+tl::expected<void, Error> createTextureImageView(Vulkan &vulkan) {
     vulkan.sceneContext.texture.imageView = createImageView(
         vulkan, vulkan.sceneContext.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_ASPECT_COLOR_BIT, vulkan.sceneContext.texture.mipLevels);
-    return 0;
+    return {};
 }
 
 int create_texture_sampler(Vulkan &vulkan) {

@@ -16,7 +16,7 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan);
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan);
 tl::expected<void, Error> createFramebuffers(Vulkan &vulkan);
 tl::expected<void, Error> createTextureImage(Vulkan &vulkan);
-int create_texture_image_view(Vulkan &vulkan);
+tl::expected<void, Error> createTextureImageView(Vulkan &vulkan);
 int create_texture_sampler(Vulkan &vulkan);
 int load_model(Vulkan &vulkan);
 int create_vertex_buffer(Vulkan &vulkan);
