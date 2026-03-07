@@ -8,11 +8,14 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Camera.hpp"
+#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
+
+#include "tl/expected.hpp"
 
 namespace mpvgl::vlk {
 
@@ -474,12 +477,15 @@ int recreate_swapchain(Vulkan &vulkan) {
     return 0;
 }
 
-int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
-                          uint32_t image_index) {
+tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
+                                              VkCommandBuffer command_buffer,
+                                              uint32_t image_index) {
     auto beginInfo = initializers::commandBufferBeginInfo();
     if (vulkan.deviceContext.logDevDisp.beginCommandBuffer(
             command_buffer, &beginInfo) != VK_SUCCESS) {
-        return -1;  // failed to begin recording command buffer
+        return tl::unexpected<Error>{
+            EngineError::VulkanRuntimeError,
+            "Failed to begin recording Command Buffer"};
     }
 
     std::array<VkClearValue, 2> clearValues{};
@@ -536,10 +542,10 @@ int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
 
     if (vulkan.deviceContext.logDevDisp.endCommandBuffer(command_buffer) !=
         VK_SUCCESS) {
-        std::cout << "failed to record command buffer\n";
-        return -1;  // failed to record command buffer!
+        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                     "Failed to record Command Buffer"};
     }
-    return 0;
+    return {};
 }
 
 int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image) {

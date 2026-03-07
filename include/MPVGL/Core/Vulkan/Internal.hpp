@@ -6,7 +6,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
+
+#include "tl/expected.hpp"
 
 namespace mpvgl::vlk {
 
@@ -49,8 +52,9 @@ VkFormat find_depth_format(Vulkan &vulkan);
 bool has_stencil_component(VkFormat format);
 void cleanupSwapChain(Vulkan &vulkan);
 int recreate_swapchain(Vulkan &vulkan);
-int record_command_buffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
-                          uint32_t image_index);
+tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
+                                              VkCommandBuffer command_buffer,
+                                              uint32_t image_index);
 int update_uniform_buffer(Vulkan &vulkan, uint32_t current_image);
 
 }  // namespace mpvgl::vlk

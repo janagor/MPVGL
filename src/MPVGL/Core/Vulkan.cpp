@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include <iostream>
 #include <string>
 #include <system_error>
 #include <unordered_map>
@@ -703,9 +702,13 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
         vulkan.data.in_flight_fences.at(vulkan.data.current_frame);
 
     update_uniform_buffer(vulkan, vulkan.data.current_frame);
-    record_command_buffer(
-        vulkan, vulkan.data.command_buffers.at(vulkan.data.current_frame),
-        image_index);
+    if (auto result = recordCommandBuffer(
+            vulkan, vulkan.data.command_buffers.at(vulkan.data.current_frame),
+            image_index);
+        !result.has_value()) {
+        return result;
+        ;
+    }
 
     auto *wait_semaphores =
         &vulkan.data.available_semaphores.at(vulkan.data.current_frame);
