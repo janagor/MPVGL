@@ -78,8 +78,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_uniform_buffers(vulkan))
-        throw std::runtime_error("Failed at `create_uniform_buffers`.");
+    if (auto result = vlk::createUniformBuffers(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_descriptor_pool(vulkan))
         throw std::runtime_error("Failed at `create_descriptor_pool`.");
     if (0 != vlk::create_descriptor_sets(vulkan))

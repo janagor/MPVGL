@@ -21,7 +21,7 @@ tl::expected<void, Error> createTextureSampler(Vulkan &vulkan);
 tl::expected<void, Error> loadModel(Vulkan &vulkan);
 tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan);
 tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan);
-int create_uniform_buffers(Vulkan &vulkan);
+tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan);
 int create_descriptor_pool(Vulkan &vulkan);
 int create_descriptor_sets(Vulkan &vulkan);
 int create_command_buffers(Vulkan &vulkan);

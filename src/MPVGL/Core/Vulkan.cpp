@@ -540,7 +540,7 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
     return {};
 }
 
-int create_uniform_buffers(Vulkan &vulkan) {
+tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
     vulkan.data.uniform_buffers.resize(
         vulkan.swapchainContext.swapchain.image_count);
@@ -560,7 +560,7 @@ int create_uniform_buffers(Vulkan &vulkan) {
             vulkan.data.uniform_buffers_memory.at(i), 0, bufferSize, 0,
             &vulkan.data.uniform_buffers_mapped.at(i));
     }
-    return 0;
+    return {};
 }
 
 int create_descriptor_pool(Vulkan &vulkan) {
