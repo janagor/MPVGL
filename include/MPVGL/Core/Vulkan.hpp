@@ -9,7 +9,7 @@
 namespace mpvgl::vlk {
 
 tl::expected<void, Error> bootstrap(Vulkan &vulkan);
-int create_render_pass(Vulkan &vulkan);
+tl::expected<void, Error> createRenderPass(Vulkan &vulkan);
 int create_descriptor_set_layout(Vulkan &vulkan);
 int create_graphics_pipeline(Vulkan &vulkan);
 int create_command_pool(Vulkan &vulkan);

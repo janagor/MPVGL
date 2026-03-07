@@ -27,8 +27,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_render_pass(vulkan))
-        throw std::runtime_error("Failed at `create_render_pass`.");
+    if (auto result = vlk::createRenderPass(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_descriptor_set_layout(vulkan))
         throw std::runtime_error("Failed at `create_descriptor_set_layout`.");
     if (0 != vlk::create_graphics_pipeline(vulkan))

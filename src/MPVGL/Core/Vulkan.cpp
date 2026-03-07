@@ -1,3 +1,4 @@
+#include "MPVGL/Core/Error.hpp"
 #define GLM_FORCE_RADIANS
 #define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -41,15 +42,15 @@ tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
     if (auto *window = create_window_glfw("Vulkan Triangle", true); window) {
         vulkan.deviceContext.window = window;
     } else {
-        return tl::unexpected{mpvgl::Error{mpvgl::EngineError::WindowError,
-                                           "Failed to create GLFW window"}};
+        return tl::unexpected{
+            Error{EngineError::WindowError, "Failed to create GLFW window"}};
     }
 
     if (auto instance = InstanceBuilder::getInstance(); instance.has_value()) {
         vulkan.deviceContext.instance = instance.value();
     } else {
         return tl::unexpected{
-            mpvgl::Error{instance.error(), "Failed to create Instance"}};
+            Error{instance.error(), "Failed to create Instance"}};
     }
 
     vulkan.deviceContext.instDisp = vulkan.deviceContext.instance.make_table();
@@ -59,8 +60,8 @@ tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
     auto physicalDevice = PhysicalDeviceBuilder::getPhysicalDevice(
         vulkan.deviceContext.instance, vulkan.surface);
     if (!physicalDevice) {
-        return tl::unexpected{mpvgl::Error{physicalDevice.error(),
-                                           "Failed to create Physical Device"}};
+        return tl::unexpected{
+            Error{physicalDevice.error(), "Failed to create Physical Device"}};
     }
 
     if (auto logicalDevice =
@@ -68,8 +69,8 @@ tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
         logicalDevice.has_value()) {
         vulkan.deviceContext.logicalDevice = logicalDevice.value();
     } else {
-        return tl::unexpected{mpvgl::Error{logicalDevice.error(),
-                                           "Failed to create Logical Device"}};
+        return tl::unexpected{
+            Error{logicalDevice.error(), "Failed to create Logical Device"}};
     }
 
     vulkan.deviceContext.logDevDisp =
@@ -95,7 +96,7 @@ tl::expected<void, Error> get_queues(Vulkan &vulkan) {
         vulkan.deviceContext.graphicsQueue = std::move(gq.value());
     } else {
         return tl::unexpected{
-            mpvgl::Error{gq.error(), "Failed to get graphics queue"}};
+            Error{gq.error(), "Failed to get graphics queue"}};
     }
 
     if (auto pq = vulkan.deviceContext.logicalDevice.get_queue(
@@ -103,8 +104,7 @@ tl::expected<void, Error> get_queues(Vulkan &vulkan) {
         pq.has_value()) {
         vulkan.deviceContext.presentQueue = std::move(pq.value());
     } else {
-        return tl::unexpected(
-            mpvgl::Error{pq.error(), "Failed to get present queue"});
+        return tl::unexpected(Error{pq.error(), "Failed to get present queue"});
     }
 
     return {};
@@ -116,7 +116,7 @@ tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
         .and_then([&] { return get_queues(vulkan); });
 }
 
-int create_render_pass(Vulkan &vulkan) {
+tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
         .format = vulkan.swapchainContext.swapchain.image_format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -173,10 +173,10 @@ int create_render_pass(Vulkan &vulkan) {
     if (vulkan.deviceContext.logDevDisp.createRenderPass(
             &render_pass_info, nullptr, &vulkan.swapchainContext.renderPass) !=
         VK_SUCCESS) {
-        std::cout << "failed to create render pass\n";
-        return -1;  // failed to create render pass!
+        return tl::unexpected(Error(EngineError::VulkanRuntimeError,
+                                    "Failed to create Render Pass"));
     }
-    return 0;
+    return {};
 }
 
 int create_descriptor_set_layout(Vulkan &vulkan) {
