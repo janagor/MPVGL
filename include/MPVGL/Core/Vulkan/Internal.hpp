@@ -13,7 +13,8 @@
 
 namespace mpvgl::vlk {
 
-GLFWwindow *create_window_glfw(const char *window_name, bool resize);
+tl::expected<GLFWwindow *, Error> createWindow(const char *window_name,
+                                               bool resize);
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator);

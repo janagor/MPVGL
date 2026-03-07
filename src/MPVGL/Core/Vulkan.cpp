@@ -37,11 +37,11 @@
 namespace mpvgl::vlk {
 
 tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
-    if (auto *window = create_window_glfw("Vulkan Triangle", true); window) {
-        vulkan.deviceContext.window = window;
+    if (auto window = createWindow("Vulkan Triangle", true);
+        window.has_value()) {
+        vulkan.deviceContext.window = window.value();
     } else {
-        return tl::unexpected{
-            Error{EngineError::WindowError, "Failed to create GLFW window"}};
+        return tl::unexpected{Error{window.error()}};
     }
 
     if (auto instance = InstanceBuilder::getInstance(); instance.has_value()) {

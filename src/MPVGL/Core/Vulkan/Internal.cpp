@@ -19,17 +19,31 @@
 
 namespace mpvgl::vlk {
 
-GLFWwindow *create_window_glfw(const char *window_name, bool resize) {
+tl::expected<GLFWwindow *, Error> createWindow(const char *window_name,
+                                               bool resize) {
     glfwSetErrorCallback([](int error, const char *description) {
         fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
     });
-    if (glfwInit()) {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        // if (!resize) glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        return glfwCreateWindow(800, 600, window_name, NULL, NULL);
+    if (!glfwInit()) {
+        return tl::unexpected<Error>{EngineError::VulkanInitFailed,
+                                     "Failed to initialize GLFW"};
     }
-    throw std::runtime_error("Nie udało się zainicjować GLFW!");
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    if (!resize) {
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    }
+
+    GLFWwindow *window =
+        glfwCreateWindow(800, 600, window_name, nullptr, nullptr);
+
+    if (!window) {
+        glfwTerminate();
+        return tl::unexpected<Error>{EngineError::WindowError,
+                                     "Failed to create GLFW window!"};
+    }
+    return window;
 }
 
 void destroy_window_glfw(GLFWwindow *window) {
