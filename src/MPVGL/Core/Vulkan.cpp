@@ -359,11 +359,13 @@ tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                            vulkan.swapchainContext.depthImage,
                            vulkan.swapchainContext.depthImageMemory)
-            .and_then([&vulkan, format]() -> tl::expected<void, Error> {
-                vulkan.swapchainContext.depthImageView =
-                    createImageView(vulkan, vulkan.swapchainContext.depthImage,
-                                    format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-                return {};
+            .and_then([&vulkan, format]() {
+                return createImageView(vulkan,
+                                       vulkan.swapchainContext.depthImage,
+                                       format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+            })
+            .transform([&vulkan](VkImageView imageView) {
+                vulkan.swapchainContext.depthImageView = imageView;
             });
     });
 }
@@ -425,10 +427,12 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createTextureImageView(Vulkan &vulkan) {
-    vulkan.sceneContext.texture.imageView = createImageView(
-        vulkan, vulkan.sceneContext.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_ASPECT_COLOR_BIT, vulkan.sceneContext.texture.mipLevels);
-    return {};
+    return createImageView(vulkan, vulkan.sceneContext.texture.image,
+                           VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT,
+                           vulkan.sceneContext.texture.mipLevels)
+        .transform([&vulkan](VkImageView view) {
+            vulkan.sceneContext.texture.imageView = view;
+        });
 }
 
 tl::expected<void, Error> createTextureSampler(Vulkan &vulkan) {

@@ -48,8 +48,10 @@ tl::expected<void, Error> generateMipmaps(Vulkan &vulkan, VkImage image,
                                           uint32_t mipLevels);
 void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
                           uint32_t width, uint32_t height);
-VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
-                            VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
+                                                 VkFormat format,
+                                                 VkImageAspectFlags aspectFlags,
+                                                 uint32_t mipLevels);
 int create_image_views(Vulkan &vulkan);
 tl::expected<VkFormat, Error> findSupportedFormat(
     Vulkan &vulkan, const std::vector<VkFormat> &candidates,

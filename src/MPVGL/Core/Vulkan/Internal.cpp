@@ -376,9 +376,10 @@ void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
-VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
-                            VkImageAspectFlags aspectFlags,
-                            uint32_t mipLevels) {
+tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
+                                                 VkFormat format,
+                                                 VkImageAspectFlags aspectFlags,
+                                                 uint32_t mipLevels) {
     auto subresourceRange = VkImageSubresourceRange{
         .aspectMask = aspectFlags,
         .baseMipLevel = 0,
@@ -392,7 +393,8 @@ VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
     VkImageView imageView;
     if (vulkan.deviceContext.logDevDisp.createImageView(
             &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image view!");
+        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                     "Failed to create Image View"};
     }
 
     return imageView;
@@ -403,10 +405,14 @@ int create_image_views(Vulkan &vulkan) {
         vulkan.swapchainContext.swapchainImages.size());
     for (uint32_t i = 0; i < vulkan.swapchainContext.swapchainImages.size();
          ++i) {
-        vulkan.swapchainContext.swapchainImageViews.at(i) = createImageView(
+        auto imageView = createImageView(
             vulkan, vulkan.swapchainContext.swapchainImages.at(i),
             vulkan.swapchainContext.swapchain.image_format,
             VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        if (!imageView.has_value()) {
+            return -1;
+        }
+        vulkan.swapchainContext.swapchainImageViews.at(i) = imageView.value();
     }
     return 0;
 }
