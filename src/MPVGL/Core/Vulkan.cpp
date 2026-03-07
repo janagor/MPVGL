@@ -37,20 +37,21 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<void, Error> device_initialization(Vulkan &vulkan) {
-    vulkan.deviceContext.window = create_window_glfw("Vulkan Triangle", true);
-    if (!vulkan.deviceContext.window) {
+tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
+    if (auto *window = create_window_glfw("Vulkan Triangle", true); window) {
+        vulkan.deviceContext.window = window;
+    } else {
         return tl::unexpected{mpvgl::Error{mpvgl::EngineError::WindowError,
                                            "Failed to create GLFW window"}};
     }
 
-    auto instance = InstanceBuilder::getInstance();
-    if (!instance) {
+    if (auto instance = InstanceBuilder::getInstance(); instance.has_value()) {
+        vulkan.deviceContext.instance = instance.value();
+    } else {
         return tl::unexpected{
             mpvgl::Error{instance.error(), "Failed to create Instance"}};
     }
 
-    vulkan.deviceContext.instance = instance.value();
     vulkan.deviceContext.instDisp = vulkan.deviceContext.instance.make_table();
     vulkan.surface = create_surface_glfw(vulkan.deviceContext.instance,
                                          vulkan.deviceContext.window, nullptr);
@@ -62,13 +63,15 @@ tl::expected<void, Error> device_initialization(Vulkan &vulkan) {
                                            "Failed to create Physical Device"}};
     }
 
-    auto logicalDevice =
-        LogicalDeviceBuilder::getLogicalDevice(physicalDevice.value());
-    if (!logicalDevice)
+    if (auto logicalDevice =
+            LogicalDeviceBuilder::getLogicalDevice(physicalDevice.value());
+        logicalDevice.has_value()) {
+        vulkan.deviceContext.logicalDevice = logicalDevice.value();
+    } else {
         return tl::unexpected{mpvgl::Error{logicalDevice.error(),
                                            "Failed to create Logical Device"}};
+    }
 
-    vulkan.deviceContext.logicalDevice = logicalDevice.value();
     vulkan.deviceContext.logDevDisp =
         vulkan.deviceContext.logicalDevice.make_table();
 
@@ -108,7 +111,7 @@ tl::expected<void, Error> get_queues(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
-    return device_initialization(vulkan)
+    return deviceInitialization(vulkan)
         .and_then([&] { return create_swapchain(vulkan); })
         .and_then([&] { return get_queues(vulkan); });
 }
