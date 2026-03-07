@@ -173,10 +173,13 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
-void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
-                 uint32_t mipLevels, VkFormat format, VkImageTiling tiling,
-                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                 VkImage &image, VkDeviceMemory &imageMemory) {
+tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
+                                      uint32_t height, uint32_t mipLevels,
+                                      VkFormat format, VkImageTiling tiling,
+                                      VkImageUsageFlags usage,
+                                      VkMemoryPropertyFlags properties,
+                                      VkImage &image,
+                                      VkDeviceMemory &imageMemory) {
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = width;
@@ -193,7 +196,8 @@ void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
 
     if (vulkan.deviceContext.logDevDisp.createImage(&imageInfo, nullptr,
                                                     &image) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image!");
+        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                     "Failed to create Image"};
     }
 
     VkMemoryRequirements memRequirements;
@@ -209,6 +213,7 @@ void createImage(Vulkan &vulkan, uint32_t width, uint32_t height,
         throw std::runtime_error("failed to allocate image memory!");
     }
     vulkan.deviceContext.logDevDisp.bindImageMemory(image, imageMemory, 0);
+    return {};
 }
 
 void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,

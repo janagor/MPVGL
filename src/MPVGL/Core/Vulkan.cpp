@@ -347,17 +347,19 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     VkFormat depthFormat = find_depth_format(vulkan);
-
-    createImage(
-        vulkan, vulkan.swapchainContext.swapchain.extent.width,
-        vulkan.swapchainContext.swapchain.extent.height, 1, depthFormat,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.swapchainContext.depthImage,
-        vulkan.swapchainContext.depthImageMemory);
-    vulkan.swapchainContext.depthImageView =
-        createImageView(vulkan, vulkan.swapchainContext.depthImage, depthFormat,
-                        VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-    return {};
+    return createImage(vulkan, vulkan.swapchainContext.swapchain.extent.width,
+                       vulkan.swapchainContext.swapchain.extent.height, 1,
+                       depthFormat, VK_IMAGE_TILING_OPTIMAL,
+                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                       vulkan.swapchainContext.depthImage,
+                       vulkan.swapchainContext.depthImageMemory)
+        .and_then([&vulkan, depthFormat]() -> tl::expected<void, Error> {
+            vulkan.swapchainContext.depthImageView =
+                createImageView(vulkan, vulkan.swapchainContext.depthImage,
+                                depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+            return {};
+        });
 }
 
 tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
@@ -384,13 +386,17 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
                                               0, &d);
     memcpy(d, pixels, static_cast<size_t>(imageSize));
     vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
-    createImage(
-        vulkan, texWidth, texHeight, vulkan.sceneContext.texture.mipLevels,
-        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.sceneContext.texture.image,
-        vulkan.sceneContext.texture.imageMemory);
+    if (auto result = createImage(
+            vulkan, texWidth, texHeight, vulkan.sceneContext.texture.mipLevels,
+            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            vulkan.sceneContext.texture.image,
+            vulkan.sceneContext.texture.imageMemory);
+        !result.has_value()) {
+        return result;
+    }
     transition_image_layout(vulkan, vulkan.sceneContext.texture.image,
                             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
