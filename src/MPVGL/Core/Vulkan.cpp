@@ -583,7 +583,7 @@ tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan) {
     return {};
 }
 
-int create_descriptor_sets(Vulkan &vulkan) {
+tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
     std::vector<VkDescriptorSetLayout> layouts(
         vulkan.swapchainContext.framebuffers.size(),
         vulkan.pipelineContext.descriptorSetLayout);
@@ -594,8 +594,8 @@ int create_descriptor_sets(Vulkan &vulkan) {
         vulkan.swapchainContext.framebuffers.size());
     if (vulkan.deviceContext.logDevDisp.allocateDescriptorSets(
             &allocInfo, vulkan.data.descriptor_sets.data()) != VK_SUCCESS) {
-        std::cout << "failed to allocate descriptor sets\n";
-        return -1;
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to allocate Descriptor Sets"}};
     }
 
     for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
@@ -620,7 +620,7 @@ int create_descriptor_sets(Vulkan &vulkan) {
             static_cast<uint32_t>(descriptorWrites.size()),
             descriptorWrites.data(), 0, nullptr);
     }
-    return 0;
+    return {};
 }
 
 int create_command_buffers(Vulkan &vulkan) {
