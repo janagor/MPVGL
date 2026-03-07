@@ -43,8 +43,10 @@ tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
 void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
                              VkImageLayout oldLayout, VkImageLayout newLayout,
                              uint32_t mipLevels);
-void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
-                     int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+tl::expected<void, Error> generateMipmaps(Vulkan &vulkan, VkImage image,
+                                          VkFormat imageFormat,
+                                          int32_t texWidth, int32_t texHeight,
+                                          uint32_t mipLevels);
 void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
                           uint32_t width, uint32_t height);
 VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,

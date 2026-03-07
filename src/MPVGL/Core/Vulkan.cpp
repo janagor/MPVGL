@@ -411,11 +411,11 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
     vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
 
-    generateMipmaps(vulkan, vulkan.sceneContext.texture.image,
-                    VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight,
-                    vulkan.sceneContext.texture.mipLevels);
+    auto result = generateMipmaps(vulkan, vulkan.sceneContext.texture.image,
+                                  VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight,
+                                  vulkan.sceneContext.texture.mipLevels);
 
-    return {};
+    return result;
 }
 
 tl::expected<void, Error> createTextureImageView(Vulkan &vulkan) {

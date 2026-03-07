@@ -271,16 +271,20 @@ void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
 
     endSingleTimeCommands(vulkan, commandBuffer);
 }
-void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
-                     int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+
+tl::expected<void, Error> generateMipmaps(Vulkan &vulkan, VkImage image,
+                                          VkFormat imageFormat,
+                                          int32_t texWidth, int32_t texHeight,
+                                          uint32_t mipLevels) {
     VkFormatProperties formatProperties;
     vulkan.deviceContext.instDisp.getPhysicalDeviceFormatProperties(
         vulkan.deviceContext.logicalDevice.physical_device, imageFormat,
         &formatProperties);
     if (!(formatProperties.optimalTilingFeatures &
           VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        throw std::runtime_error(
-            "texture image format does not support linear blitting!");
+        return tl::unexpected<Error>{
+            EngineError::VulkanRuntimeError,
+            "Texture image format does not support linear blitting"};
     }
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(vulkan);
     auto subresourceRange = VkImageSubresourceRange{
@@ -349,6 +353,7 @@ void generateMipmaps(Vulkan &vulkan, VkImage image, VkFormat imageFormat,
         &barrier);
 
     endSingleTimeCommands(vulkan, commandBuffer);
+    return {};
 }
 
 void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
