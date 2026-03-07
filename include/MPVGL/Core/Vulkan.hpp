@@ -3,11 +3,12 @@
 #include <tl/expected.hpp>
 #include <vulkan/vulkan.h>
 
+#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 
 namespace mpvgl::vlk {
 
-tl::expected<void, std::error_code> bootstrap(Vulkan &vulkan);
+tl::expected<void, Error> bootstrap(Vulkan &vulkan);
 int create_render_pass(Vulkan &vulkan);
 int create_descriptor_set_layout(Vulkan &vulkan);
 int create_graphics_pipeline(Vulkan &vulkan);
@@ -30,8 +31,8 @@ int reloadShadersAndPipeline(Vulkan &vulkan);
 void cleanup(Vulkan &vulkan);
 
 // TODO: remove from public api
-tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan);
-tl::expected<void, std::error_code> create_swapchain(Vulkan &vulkan);
-tl::expected<void, std::error_code> get_queues(Vulkan &vulkan);
+tl::expected<void, Error> device_initialization(Vulkan &vulkan);
+tl::expected<void, Error> create_swapchain(Vulkan &vulkan);
+tl::expected<void, Error> get_queues(Vulkan &vulkan);
 
 }  // namespace mpvgl::vlk

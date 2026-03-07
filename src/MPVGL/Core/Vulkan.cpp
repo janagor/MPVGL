@@ -37,11 +37,18 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
+tl::expected<void, Error> device_initialization(Vulkan &vulkan) {
     vulkan.deviceContext.window = create_window_glfw("Vulkan Triangle", true);
+    if (!vulkan.deviceContext.window) {
+        return tl::unexpected{mpvgl::Error{mpvgl::EngineError::WindowError,
+                                           "Failed to create GLFW window"}};
+    }
 
     auto instance = InstanceBuilder::getInstance();
-    if (!instance) return tl::unexpected(instance.error());
+    if (!instance) {
+        return tl::unexpected{
+            mpvgl::Error{instance.error(), "Failed to create Instance"}};
+    }
 
     vulkan.deviceContext.instance = instance.value();
     vulkan.deviceContext.instDisp = vulkan.deviceContext.instance.make_table();
@@ -50,11 +57,17 @@ tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
 
     auto physicalDevice = PhysicalDeviceBuilder::getPhysicalDevice(
         vulkan.deviceContext.instance, vulkan.surface);
-    if (!physicalDevice) return tl::unexpected(physicalDevice.error());
+    if (!physicalDevice) {
+        return tl::unexpected{mpvgl::Error{physicalDevice.error(),
+                                           "Failed to create Physical Device"}};
+    }
 
     auto logicalDevice =
         LogicalDeviceBuilder::getLogicalDevice(physicalDevice.value());
-    if (!logicalDevice) return tl::unexpected(logicalDevice.error());
+    if (!logicalDevice)
+        return tl::unexpected{mpvgl::Error{logicalDevice.error(),
+                                           "Failed to create Logical Device"}};
+
     vulkan.deviceContext.logicalDevice = logicalDevice.value();
     vulkan.deviceContext.logDevDisp =
         vulkan.deviceContext.logicalDevice.make_table();
@@ -62,7 +75,7 @@ tl::expected<void, std::error_code> device_initialization(Vulkan &vulkan) {
     return {};
 }
 
-tl::expected<void, std::error_code> create_swapchain(Vulkan &vulkan) {
+tl::expected<void, Error> create_swapchain(Vulkan &vulkan) {
     auto swapchain = SwapchainBuilder::getSwapchain(
         vulkan.deviceContext.logicalDevice, vulkan.deviceContext.window,
         vulkan.swapchainContext.swapchain);
@@ -72,28 +85,29 @@ tl::expected<void, std::error_code> create_swapchain(Vulkan &vulkan) {
     return {};
 }
 
-tl::expected<void, std::error_code> get_queues(Vulkan &vulkan) {
-    auto gq =
-        vulkan.deviceContext.logicalDevice.get_queue(vkb::QueueType::graphics);
-    if (!gq.has_value()) {
-        std::cout << "failed to get graphics queue: " << gq.error().message()
-                  << "\n";
-        return tl::unexpected(gq.error());
+tl::expected<void, Error> get_queues(Vulkan &vulkan) {
+    if (auto gq = vulkan.deviceContext.logicalDevice.get_queue(
+            vkb::QueueType::graphics);
+        gq.has_value()) {
+        vulkan.deviceContext.graphicsQueue = std::move(gq.value());
+    } else {
+        return tl::unexpected{
+            mpvgl::Error{gq.error(), "Failed to get graphics queue"}};
     }
-    vulkan.deviceContext.graphicsQueue = gq.value();
 
-    auto pq =
-        vulkan.deviceContext.logicalDevice.get_queue(vkb::QueueType::present);
-    if (!pq.has_value()) {
-        std::cout << "failed to get present queue: " << pq.error().message()
-                  << "\n";
-        return tl::unexpected(pq.error());
+    if (auto pq = vulkan.deviceContext.logicalDevice.get_queue(
+            vkb::QueueType::present);
+        pq.has_value()) {
+        vulkan.deviceContext.presentQueue = std::move(pq.value());
+    } else {
+        return tl::unexpected(
+            mpvgl::Error{pq.error(), "Failed to get present queue"});
     }
-    vulkan.deviceContext.presentQueue = pq.value();
+
     return {};
 }
 
-tl::expected<void, std::error_code> bootstrap(Vulkan &vulkan) {
+tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
     return device_initialization(vulkan)
         .and_then([&] { return create_swapchain(vulkan); })
         .and_then([&] { return get_queues(vulkan); });

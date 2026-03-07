@@ -24,7 +24,7 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     shader_watcher.compileAll();
 
     if (auto result = vlk::bootstrap(vulkan); !result.has_value()) {
-        std::cout << result.error().message() << "\n";
+        std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
     if (0 != vlk::create_render_pass(vulkan))

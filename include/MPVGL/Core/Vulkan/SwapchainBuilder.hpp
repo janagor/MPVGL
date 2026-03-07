@@ -6,10 +6,12 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Error.hpp"
+
 namespace mpvgl::vlk {
 
 struct SwapchainBuilder {
-    static tl::expected<vkb::Swapchain, std::error_code> getSwapchain(
+    static tl::expected<vkb::Swapchain, Error> getSwapchain(
         vkb::Device const& device, GLFWwindow* window,
         vkb::Swapchain& oldSwapchain) {
         vkb::SwapchainBuilder swapchainBuilder{device};
@@ -21,7 +23,11 @@ struct SwapchainBuilder {
                                     static_cast<uint32_t>(height))
                 .set_old_swapchain(oldSwapchain)
                 .build();
-        if (!newSwapchain) return tl::unexpected(newSwapchain.error());
+        if (!newSwapchain) {
+            std::string errorMsg =
+                "Swapchain build error: " + newSwapchain.error().message();
+            return tl::unexpected(mpvgl::Error{newSwapchain.error(), errorMsg});
+        }
         vkb::destroy_swapchain(oldSwapchain);
         return newSwapchain.value();
     }
