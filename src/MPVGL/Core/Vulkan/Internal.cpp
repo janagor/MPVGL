@@ -469,7 +469,7 @@ int recreate_swapchain(Vulkan &vulkan) {
     if (0 != create_image_views(vulkan)) return -1;
     if (!createFramebuffers(vulkan).has_value()) return -1;
     if (!createCommandPool(vulkan).has_value()) return -1;
-    if (0 != create_command_buffers(vulkan)) return -1;
+    if (!createCommandBuffers(vulkan).has_value()) return -1;
 
     return 0;
 }

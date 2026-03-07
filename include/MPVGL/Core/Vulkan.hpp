@@ -24,7 +24,7 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan);
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan);
-int create_command_buffers(Vulkan &vulkan);
+tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan);
 int create_sync_objects(Vulkan &vulkan);
 int draw_frame(Vulkan &vulkan);
 tl::expected<void, Error> reloadShadersAndPipeline(Vulkan &vulkan);

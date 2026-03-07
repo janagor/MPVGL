@@ -623,7 +623,7 @@ tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
     return {};
 }
 
-int create_command_buffers(Vulkan &vulkan) {
+tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan) {
     vulkan.data.command_buffers.resize(
         vulkan.swapchainContext.framebuffers.size());
     auto allocInfo = initializers::commandBufferAllocateInfo(
@@ -631,9 +631,10 @@ int create_command_buffers(Vulkan &vulkan) {
         static_cast<std::uint32_t>(vulkan.data.command_buffers.size()));
     if (vulkan.deviceContext.logDevDisp.allocateCommandBuffers(
             &allocInfo, vulkan.data.command_buffers.data()) != VK_SUCCESS) {
-        return -1;  // failed to allocate command buffers;
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to allocate Command Buffers"}};
     }
-    return 0;
+    return {};
 }
 
 int create_sync_objects(Vulkan &vulkan) {
