@@ -36,8 +36,11 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_graphics_pipeline(vulkan))
-        throw std::runtime_error("Failed at `create_graphics_pipeline`.");
+    if (auto result = vlk::createGraphicsPipeline(vulkan);
+        !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_command_pool(vulkan))
         throw std::runtime_error("Failed at `create_command_pool`.");
     if (0 != vlk::create_depth_resources(vulkan))
@@ -145,7 +148,12 @@ int RenderWindow::draw() noexcept {
         }
 
         if (time++ >= 10'000) {
-            vlk::reloadShadersAndPipeline(vulkan);
+            if (auto result = vlk::reloadShadersAndPipeline(vulkan);
+                !result.has_value()) {
+                std::cout << result.error().message << "\n";
+                vulkan.deviceContext.logDevDisp.deviceWaitIdle();
+                return 0;
+            }
             time = 0;
         }
     }

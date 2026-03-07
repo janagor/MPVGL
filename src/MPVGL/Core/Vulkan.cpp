@@ -208,7 +208,7 @@ tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
     return {};
 }
 
-int create_graphics_pipeline(Vulkan &vulkan) {
+tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
     auto vert_code =
         readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv");
     auto frag_code =
@@ -217,8 +217,8 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     auto vert_module = createShaderModule(vulkan, vert_code);
     auto frag_module = createShaderModule(vulkan, frag_code);
     if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE) {
-        std::cout << "failed to create shader module\n";
-        return -1;  // failed to create shader modules
+        return tl::unexpected{
+            Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
     }
 
     auto vertStageInfo = initializers::pipelineShaderStageCreateInfo(
@@ -273,7 +273,8 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     if (vulkan.deviceContext.logDevDisp.createPipelineLayout(
             &pipelineLayoutInfo, nullptr,
             &vulkan.pipelineContext.pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Pipeline Layout"}};
     }
 
     auto pipelineInfo = initializers::graphicsPipelineCreateInfo();
@@ -295,13 +296,13 @@ int create_graphics_pipeline(Vulkan &vulkan) {
     if (vulkan.deviceContext.logDevDisp.createGraphicsPipelines(
             VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
             &vulkan.pipelineContext.graphicsPipeline) != VK_SUCCESS) {
-        std::cout << "failed to create pipline\n";
-        return -1;  // failed to create graphics pipeline
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Graphics Pipeline"}};
     }
 
     vulkan.deviceContext.logDevDisp.destroyShaderModule(frag_module, nullptr);
     vulkan.deviceContext.logDevDisp.destroyShaderModule(vert_module, nullptr);
-    return 0;
+    return {};
 }
 
 int create_framebuffers(Vulkan &vulkan) {
@@ -740,7 +741,7 @@ int draw_frame(Vulkan &vulkan) {
     return 0;
 }
 
-int reloadShadersAndPipeline(Vulkan &vulkan) {
+tl::expected<void, Error> reloadShadersAndPipeline(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.queueWaitIdle(
         vulkan.deviceContext.graphicsQueue);
 
@@ -749,7 +750,7 @@ int reloadShadersAndPipeline(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
         vulkan.pipelineContext.pipelineLayout, nullptr);
 
-    return create_graphics_pipeline(vulkan);
+    return createGraphicsPipeline(vulkan);
 }
 
 void cleanup(Vulkan &vulkan) {
