@@ -55,7 +55,7 @@ tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
                                                  VkFormat format,
                                                  VkImageAspectFlags aspectFlags,
                                                  uint32_t mipLevels);
-int create_image_views(Vulkan &vulkan);
+tl::expected<void, Error> createImageViews(Vulkan &vulkan);
 tl::expected<VkFormat, Error> findSupportedFormat(
     Vulkan &vulkan, const std::vector<VkFormat> &candidates,
     VkImageTiling tiling, VkFormatFeatureFlags features);

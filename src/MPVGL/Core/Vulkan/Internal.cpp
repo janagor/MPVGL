@@ -420,7 +420,7 @@ tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
     return imageView;
 }
 
-int create_image_views(Vulkan &vulkan) {
+tl::expected<void, Error> createImageViews(Vulkan &vulkan) {
     vulkan.swapchainContext.swapchainImageViews.resize(
         vulkan.swapchainContext.swapchainImages.size());
     for (uint32_t i = 0; i < vulkan.swapchainContext.swapchainImages.size();
@@ -430,11 +430,11 @@ int create_image_views(Vulkan &vulkan) {
             vulkan.swapchainContext.swapchain.image_format,
             VK_IMAGE_ASPECT_COLOR_BIT, 1);
         if (!imageView.has_value()) {
-            return -1;
+            return tl::unexpected<Error>(imageView.error());
         }
         vulkan.swapchainContext.swapchainImageViews.at(i) = imageView.value();
     }
-    return 0;
+    return {};
 }
 
 tl::expected<VkFormat, Error> findSupportedFormat(
@@ -519,7 +519,7 @@ int recreate_swapchain(Vulkan &vulkan) {
     vulkan.swapchainContext.swapchainImages =
         vulkan.swapchainContext.swapchain.get_images().value();
     if (!createDepthResources(vulkan).has_value()) return -1;
-    if (0 != create_image_views(vulkan)) return -1;
+    if (!createImageViews(vulkan).has_value()) return -1;
     if (!createFramebuffers(vulkan).has_value()) return -1;
     if (!createCommandPool(vulkan).has_value()) return -1;
     if (!createCommandBuffers(vulkan).has_value()) return -1;
