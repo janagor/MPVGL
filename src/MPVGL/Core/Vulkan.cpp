@@ -478,7 +478,7 @@ tl::expected<void, Error> loadModel(Vulkan &vulkan) {
     return {};
 }
 
-int create_vertex_buffer(Vulkan &vulkan) {
+tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
     VkDeviceSize bufferSize = sizeof(vulkan.sceneContext.vertices.at(0)) *
                               vulkan.sceneContext.vertices.size();
 
@@ -506,7 +506,7 @@ int create_vertex_buffer(Vulkan &vulkan) {
                 bufferSize);
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
     vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
-    return 0;
+    return {};
 }
 
 int create_index_buffer(Vulkan &vulkan) {
