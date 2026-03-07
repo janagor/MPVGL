@@ -82,8 +82,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_descriptor_pool(vulkan))
-        throw std::runtime_error("Failed at `create_descriptor_pool`.");
+    if (auto result = vlk::createDescriptorPool(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_descriptor_sets(vulkan))
         throw std::runtime_error("Failed at `create_descriptor_sets`.");
     if (0 != vlk::create_command_buffers(vulkan))

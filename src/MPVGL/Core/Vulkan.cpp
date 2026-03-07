@@ -563,7 +563,7 @@ tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
     return {};
 }
 
-int create_descriptor_pool(Vulkan &vulkan) {
+tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan) {
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount =
@@ -577,10 +577,10 @@ int create_descriptor_pool(Vulkan &vulkan) {
 
     if (vulkan.deviceContext.logDevDisp.createDescriptorPool(
             &poolInfo, nullptr, &vulkan.data.descriptor_pool) != VK_SUCCESS) {
-        std::cout << "failed to create descriptor pool\n";
-        return -1;
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Descriptor Pool"}};
     }
-    return 0;
+    return {};
 }
 
 int create_descriptor_sets(Vulkan &vulkan) {

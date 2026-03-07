@@ -22,7 +22,7 @@ tl::expected<void, Error> loadModel(Vulkan &vulkan);
 tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan);
 tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan);
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan);
-int create_descriptor_pool(Vulkan &vulkan);
+tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan);
 int create_descriptor_sets(Vulkan &vulkan);
 int create_command_buffers(Vulkan &vulkan);
 int create_sync_objects(Vulkan &vulkan);
