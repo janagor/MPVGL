@@ -377,10 +377,14 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
     }
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    create_buffer(vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                  stagingBuffer, stagingBufferMemory);
+    if (auto result =
+            createBuffer(vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer, stagingBufferMemory);
+        !result.has_value()) {
+        return result;
+    }
     void *d;
     vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0, imageSize,
                                               0, &d);
@@ -489,11 +493,14 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    create_buffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                  stagingBuffer, stagingBufferMemory);
-
+    if (auto result =
+            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer, stagingBufferMemory);
+        !result.has_value()) {
+        return result;
+    }
     void *d;
     vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0,
                                               bufferSize, 0, &d);
@@ -501,11 +508,15 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
            static_cast<size_t>(bufferSize));
     vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
 
-    create_buffer(
-        vulkan, bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.sceneContext.vertexBuffer,
-        vulkan.sceneContext.vertexBufferMemory);
+    if (auto result = createBuffer(vulkan, bufferSize,
+                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                   vulkan.sceneContext.vertexBuffer,
+                                   vulkan.sceneContext.vertexBufferMemory);
+        !result.has_value()) {
+        return result;
+    }
 
     copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.vertexBuffer,
                 bufferSize);
@@ -520,23 +531,29 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    create_buffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                  stagingBuffer, stagingBufferMemory);
-
+    if (auto result =
+            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer, stagingBufferMemory);
+        !result.has_value()) {
+        return result;
+    }
     void *d;
     vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0,
                                               bufferSize, 0, &d);
     memcpy(d, vulkan.sceneContext.indices.data(), (size_t)bufferSize);
     vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
 
-    create_buffer(
-        vulkan, bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.sceneContext.indexBuffer,
-        vulkan.sceneContext.indexBufferMemory);
-
+    if (auto result = createBuffer(
+            vulkan, bufferSize,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            vulkan.sceneContext.indexBuffer,
+            vulkan.sceneContext.indexBufferMemory);
+        !result.has_value()) {
+        return result;
+    }
     copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.indexBuffer,
                 bufferSize);
 
@@ -555,12 +572,15 @@ tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
         vulkan.swapchainContext.swapchain.image_count);
 
     for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
-        create_buffer(vulkan, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                      vulkan.data.uniform_buffers.at(i),
-                      vulkan.data.uniform_buffers_memory.at(i));
-
+        if (auto result = createBuffer(
+                vulkan, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                vulkan.data.uniform_buffers.at(i),
+                vulkan.data.uniform_buffers_memory.at(i));
+            !result.has_value()) {
+            return result;
+        }
         vulkan.deviceContext.logDevDisp.mapMemory(
             vulkan.data.uniform_buffers_memory.at(i), 0, bufferSize, 0,
             &vulkan.data.uniform_buffers_mapped.at(i));

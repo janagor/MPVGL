@@ -23,9 +23,11 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
                                   const std::vector<char> &code);
 uint32_t find_memory_type(Vulkan &vulkan, uint32_t typeFilter,
                           VkMemoryPropertyFlags properties);
-void create_buffer(Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
-                   VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                   VkDeviceMemory &bufferMemory);
+tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
+                                       VkBufferUsageFlags usage,
+                                       VkMemoryPropertyFlags properties,
+                                       VkBuffer &buffer,
+                                       VkDeviceMemory &bufferMemory);
 VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan);
 void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer);
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
