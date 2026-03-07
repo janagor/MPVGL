@@ -13,7 +13,6 @@
 
 namespace mpvgl::vlk {
 
-VkFormat find_depth_format(Vulkan &vulkan);
 GLFWwindow *create_window_glfw(const char *window_name, bool resize);
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
@@ -52,11 +51,10 @@ void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
 VkImageView createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
                             VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 int create_image_views(Vulkan &vulkan);
-VkFormat find_supported_format(Vulkan &vulkan,
-                               const std::vector<VkFormat> &candidates,
-                               VkImageTiling tiling,
-                               VkFormatFeatureFlags features);
-VkFormat find_depth_format(Vulkan &vulkan);
+tl::expected<VkFormat, Error> findSupportedFormat(
+    Vulkan &vulkan, const std::vector<VkFormat> &candidates,
+    VkImageTiling tiling, VkFormatFeatureFlags features);
+tl::expected<VkFormat, Error> findDepthFormat(Vulkan &vulkan);
 bool has_stencil_component(VkFormat format);
 void cleanupSwapChain(Vulkan &vulkan);
 int recreate_swapchain(Vulkan &vulkan);

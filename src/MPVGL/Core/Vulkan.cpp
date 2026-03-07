@@ -131,15 +131,19 @@ tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = find_depth_format(vulkan);
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    if (auto depthFormat = findDepthFormat(vulkan); depthFormat.has_value()) {
+        depth_attachment.format = depthFormat.value();
+        depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    } else {
+        return tl::unexpected<Error>{depthFormat.error()};
+    }
 
     VkAttachmentReference depth_attachment_ref{};
     depth_attachment_ref.attachment = 1;
@@ -346,20 +350,22 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
-    VkFormat depthFormat = find_depth_format(vulkan);
-    return createImage(vulkan, vulkan.swapchainContext.swapchain.extent.width,
-                       vulkan.swapchainContext.swapchain.extent.height, 1,
-                       depthFormat, VK_IMAGE_TILING_OPTIMAL,
-                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                       vulkan.swapchainContext.depthImage,
-                       vulkan.swapchainContext.depthImageMemory)
-        .and_then([&vulkan, depthFormat]() -> tl::expected<void, Error> {
-            vulkan.swapchainContext.depthImageView =
-                createImageView(vulkan, vulkan.swapchainContext.depthImage,
-                                depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-            return {};
-        });
+    return findDepthFormat(vulkan).and_then([&vulkan](VkFormat format) {
+        return createImage(vulkan,
+                           vulkan.swapchainContext.swapchain.extent.width,
+                           vulkan.swapchainContext.swapchain.extent.height, 1,
+                           format, VK_IMAGE_TILING_OPTIMAL,
+                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                           vulkan.swapchainContext.depthImage,
+                           vulkan.swapchainContext.depthImageMemory)
+            .and_then([&vulkan, format]() -> tl::expected<void, Error> {
+                vulkan.swapchainContext.depthImageView =
+                    createImageView(vulkan, vulkan.swapchainContext.depthImage,
+                                    format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+                return {};
+            });
+    });
 }
 
 tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {

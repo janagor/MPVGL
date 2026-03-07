@@ -411,10 +411,9 @@ int create_image_views(Vulkan &vulkan) {
     return 0;
 }
 
-VkFormat find_supported_format(Vulkan &vulkan,
-                               const std::vector<VkFormat> &candidates,
-                               VkImageTiling tiling,
-                               VkFormatFeatureFlags features) {
+tl::expected<VkFormat, Error> findSupportedFormat(
+    Vulkan &vulkan, const std::vector<VkFormat> &candidates,
+    VkImageTiling tiling, VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
         vulkan.deviceContext.instDisp.getPhysicalDeviceFormatProperties(
@@ -427,11 +426,12 @@ VkFormat find_supported_format(Vulkan &vulkan,
             return format;
         }
     }
-    throw std::runtime_error("failed to find supported format!");
+    return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                 "Failed to find supported Format"};
 }
 
-VkFormat find_depth_format(Vulkan &vulkan) {
-    return find_supported_format(
+tl::expected<VkFormat, Error> findDepthFormat(Vulkan &vulkan) {
+    return findSupportedFormat(
         vulkan,
         {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
          VK_FORMAT_D24_UNORM_S8_UINT},
