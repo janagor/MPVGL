@@ -332,7 +332,7 @@ int create_framebuffers(Vulkan &vulkan) {
     return 0;
 }
 
-int create_command_pool(Vulkan &vulkan) {
+tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
     auto poolInfo = initializers::commandPoolCreateInfo(
         vulkan.deviceContext.logicalDevice
             .get_queue_index(vkb::QueueType::graphics)
@@ -341,10 +341,10 @@ int create_command_pool(Vulkan &vulkan) {
 
     if (vulkan.deviceContext.logDevDisp.createCommandPool(
             &poolInfo, nullptr, &vulkan.data.command_pool) != VK_SUCCESS) {
-        std::cout << "failed to create command pool\n";
-        return -1;  // failed to create command pool
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Command Pool"}};
     }
-    return 0;
+    return {};
 }
 
 int create_depth_resources(Vulkan &vulkan) {
@@ -662,7 +662,8 @@ int create_sync_objects(Vulkan &vulkan) {
                 &fenceInfo, nullptr, &vulkan.data.in_flight_fences.at(i)) !=
                 VK_SUCCESS) {
             std::cout << "failed to create sync objects\n";
-            return -1;  // failed to create synchronization objects for a frame
+            return -1;  // failed to create synchronization objects
+                        // for a frame
         }
     }
     return 0;

@@ -41,8 +41,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_command_pool(vulkan))
-        throw std::runtime_error("Failed at `create_command_pool`.");
+    if (auto result = vlk::createCommandPool(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_depth_resources(vulkan))
         throw std::runtime_error("Failed at `create_depth_resources`.");
     if (0 != vlk::create_framebuffers(vulkan))
