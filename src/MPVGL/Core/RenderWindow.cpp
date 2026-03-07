@@ -94,8 +94,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_sync_objects(vulkan))
-        throw std::runtime_error("Failed at `create_sync_objects`.");
+    if (auto result = vlk::createSyncObjects(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
 }
 
 RenderWindow::~RenderWindow() noexcept { cleanup(vulkan); }

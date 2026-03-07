@@ -637,7 +637,7 @@ tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan) {
     return {};
 }
 
-int create_sync_objects(Vulkan &vulkan) {
+tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
     // TODO:
     vulkan.data.available_semaphores.resize(
         vulkan.swapchainContext.swapchain.image_count, VK_NULL_HANDLE);
@@ -662,12 +662,12 @@ int create_sync_objects(Vulkan &vulkan) {
             vulkan.deviceContext.logDevDisp.createFence(
                 &fenceInfo, nullptr, &vulkan.data.in_flight_fences.at(i)) !=
                 VK_SUCCESS) {
-            std::cout << "failed to create sync objects\n";
-            return -1;  // failed to create synchronization objects
-                        // for a frame
+            return tl::unexpected{
+                Error{EngineError::VulkanRuntimeError,
+                      "Failed to create Synchronization Objects for a Frame"}};
         }
     }
-    return 0;
+    return {};
 }
 
 int draw_frame(Vulkan &vulkan) {
