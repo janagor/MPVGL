@@ -491,7 +491,7 @@ void cleanupSwapChain(Vulkan &vulkan) {
     vkb::destroy_swapchain(vulkan.swapchainContext.swapchain);
 }
 
-int recreate_swapchain(Vulkan &vulkan) {
+tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.deviceWaitIdle();
 
     if (vulkan.swapchainContext.depthImageView != VK_NULL_HANDLE) {
@@ -515,16 +515,16 @@ int recreate_swapchain(Vulkan &vulkan) {
     vulkan.swapchainContext.framebuffers.clear();
     vulkan.swapchainContext.swapchainImageViews.clear();
 
-    if (!create_swapchain(vulkan).has_value()) return -1;
-    vulkan.swapchainContext.swapchainImages =
-        vulkan.swapchainContext.swapchain.get_images().value();
-    if (!createDepthResources(vulkan).has_value()) return -1;
-    if (!createImageViews(vulkan).has_value()) return -1;
-    if (!createFramebuffers(vulkan).has_value()) return -1;
-    if (!createCommandPool(vulkan).has_value()) return -1;
-    if (!createCommandBuffers(vulkan).has_value()) return -1;
-
-    return 0;
+    return create_swapchain(vulkan)
+        .transform([&vulkan]() {
+            vulkan.swapchainContext.swapchainImages =
+                vulkan.swapchainContext.swapchain.get_images().value();
+        })
+        .and_then([&vulkan]() { return createDepthResources(vulkan); })
+        .and_then([&vulkan]() { return createImageViews(vulkan); })
+        .and_then([&vulkan]() { return createFramebuffers(vulkan); })
+        .and_then([&vulkan]() { return createCommandPool(vulkan); })
+        .and_then([&vulkan]() { return createCommandBuffers(vulkan); });
 }
 
 tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,

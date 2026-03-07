@@ -722,11 +722,7 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
         VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        auto res = recreate_swapchain(vulkan);
-        return tl::unexpected{Error{EngineError::Unknown,
-                                    "Failed to draw frame because of "
-                                    "`VK_ERROR_OUT_OF_DATE_KHR`. Error " +
-                                        std::to_string(res)}};
+        return recreateSwapchain(vulkan);
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
@@ -781,13 +777,7 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
     result = vulkan.deviceContext.logDevDisp.queuePresentKHR(
         vulkan.deviceContext.presentQueue, &presentInfoKHR);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        auto res = recreate_swapchain(vulkan);
-        return tl::unexpected{
-            Error{EngineError::Unknown,
-                  "Failed to draw frame because of "
-                  "`VK_ERROR_OUT_OF_DATE_KHR` or `VK_SUBOPTIMAL_KHR`."
-                  " Error " +
-                      std::to_string(res)}};
+        return recreateSwapchain(vulkan);
     } else if (result != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to present Swapchain Image"}};

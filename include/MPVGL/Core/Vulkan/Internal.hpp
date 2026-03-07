@@ -62,7 +62,7 @@ tl::expected<VkFormat, Error> findSupportedFormat(
 tl::expected<VkFormat, Error> findDepthFormat(Vulkan &vulkan);
 bool has_stencil_component(VkFormat format);
 void cleanupSwapChain(Vulkan &vulkan);
-int recreate_swapchain(Vulkan &vulkan);
+tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan);
 tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
                                               VkCommandBuffer command_buffer,
                                               uint32_t image_index);
