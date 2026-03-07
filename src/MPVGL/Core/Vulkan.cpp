@@ -362,7 +362,7 @@ tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     return {};
 }
 
-int create_texture_image(Vulkan &vulkan) {
+tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels = stbi_load(TEXTURE_PATH, &texWidth, &texHeight,
                                 &texChannels, STBI_rgb_alpha);
@@ -372,8 +372,8 @@ int create_texture_image(Vulkan &vulkan) {
         1;
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     if (!pixels) {
-        std::cout << "failed to load texture image\n";
-        return -1;  // failed to load texture image
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to load Texture Image"}};
     }
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -407,7 +407,7 @@ int create_texture_image(Vulkan &vulkan) {
                     VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight,
                     vulkan.sceneContext.texture.mipLevels);
 
-    return 0;
+    return {};
 }
 
 int create_texture_image_view(Vulkan &vulkan) {

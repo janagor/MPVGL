@@ -53,8 +53,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_texture_image(vulkan))
-        throw std::runtime_error("Failed at `create_texture_image`.");
+    if (auto result = vlk::createTextureImage(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_texture_image_view(vulkan))
         throw std::runtime_error("Failed at `create_texture_image_view`.");
     if (0 != vlk::create_texture_sampler(vulkan))
