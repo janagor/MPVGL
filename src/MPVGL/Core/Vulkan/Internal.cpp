@@ -245,9 +245,11 @@ tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
     return {};
 }
 
-void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
-                             VkImageLayout oldLayout, VkImageLayout newLayout,
-                             uint32_t mipLevels) {
+tl::expected<void, Error> transitionImageLayout(Vulkan &vulkan, VkImage image,
+                                                VkFormat format,
+                                                VkImageLayout oldLayout,
+                                                VkImageLayout newLayout,
+                                                uint32_t mipLevels) {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(vulkan);
 
     auto subresourceRange = VkImageSubresourceRange{
@@ -278,13 +280,16 @@ void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else {
-        throw std::invalid_argument("unsupported layout transition!");
+        return tl::unexpected<Error>{
+            EngineError::VulkanRuntimeError,
+            "Requested an unsupported layout transition"};
     }
     vulkan.deviceContext.logDevDisp.cmdPipelineBarrier(
         commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr,
         1, &barrier);
 
     endSingleTimeCommands(vulkan, commandBuffer);
+    return {};
 }
 
 tl::expected<void, Error> generateMipmaps(Vulkan &vulkan, VkImage image,

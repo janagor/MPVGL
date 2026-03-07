@@ -411,10 +411,13 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
         !result.has_value()) {
         return result;
     }
-    transition_image_layout(vulkan, vulkan.sceneContext.texture.image,
-                            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            vulkan.sceneContext.texture.mipLevels);
+    if (auto result = transitionImageLayout(
+            vulkan, vulkan.sceneContext.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            vulkan.sceneContext.texture.mipLevels);
+        !result.has_value()) {
+        return tl::unexpected<Error>{result.error()};
+    }
     copy_buffer_to_image(
         vulkan, stagingBuffer, vulkan.sceneContext.texture.image,
         static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));

@@ -40,9 +40,11 @@ tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
                                       VkMemoryPropertyFlags properties,
                                       VkImage &image,
                                       VkDeviceMemory &imageMemory);
-void transition_image_layout(Vulkan &vulkan, VkImage image, VkFormat format,
-                             VkImageLayout oldLayout, VkImageLayout newLayout,
-                             uint32_t mipLevels);
+tl::expected<void, Error> transitionImageLayout(Vulkan &vulkan, VkImage image,
+                                                VkFormat format,
+                                                VkImageLayout oldLayout,
+                                                VkImageLayout newLayout,
+                                                uint32_t mipLevels);
 tl::expected<void, Error> generateMipmaps(Vulkan &vulkan, VkImage image,
                                           VkFormat imageFormat,
                                           int32_t texWidth, int32_t texHeight,
