@@ -45,8 +45,10 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         std::cout << result.error().message << "\n";
         throw std::runtime_error("Failed .");
     }
-    if (0 != vlk::create_depth_resources(vulkan))
-        throw std::runtime_error("Failed at `create_depth_resources`.");
+    if (auto result = vlk::createDepthResources(vulkan); !result.has_value()) {
+        std::cout << result.error().message << "\n";
+        throw std::runtime_error("Failed .");
+    }
     if (0 != vlk::create_framebuffers(vulkan))
         throw std::runtime_error("Failed at `create_framebuffers`.");
     if (0 != vlk::create_texture_image(vulkan))

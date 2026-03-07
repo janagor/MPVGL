@@ -465,7 +465,7 @@ int recreate_swapchain(Vulkan &vulkan) {
     if (!create_swapchain(vulkan).has_value()) return -1;
     vulkan.swapchainContext.swapchainImages =
         vulkan.swapchainContext.swapchain.get_images().value();
-    if (0 != create_depth_resources(vulkan)) return -1;
+    if (!createDepthResources(vulkan).has_value()) return -1;
     if (0 != create_image_views(vulkan)) return -1;
     if (0 != create_framebuffers(vulkan)) return -1;
     if (!createCommandPool(vulkan).has_value()) return -1;

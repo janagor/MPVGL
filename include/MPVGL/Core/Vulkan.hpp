@@ -13,7 +13,7 @@ tl::expected<void, Error> createRenderPass(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan);
 tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan);
 tl::expected<void, Error> createCommandPool(Vulkan &vulkan);
-int create_depth_resources(Vulkan &vulkan);
+tl::expected<void, Error> createDepthResources(Vulkan &vulkan);
 int create_framebuffers(Vulkan &vulkan);
 int create_texture_image(Vulkan &vulkan);
 int create_texture_image_view(Vulkan &vulkan);

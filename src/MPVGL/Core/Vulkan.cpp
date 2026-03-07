@@ -347,7 +347,7 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
     return {};
 }
 
-int create_depth_resources(Vulkan &vulkan) {
+tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     VkFormat depthFormat = find_depth_format(vulkan);
 
     createImage(
@@ -359,7 +359,7 @@ int create_depth_resources(Vulkan &vulkan) {
     vulkan.swapchainContext.depthImageView =
         createImageView(vulkan, vulkan.swapchainContext.depthImage, depthFormat,
                         VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-    return 0;
+    return {};
 }
 
 int create_texture_image(Vulkan &vulkan) {
