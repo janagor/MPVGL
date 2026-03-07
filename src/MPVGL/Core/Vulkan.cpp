@@ -670,7 +670,7 @@ tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
     return {};
 }
 
-int draw_frame(Vulkan &vulkan) {
+tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.waitForFences(
         1, &vulkan.data.in_flight_fences.at(vulkan.data.current_frame), VK_TRUE,
         UINT64_MAX);
@@ -682,11 +682,18 @@ int draw_frame(Vulkan &vulkan) {
         VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        return recreate_swapchain(vulkan);
+        auto res = recreate_swapchain(vulkan);
+        return tl::unexpected{Error{EngineError::Unknown,
+                                    "Failed to draw frame because of "
+                                    "`VK_ERROR_OUT_OF_DATE_KHR`. Error " +
+                                        std::to_string(res)}};
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         std::cout << "failed to acquire swapchain image. Error " << result
                   << "\n";
-        return -1;
+        return tl::unexpected{
+            Error{EngineError::VulkanRuntimeError,
+                  "Failed to acquire Swapchain Image. Error " +
+                      std::to_string(result)}};
     }
 
     if (vulkan.data.image_in_flight.at(image_index) != VK_NULL_HANDLE) {
@@ -720,8 +727,8 @@ int draw_frame(Vulkan &vulkan) {
             vulkan.deviceContext.graphicsQueue, 1, &submitInfo,
             vulkan.data.in_flight_fences.at(vulkan.data.current_frame)) !=
         VK_SUCCESS) {
-        std::cout << "failed to submit draw command buffer\n";
-        return -1;  //"failed to submit draw command buffer
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to submit Draw Command Buffer"}};
     }
 
     auto swapchainKRH =
@@ -732,15 +739,21 @@ int draw_frame(Vulkan &vulkan) {
     result = vulkan.deviceContext.logDevDisp.queuePresentKHR(
         vulkan.deviceContext.presentQueue, &presentInfoKHR);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        return recreate_swapchain(vulkan);
+        auto res = recreate_swapchain(vulkan);
+        return tl::unexpected{
+            Error{EngineError::Unknown,
+                  "Failed to draw frame because of "
+                  "`VK_ERROR_OUT_OF_DATE_KHR` or `VK_SUBOPTIMAL_KHR`."
+                  " Error " +
+                      std::to_string(res)}};
     } else if (result != VK_SUCCESS) {
-        std::cout << "failed to present swapchain image\n";
-        return -1;
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to present Swapchain Image"}};
     }
 
     vulkan.data.current_frame = (vulkan.data.current_frame + 1) %
                                 vulkan.swapchainContext.framebuffers.size();
-    return 0;
+    return {};
 }
 
 tl::expected<void, Error> reloadShadersAndPipeline(Vulkan &vulkan) {

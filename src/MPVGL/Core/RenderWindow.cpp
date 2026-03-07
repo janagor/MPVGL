@@ -170,9 +170,9 @@ int RenderWindow::draw() noexcept {
 
         vulkan.sceneContext.camera.processMouseMovement(xoffset, yoffset);
 
-        int res = vlk::draw_frame(vulkan);
-        if (res != 0) {
-            std::cout << "failed to draw frame \n";
+        if (auto result = vlk::drawFrame(vulkan); !result.has_value()) {
+            std::cout << "failed to draw a Frame:" << result.error().message
+                      << std::endl;
             return -1;
         }
 

@@ -26,7 +26,7 @@ tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan);
 tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan);
 tl::expected<void, Error> createSyncObjects(Vulkan &vulkan);
-int draw_frame(Vulkan &vulkan);
+tl::expected<void, Error> drawFrame(Vulkan &vulkan);
 tl::expected<void, Error> reloadShadersAndPipeline(Vulkan &vulkan);
 void cleanup(Vulkan &vulkan);
 
