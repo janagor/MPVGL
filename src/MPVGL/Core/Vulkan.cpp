@@ -365,7 +365,7 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     return findDepthFormat(vulkan).and_then([&vulkan](VkFormat format) {
-        return createImage2(
+        return createImage(
                    vulkan, vulkan.swapchainContext.swapchain.extent.width,
                    vulkan.swapchainContext.swapchain.extent.height, 1, format,
                    VK_IMAGE_TILING_OPTIMAL,
@@ -411,7 +411,7 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
     memcpy(d, pixels, static_cast<size_t>(imageSize));
     vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
     stbi_image_free(pixels);
-    if (auto result = createImage2(
+    if (auto result = createImage(
             vulkan, texWidth, texHeight, vulkan.sceneContext.texture.mipLevels,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |

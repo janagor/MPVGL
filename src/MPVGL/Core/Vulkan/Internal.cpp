@@ -184,7 +184,7 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
-tl::expected<void, Error> createImage2(
+tl::expected<void, Error> createImage(
     Vulkan &vulkan, uint32_t width, uint32_t height, uint32_t mipLevels,
     VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
     VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
@@ -212,54 +212,6 @@ tl::expected<void, Error> createImage2(
         return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
                                      "Failed to create Image via VMA"};
     }
-    return {};
-}
-
-tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
-                                      uint32_t height, uint32_t mipLevels,
-                                      VkFormat format, VkImageTiling tiling,
-                                      VkImageUsageFlags usage,
-                                      VkMemoryPropertyFlags properties,
-                                      VkImage &image,
-                                      VkDeviceMemory &imageMemory) {
-    auto imageInfo = initializers::imageCreateInfo();
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
-    imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vulkan.deviceContext.logDevDisp.createImage(&imageInfo, nullptr,
-                                                    &image) != VK_SUCCESS) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to create Image"};
-    }
-
-    VkMemoryRequirements memRequirements;
-    vulkan.deviceContext.logDevDisp.getImageMemoryRequirements(
-        image, &memRequirements);
-
-    auto memoryType =
-        findMemoryType(vulkan, memRequirements.memoryTypeBits, properties);
-    if (!memoryType.has_value()) {
-        return tl::unexpected<Error>{memoryType.error()};
-    }
-    auto allocInfo = initializers::memoryAllocateInfo(memRequirements.size,
-                                                      memoryType.value());
-
-    if (vulkan.deviceContext.logDevDisp.allocateMemory(
-            &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to allocate Image Memory"};
-    }
-    vulkan.deviceContext.logDevDisp.bindImageMemory(image, imageMemory, 0);
     return {};
 }
 

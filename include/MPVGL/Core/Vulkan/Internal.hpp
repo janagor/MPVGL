@@ -34,14 +34,7 @@ VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan);
 void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer);
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
                  VkDeviceSize size);
-tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
-                                      uint32_t height, uint32_t mipLevels,
-                                      VkFormat format, VkImageTiling tiling,
-                                      VkImageUsageFlags usage,
-                                      VkMemoryPropertyFlags properties,
-                                      VkImage &image,
-                                      VkDeviceMemory &imageMemory);
-tl::expected<void, Error> createImage2(
+tl::expected<void, Error> createImage(
     Vulkan &vulkan, uint32_t width, uint32_t height, uint32_t mipLevels,
     VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
     VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
