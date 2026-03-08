@@ -145,7 +145,7 @@ IfMacros:
   - KJ_IF_MAYBE
 IncludeBlocks:   Regroup
 IncludeCategories:
-  - Regex:           '^\<(vulkan/|glm/|stb/|tl/|vk-bootstrap/|tinyobjloader/|glslang/).*'
+  - Regex:           '^\<(vulkan/|glm/|stb/|tl/|vk-bootstrap/|tinyobjloader/|glslang/|VulkanMemoryAllocator/).*'
     Priority:        2
   - Regex:           '^<GLFW/.*\>'
     Priority:        3

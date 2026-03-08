@@ -15,6 +15,7 @@ include(setup_expected)
 include(setup_tinyobjloader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/VulkanMemoryAllocator)
 
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in"
@@ -44,6 +45,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     glslang::glslang
     vk-bootstrap::vk-bootstrap
     tinyobjloader::tinyobjloader
+    GPUOpen::VulkanMemoryAllocator
     glslang::glslang-default-resource-limits
 )
 
