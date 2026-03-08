@@ -590,24 +590,24 @@ tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
     vulkan.data.uniform_buffers.resize(
         vulkan.swapchainContext.swapchain.image_count);
-    vulkan.data.uniform_buffers_memory.resize(
+    vulkan.data.uniformBufferAllocations.resize(
         vulkan.swapchainContext.swapchain.image_count);
     vulkan.data.uniform_buffers_mapped.resize(
         vulkan.swapchainContext.swapchain.image_count);
 
     for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
-        if (auto result = createBuffer(
+        if (auto result = createBuffer2(
                 vulkan, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                VMA_MEMORY_USAGE_AUTO,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
                 vulkan.data.uniform_buffers.at(i),
-                vulkan.data.uniform_buffers_memory.at(i));
+                vulkan.data.uniformBufferAllocations.at(i));
             !result.has_value()) {
             return result;
         }
-        vulkan.deviceContext.logDevDisp.mapMemory(
-            vulkan.data.uniform_buffers_memory.at(i), 0, bufferSize, 0,
-            &vulkan.data.uniform_buffers_mapped.at(i));
+        vmaMapMemory(vulkan.deviceContext.allocator,
+                     vulkan.data.uniformBufferAllocations.at(i),
+                     &vulkan.data.uniform_buffers_mapped.at(i));
     }
     return {};
 }
@@ -843,8 +843,8 @@ void cleanup(Vulkan &vulkan) {
     for (size_t i = 0; i < vulkan.swapchainContext.framebuffers.size(); i++) {
         vulkan.deviceContext.logDevDisp.destroyBuffer(
             vulkan.data.uniform_buffers.at(i), nullptr);
-        vulkan.deviceContext.logDevDisp.freeMemory(
-            vulkan.data.uniform_buffers_memory.at(i), nullptr);
+        vmaFreeMemory(vulkan.deviceContext.allocator,
+                      vulkan.data.uniformBufferAllocations.at(i));
     }
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorPool(
