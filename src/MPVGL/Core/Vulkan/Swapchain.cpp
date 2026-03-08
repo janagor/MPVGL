@@ -1,0 +1,131 @@
+#include "MPVGL/Core/Vulkan/Initializers.hpp"
+#include "MPVGL/Core/Vulkan/Swapchain.hpp"
+
+namespace mpvgl::vlk {
+
+Swapchain::Swapchain(vkb::Swapchain vkbSwapchain,
+                     vkb::DispatchTable disp) noexcept
+    : m_swapchain(std::move(vkbSwapchain)),
+      m_images({}),
+      m_imageViews({}),
+      m_disp(std::move(disp)) {
+    if (auto images = m_swapchain.get_images(); images.has_value()) {
+        m_images = images.value();
+    }
+}
+
+Swapchain::Swapchain(Swapchain&& other) noexcept
+    : m_swapchain(std::move(other.m_swapchain)),
+      m_images(std::move(other.m_images)),
+      m_imageViews(std::move(other.m_imageViews)),
+      m_disp(std::move(other.m_disp)) {
+    other.m_swapchain.swapchain = VK_NULL_HANDLE;
+}
+
+Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
+    if (this != &other) {
+        cleanup();
+        m_swapchain = std::move(other.m_swapchain);
+        m_images = std::move(other.m_images);
+        m_imageViews = std::move(other.m_imageViews);
+        m_disp = std::move(other.m_disp);
+        other.m_swapchain.swapchain = VK_NULL_HANDLE;
+    }
+    return *this;
+}
+
+Swapchain::~Swapchain() { cleanup(); }
+
+void Swapchain::cleanup() noexcept {
+    if (m_swapchain.swapchain != VK_NULL_HANDLE) {
+        m_swapchain.destroy_image_views(m_imageViews);
+        vkb::destroy_swapchain(m_swapchain);
+        m_swapchain.swapchain = VK_NULL_HANDLE;
+    }
+    m_imageViews.clear();
+    m_images.clear();
+}
+
+tl::expected<Swapchain, Error> Swapchain::create(
+    DeviceContext const& deviceContext) {
+    vkb::SwapchainBuilder swapchainBuilder{deviceContext.logicalDevice};
+
+    int width, height;
+    glfwGetWindowSize(deviceContext.window, &width, &height);
+
+    auto vkbSwapchain = swapchainBuilder
+                            .set_desired_extent(static_cast<uint32_t>(width),
+                                                static_cast<uint32_t>(height))
+                            .build();
+
+    if (!vkbSwapchain) {
+        return tl::unexpected(mpvgl::Error{
+            EngineError::VulkanRuntimeError,
+            "Swapchain build error: " + vkbSwapchain.error().message()});
+    }
+
+    Swapchain swapchain(vkbSwapchain.value(), deviceContext.logDevDisp);
+
+    if (auto res = swapchain.initImageViews(); !res.has_value()) {
+        return tl::unexpected(res.error());
+    }
+
+    return swapchain;
+}
+
+tl::expected<void, Error> Swapchain::recreate(
+    DeviceContext const& deviceContext) {
+    vkb::SwapchainBuilder swapchainBuilder{deviceContext.logicalDevice};
+
+    int width, height;
+    glfwGetWindowSize(deviceContext.window, &width, &height);
+
+    auto newSwapchain = swapchainBuilder
+                            .set_desired_extent(static_cast<uint32_t>(width),
+                                                static_cast<uint32_t>(height))
+                            .set_old_swapchain(m_swapchain)
+                            .build();
+
+    if (!newSwapchain) {
+        return tl::unexpected(mpvgl::Error{
+            EngineError::VulkanRuntimeError,
+            "Failed to recreate Swapchain: " + newSwapchain.error().message()});
+    }
+
+    cleanup();
+    m_swapchain = newSwapchain.value();
+
+    if (auto images = m_swapchain.get_images(); images.has_value()) {
+        m_images = images.value();
+    } else {
+        m_images = std::vector<VkImage>{};
+    }
+
+    return initImageViews();
+}
+
+tl::expected<void, Error> Swapchain::initImageViews() {
+    m_imageViews.resize(m_images.size());
+    for (size_t i = 0; i < m_images.size(); ++i) {
+        auto subresourceRange = VkImageSubresourceRange{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        };
+        auto viewInfo = initializers::imageViewCreateInfo(
+            m_images[i], VK_IMAGE_VIEW_TYPE_2D, m_swapchain.image_format,
+            subresourceRange);
+
+        if (m_disp.createImageView(&viewInfo, nullptr, &m_imageViews[i]) !=
+            VK_SUCCESS) {
+            return tl::unexpected(
+                Error{EngineError::VulkanRuntimeError,
+                      "Failed to create Swapchain Image View"});
+        }
+    }
+    return {};
+}
+
+}  // namespace mpvgl::vlk

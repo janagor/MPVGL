@@ -16,6 +16,7 @@
 
 #include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
@@ -88,9 +89,7 @@ struct hash<mpvgl::Vertex> {
 namespace mpvgl::vlk {
 
 struct SwapchainContext {
-    vkb::Swapchain swapchain;
-    std::vector<VkImage> swapchainImages;
-    std::vector<VkImageView> swapchainImageViews;
+    Swapchain swapchain;
 
     VkImage depthImage{VK_NULL_HANDLE};
     VmaAllocation depthImageAllocation{VK_NULL_HANDLE};

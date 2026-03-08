@@ -374,18 +374,19 @@ tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
 }
 
 tl::expected<void, Error> createImageViews(Vulkan &vulkan) {
-    vulkan.swapchainContext.swapchainImageViews.resize(
-        vulkan.swapchainContext.swapchainImages.size());
-    for (uint32_t i = 0; i < vulkan.swapchainContext.swapchainImages.size();
+    vulkan.swapchainContext.swapchain.imageViews().resize(
+        vulkan.swapchainContext.swapchain.images().size());
+    for (uint32_t i = 0; i < vulkan.swapchainContext.swapchain.images().size();
          ++i) {
         auto imageView = createImageView(
-            vulkan, vulkan.swapchainContext.swapchainImages.at(i),
-            vulkan.swapchainContext.swapchain.image_format,
+            vulkan, vulkan.swapchainContext.swapchain.images().at(i),
+            vulkan.swapchainContext.swapchain.format(),
             VK_IMAGE_ASPECT_COLOR_BIT, 1);
         if (!imageView.has_value()) {
             return tl::unexpected<Error>(imageView.error());
         }
-        vulkan.swapchainContext.swapchainImageViews.at(i) = imageView.value();
+        vulkan.swapchainContext.swapchain.imageViews().at(i) =
+            imageView.value();
     }
     return {};
 }
@@ -431,17 +432,16 @@ void cleanupSwapChain(Vulkan &vulkan) {
             vulkan.swapchainContext.depthImage, nullptr);
         vmaFreeMemory(vulkan.deviceContext.allocator,
                       vulkan.swapchainContext.depthImageAllocation);
+        vulkan.swapchainContext.depthImageView = VK_NULL_HANDLE;
+        vulkan.swapchainContext.depthImage = VK_NULL_HANDLE;
     }
 
     for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
         vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
                                                            nullptr);
     }
-
-    vulkan.swapchainContext.swapchain.destroy_image_views(
-        vulkan.swapchainContext.swapchainImageViews);
-
-    vkb::destroy_swapchain(vulkan.swapchainContext.swapchain);
+    vulkan.swapchainContext.framebuffers.clear();
+    vulkan.swapchainContext.swapchain = Swapchain();
 }
 
 tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
@@ -463,18 +463,10 @@ tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
                                                            nullptr);
     }
 
-    vulkan.swapchainContext.swapchain.destroy_image_views(
-        vulkan.swapchainContext.swapchainImageViews);
     vulkan.swapchainContext.framebuffers.clear();
-    vulkan.swapchainContext.swapchainImageViews.clear();
 
-    return create_swapchain(vulkan)
-        .transform([&vulkan]() {
-            vulkan.swapchainContext.swapchainImages =
-                vulkan.swapchainContext.swapchain.get_images().value();
-        })
+    return vulkan.swapchainContext.swapchain.recreate(vulkan.deviceContext)
         .and_then([&vulkan]() { return createDepthResources(vulkan); })
-        .and_then([&vulkan]() { return createImageViews(vulkan); })
         .and_then([&vulkan]() { return createFramebuffers(vulkan); })
         .and_then([&vulkan]() { return createCommandPool(vulkan); })
         .and_then([&vulkan]() { return createCommandBuffers(vulkan); });
@@ -498,7 +490,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     auto renderPassInfo = initializers::renderPassBeginInfo(
         vulkan.swapchainContext.renderPass,
         vulkan.swapchainContext.framebuffers.at(image_index),
-        VkRect2D{VkOffset2D{0, 0}, vulkan.swapchainContext.swapchain.extent},
+        VkRect2D{VkOffset2D{0, 0}, vulkan.swapchainContext.swapchain.extent()},
         clearValues);
 
     vulkan.deviceContext.logDevDisp.cmdBeginRenderPass(
@@ -510,8 +502,8 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)vulkan.swapchainContext.swapchain.extent.width;
-    viewport.height = (float)vulkan.swapchainContext.swapchain.extent.height;
+    viewport.width = (float)vulkan.swapchainContext.swapchain.extent().width;
+    viewport.height = (float)vulkan.swapchainContext.swapchain.extent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vulkan.deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1,
@@ -519,7 +511,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
-    scissor.extent = vulkan.swapchainContext.swapchain.extent;
+    scissor.extent = vulkan.swapchainContext.swapchain.extent();
     vulkan.deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1,
                                                   &scissor);
 
@@ -565,8 +557,9 @@ void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
     ubo.view = vulkan.sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
         glm::radians(vulkan.sceneContext.camera.Zoom),
-        vulkan.swapchainContext.swapchain.extent.width /
-            static_cast<float>(vulkan.swapchainContext.swapchain.extent.height),
+        vulkan.swapchainContext.swapchain.extent().width /
+            static_cast<float>(
+                vulkan.swapchainContext.swapchain.extent().height),
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 
