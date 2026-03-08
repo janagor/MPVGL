@@ -126,6 +126,12 @@ tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
         .and_then([&] { return get_queues(vulkan); });
 }
 
+tl::expected<void, Error> setupRenderingPipeline(Vulkan &vulkan) {
+    return createRenderPass(vulkan)
+        .and_then([&] { return createDescriptorSetLayout(vulkan); })
+        .and_then([&] { return createGraphicsPipeline(vulkan); });
+}
+
 tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
         .format = vulkan.swapchainContext.swapchain.image_format,
