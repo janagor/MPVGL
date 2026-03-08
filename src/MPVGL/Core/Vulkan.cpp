@@ -137,6 +137,17 @@ tl::expected<void, Error> setupRenderTargets(Vulkan &vulkan) {
         [&] { return createFramebuffers(vulkan); });
 }
 
+tl::expected<void, Error> loadAndPrepareAssets(Vulkan &vulkan) {
+    return vlk::createCommandPool(vulkan)
+        .and_then([&] { return vlk::createTextureImage(vulkan); })
+        .and_then([&] { return vlk::createTextureImageView(vulkan); })
+        .and_then([&] { return vlk::createTextureSampler(vulkan); })
+        .and_then([&] { return vlk::loadModel(vulkan); })
+        .and_then([&] { return vlk::createVertexBuffer(vulkan); })
+        .and_then([&] { return vlk::createIndexBuffer(vulkan); })
+        .and_then([&] { return vlk::createUniformBuffers(vulkan); });
+}
+
 tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
         .format = vulkan.swapchainContext.swapchain.image_format,
