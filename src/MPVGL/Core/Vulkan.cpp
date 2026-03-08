@@ -398,20 +398,20 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
                                     "Failed to load Texture Image"}};
     }
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    if (auto result =
-            createBuffer(vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferAllocation;
+    if (auto result = createBuffer2(
+            vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_AUTO,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+            stagingBuffer, stagingBufferAllocation);
         !result.has_value()) {
         return result;
     }
     void *d;
-    vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0, imageSize,
-                                              0, &d);
+    vmaMapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation, &d);
     memcpy(d, pixels, static_cast<size_t>(imageSize));
-    vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
+    vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
+    stbi_image_free(pixels);
     if (auto result = createImage(
             vulkan, texWidth, texHeight, vulkan.sceneContext.texture.mipLevels,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -434,7 +434,7 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
         vulkan, stagingBuffer, vulkan.sceneContext.texture.image,
         static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
+    vmaFreeMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
 
     auto result = generateMipmaps(vulkan, vulkan.sceneContext.texture.image,
                                   VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight,
