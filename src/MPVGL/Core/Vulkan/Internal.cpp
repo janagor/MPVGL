@@ -494,8 +494,8 @@ void cleanupSwapChain(Vulkan &vulkan) {
             vulkan.swapchainContext.depthImageView, nullptr);
         vulkan.deviceContext.logDevDisp.destroyImage(
             vulkan.swapchainContext.depthImage, nullptr);
-        vulkan.deviceContext.logDevDisp.freeMemory(
-            vulkan.swapchainContext.depthImageMemory, nullptr);
+        vmaFreeMemory(vulkan.deviceContext.allocator,
+                      vulkan.swapchainContext.depthImageAllocation);
     }
 
     for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
@@ -517,8 +517,8 @@ tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
             vulkan.swapchainContext.depthImageView, nullptr);
         vulkan.deviceContext.logDevDisp.destroyImage(
             vulkan.swapchainContext.depthImage, nullptr);
-        vulkan.deviceContext.logDevDisp.freeMemory(
-            vulkan.swapchainContext.depthImageMemory, nullptr);
+        vmaFreeMemory(vulkan.deviceContext.allocator,
+                      vulkan.swapchainContext.depthImageAllocation);
     }
 
     vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,

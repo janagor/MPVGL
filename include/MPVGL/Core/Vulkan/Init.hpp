@@ -108,7 +108,7 @@ struct SwapchainContext {
     std::vector<VkImageView> swapchainImageViews;
 
     VkImage depthImage{VK_NULL_HANDLE};
-    VkDeviceMemory depthImageMemory{VK_NULL_HANDLE};
+    VmaAllocation depthImageAllocation{VK_NULL_HANDLE};
     VkImageView depthImageView{VK_NULL_HANDLE};
 
     VkRenderPass renderPass{VK_NULL_HANDLE};

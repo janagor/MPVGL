@@ -365,14 +365,13 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     return findDepthFormat(vulkan).and_then([&vulkan](VkFormat format) {
-        return createImage(vulkan,
-                           vulkan.swapchainContext.swapchain.extent.width,
-                           vulkan.swapchainContext.swapchain.extent.height, 1,
-                           format, VK_IMAGE_TILING_OPTIMAL,
-                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                           vulkan.swapchainContext.depthImage,
-                           vulkan.swapchainContext.depthImageMemory)
+        return createImage2(
+                   vulkan, vulkan.swapchainContext.swapchain.extent.width,
+                   vulkan.swapchainContext.swapchain.extent.height, 1, format,
+                   VK_IMAGE_TILING_OPTIMAL,
+                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                   VMA_MEMORY_USAGE_AUTO, 0, vulkan.swapchainContext.depthImage,
+                   vulkan.swapchainContext.depthImageAllocation)
             .and_then([&vulkan, format]() {
                 return createImageView(vulkan,
                                        vulkan.swapchainContext.depthImage,
