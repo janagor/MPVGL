@@ -15,6 +15,7 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Camera.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
@@ -85,22 +86,6 @@ struct hash<mpvgl::Vertex> {
 }  // namespace std
 
 namespace mpvgl::vlk {
-
-struct DeviceContext {
-    GLFWwindow *window{nullptr};
-    vkb::Instance instance;
-    vkb::InstanceDispatchTable instDisp;
-
-    vkb::Device logicalDevice;
-    vkb::DispatchTable logDevDisp;
-
-    VmaAllocator allocator{VK_NULL_HANDLE};
-
-    VkQueue graphicsQueue{VK_NULL_HANDLE};
-    VkQueue presentQueue{VK_NULL_HANDLE};
-    std::uint32_t graphicsQueueIndex{0};
-    std::uint32_t presentQueueIndex{0};
-};
 
 struct SwapchainContext {
     vkb::Swapchain swapchain;
