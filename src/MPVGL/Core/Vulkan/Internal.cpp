@@ -184,6 +184,37 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
+tl::expected<void, Error> createImage2(
+    Vulkan &vulkan, uint32_t width, uint32_t height, uint32_t mipLevels,
+    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
+    VkImage &image, VmaAllocation &imageAllocation) {
+    auto imageInfo = initializers::imageCreateInfo();
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = mipLevels;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = tiling;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usage;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = memoryUsage;
+    allocInfo.flags = allocFlags;
+
+    if (vmaCreateImage(vulkan.deviceContext.allocator, &imageInfo, &allocInfo,
+                       &image, &imageAllocation, nullptr) != VK_SUCCESS) {
+        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                     "Failed to create Image via VMA"};
+    }
+    return {};
+}
+
 tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
                                       uint32_t height, uint32_t mipLevels,
                                       VkFormat format, VkImageTiling tiling,

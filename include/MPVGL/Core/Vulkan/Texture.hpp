@@ -12,7 +12,7 @@ struct Texture {
     VkImage image;
     VkImageView imageView;
     VkSampler sampler;
-    VkDeviceMemory imageMemory;
+    VmaAllocation imageAllocation;
 
     Vulkan& vulkan;
 };

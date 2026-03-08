@@ -41,6 +41,11 @@ tl::expected<void, Error> createImage(Vulkan &vulkan, uint32_t width,
                                       VkMemoryPropertyFlags properties,
                                       VkImage &image,
                                       VkDeviceMemory &imageMemory);
+tl::expected<void, Error> createImage2(
+    Vulkan &vulkan, uint32_t width, uint32_t height, uint32_t mipLevels,
+    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
+    VkImage &image, VmaAllocation &imageAllocation);
 tl::expected<void, Error> transitionImageLayout(Vulkan &vulkan, VkImage image,
                                                 VkFormat format,
                                                 VkImageLayout oldLayout,
