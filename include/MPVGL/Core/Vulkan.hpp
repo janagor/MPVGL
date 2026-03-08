@@ -10,6 +10,8 @@ namespace mpvgl::vlk {
 
 tl::expected<void, Error> bootstrap(Vulkan &vulkan);
 tl::expected<void, Error> setupRenderingPipeline(Vulkan &vulkan);
+tl::expected<void, Error> setupRenderTargets(Vulkan &vulkan);
+
 tl::expected<void, Error> createRenderPass(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan);
 tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan);

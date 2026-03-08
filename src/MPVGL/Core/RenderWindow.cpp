@@ -26,10 +26,9 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     auto result =
         vlk::bootstrap(vulkan)
             .and_then([&] { return vlk::setupRenderingPipeline(vulkan); })
+            .and_then([&] { return vlk::setupRenderTargets(vulkan); })
 
             .and_then([&] { return vlk::createCommandPool(vulkan); })
-            .and_then([&] { return vlk::createDepthResources(vulkan); })
-            .and_then([&] { return vlk::createFramebuffers(vulkan); })
             .and_then([&] { return vlk::createTextureImage(vulkan); })
             .and_then([&] { return vlk::createTextureImageView(vulkan); })
             .and_then([&] { return vlk::createTextureSampler(vulkan); })

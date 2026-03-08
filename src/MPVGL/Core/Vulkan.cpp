@@ -132,6 +132,11 @@ tl::expected<void, Error> setupRenderingPipeline(Vulkan &vulkan) {
         .and_then([&] { return createGraphicsPipeline(vulkan); });
 }
 
+tl::expected<void, Error> setupRenderTargets(Vulkan &vulkan) {
+    return createDepthResources(vulkan).and_then(
+        [&] { return createFramebuffers(vulkan); });
+}
+
 tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
         .format = vulkan.swapchainContext.swapchain.image_format,
