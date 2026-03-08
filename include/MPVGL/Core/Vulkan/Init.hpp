@@ -125,7 +125,7 @@ struct SceneContext {
 
     std::vector<uint32_t> indices;
     VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    VmaAllocation indexBufferAllocation;
 
     Texture texture;
 

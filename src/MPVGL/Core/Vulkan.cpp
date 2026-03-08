@@ -556,27 +556,25 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
                               vulkan.sceneContext.indices.size();
 
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    if (auto result =
-            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferAllocation;
+    if (auto result = createBuffer2(
+            vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_AUTO,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+            stagingBuffer, stagingBufferAllocation);
         !result.has_value()) {
         return result;
     }
     void *d;
-    vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0,
-                                              bufferSize, 0, &d);
+    vmaMapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation, &d);
     memcpy(d, vulkan.sceneContext.indices.data(), (size_t)bufferSize);
-    vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
+    vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
 
-    if (auto result = createBuffer(
+    if (auto result = createBuffer2(
             vulkan, bufferSize,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            vulkan.sceneContext.indexBuffer,
-            vulkan.sceneContext.indexBufferMemory);
+            VMA_MEMORY_USAGE_AUTO, 0, vulkan.sceneContext.indexBuffer,
+            vulkan.sceneContext.indexBufferAllocation);
         !result.has_value()) {
         return result;
     }
@@ -584,7 +582,7 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
                 bufferSize);
 
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
+    vmaFreeMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
     return {};
 }
 
@@ -862,8 +860,9 @@ void cleanup(Vulkan &vulkan) {
 
     vulkan.deviceContext.logDevDisp.destroyBuffer(
         vulkan.sceneContext.indexBuffer, nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(
-        vulkan.sceneContext.indexBufferMemory, nullptr);
+    vmaFreeMemory(vulkan.deviceContext.allocator,
+                  vulkan.sceneContext.indexBufferAllocation);
+    vmaDestroyAllocator(vulkan.deviceContext.allocator);
 
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);
     vkb::destroy_surface(vulkan.deviceContext.instance, vulkan.surface);
