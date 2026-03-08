@@ -91,9 +91,6 @@ tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
 
 tl::expected<void, Error> create_swapchain(Vulkan &vulkan) {
     auto swapchain = Swapchain::create(vulkan.deviceContext);
-    // SwapchainBuilder::getSwapchain(
-    // vulkan.deviceContext.logicalDevice, vulkan.deviceContext.window,
-    // vulkan.swapchainContext.swapchain);
     // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
     if (!swapchain) return tl::unexpected(swapchain.error());
     vulkan.swapchainContext.swapchain = std::move(swapchain.value());

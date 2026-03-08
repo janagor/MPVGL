@@ -1,6 +1,5 @@
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
-#include "MPVGL/Core/Vulkan/SwapchainBuilder.hpp"
 
 namespace mpvgl::vlk {
 
