@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 
+#include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <glm/glm.hpp>
 
 #include <GLFW/glfw3.h>
@@ -123,6 +124,25 @@ tl::expected<std::uint32_t, Error> findMemoryType(
                                  "Failed to find suitable Memory Type"};
 }
 
+tl::expected<void, Error> createBuffer2(Vulkan &vulkan, VkDeviceSize size,
+                                        VkBufferUsageFlags usage,
+                                        VmaMemoryUsage memoryUsage,
+                                        VmaAllocationCreateFlags allocFlags,
+                                        VkBuffer &buffer,
+                                        VmaAllocation &bufferAllocation) {
+    auto bufferInfo = initializers::bufferCreateInfo(size, usage);
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = memoryUsage;
+    allocInfo.flags = allocFlags;
+
+    if (vmaCreateBuffer(vulkan.deviceContext.allocator, &bufferInfo, &allocInfo,
+                        &buffer, &bufferAllocation, nullptr) != VK_SUCCESS) {
+        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
+                                     "Failed to create Buffer via VMA"};
+    }
+    return {};
+}
 tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
                                        VkBufferUsageFlags usage,
                                        VkMemoryPropertyFlags properties,

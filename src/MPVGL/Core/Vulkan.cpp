@@ -1,5 +1,5 @@
-#include "MPVGL/Core/Error.hpp"
 #define GLM_FORCE_RADIANS
+#define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -21,6 +21,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -73,6 +74,17 @@ tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
 
     vulkan.deviceContext.logDevDisp =
         vulkan.deviceContext.logicalDevice.make_table();
+
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice =
+        vulkan.deviceContext.logicalDevice.physical_device;
+    allocatorInfo.device = vulkan.deviceContext.logicalDevice.device;
+    allocatorInfo.instance = vulkan.deviceContext.instance.instance;
+    if (vmaCreateAllocator(&allocatorInfo, &vulkan.deviceContext.allocator) !=
+        VK_SUCCESS) {
+        return tl::unexpected{Error{EngineError::VulkanInitFailed,
+                                    "Failed to create VMA Allocator"}};
+    }
 
     return {};
 }
@@ -507,28 +519,27 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
                               vulkan.sceneContext.vertices.size();
 
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    if (auto result =
-            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferAllocation;
+    if (auto result = createBuffer2(
+            vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_AUTO,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+            stagingBuffer, stagingBufferAllocation);
         !result.has_value()) {
         return result;
     }
     void *d;
-    vulkan.deviceContext.logDevDisp.mapMemory(stagingBufferMemory, 0,
-                                              bufferSize, 0, &d);
+    vmaMapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation, &d);
     memcpy(d, vulkan.sceneContext.vertices.data(),
            static_cast<size_t>(bufferSize));
-    vulkan.deviceContext.logDevDisp.unmapMemory(stagingBufferMemory);
+    vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
 
-    if (auto result = createBuffer(vulkan, bufferSize,
-                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                   vulkan.sceneContext.vertexBuffer,
-                                   vulkan.sceneContext.vertexBufferMemory);
+    if (auto result = createBuffer2(vulkan, bufferSize,
+                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                    VMA_MEMORY_USAGE_AUTO, 0,
+                                    vulkan.sceneContext.vertexBuffer,
+                                    vulkan.sceneContext.vertexBufferAllocation);
         !result.has_value()) {
         return result;
     }
@@ -536,7 +547,7 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
     copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.vertexBuffer,
                 bufferSize);
     vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(stagingBufferMemory, nullptr);
+    vmaFreeMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
     return {};
 }
 
@@ -846,8 +857,8 @@ void cleanup(Vulkan &vulkan) {
 
     vulkan.deviceContext.logDevDisp.destroyBuffer(
         vulkan.sceneContext.vertexBuffer, nullptr);
-    vulkan.deviceContext.logDevDisp.freeMemory(
-        vulkan.sceneContext.vertexBufferMemory, nullptr);
+    vmaFreeMemory(vulkan.deviceContext.allocator,
+                  vulkan.sceneContext.vertexBufferAllocation);
 
     vulkan.deviceContext.logDevDisp.destroyBuffer(
         vulkan.sceneContext.indexBuffer, nullptr);

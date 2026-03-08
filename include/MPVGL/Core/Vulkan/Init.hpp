@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 #include <vk-bootstrap/src/VkBootstrap.h>
@@ -93,6 +94,8 @@ struct DeviceContext {
     vkb::Device logicalDevice;
     vkb::DispatchTable logDevDisp;
 
+    VmaAllocator allocator{VK_NULL_HANDLE};
+
     VkQueue graphicsQueue{VK_NULL_HANDLE};
     VkQueue presentQueue{VK_NULL_HANDLE};
     std::uint32_t graphicsQueueIndex{0};
@@ -118,7 +121,7 @@ struct SceneContext {
     std::vector<Vertex> vertices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
     VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
+    VmaAllocation vertexBufferAllocation;
 
     std::vector<uint32_t> indices;
     VkBuffer indexBuffer;

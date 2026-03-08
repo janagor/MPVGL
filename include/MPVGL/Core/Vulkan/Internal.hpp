@@ -24,6 +24,12 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
 tl::expected<uint32_t, Error> findMemoryType(Vulkan &vulkan,
                                              uint32_t typeFilter,
                                              VkMemoryPropertyFlags properties);
+tl::expected<void, Error> createBuffer2(Vulkan &vulkan, VkDeviceSize size,
+                                        VkBufferUsageFlags usage,
+                                        VmaMemoryUsage memoryUsage,
+                                        VmaAllocationCreateFlags allocFlags,
+                                        VkBuffer &buffer,
+                                        VmaAllocation &bufferAllocation);
 tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
                                        VkBufferUsageFlags usage,
                                        VkMemoryPropertyFlags properties,
