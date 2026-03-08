@@ -107,23 +107,6 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
     return shaderModule;
 }
 
-tl::expected<std::uint32_t, Error> findMemoryType(
-    Vulkan &vulkan, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vulkan.deviceContext.instDisp.getPhysicalDeviceMemoryProperties(
-        vulkan.deviceContext.logicalDevice.physical_device, &memProperties);
-
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((typeFilter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
-            return i;
-        }
-    }
-    return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                 "Failed to find suitable Memory Type"};
-}
-
 tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
                                        VkBufferUsageFlags usage,
                                        VmaMemoryUsage memoryUsage,
