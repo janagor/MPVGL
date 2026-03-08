@@ -1,5 +1,6 @@
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/SwapchainBuilder.hpp"
 
 namespace mpvgl::vlk {
 
@@ -48,53 +49,27 @@ void Swapchain::cleanup() noexcept {
 
 tl::expected<Swapchain, Error> Swapchain::create(
     DeviceContext const& deviceContext) {
-    vkb::SwapchainBuilder swapchainBuilder{deviceContext.logicalDevice};
-
-    int width, height;
-    glfwGetWindowSize(deviceContext.window, &width, &height);
-
-    auto vkbSwapchain = swapchainBuilder
-                            .set_desired_extent(static_cast<uint32_t>(width),
-                                                static_cast<uint32_t>(height))
-                            .build();
-
-    if (!vkbSwapchain) {
-        return tl::unexpected(mpvgl::Error{
-            EngineError::VulkanRuntimeError,
-            "Swapchain build error: " + vkbSwapchain.error().message()});
-    }
+    auto vkbSwapchain = SwapchainBuilder::getSwapchain(
+        deviceContext.logicalDevice, deviceContext.window);
+    if (!vkbSwapchain) return tl::unexpected(vkbSwapchain.error());
 
     Swapchain swapchain(vkbSwapchain.value(), deviceContext.logDevDisp);
-
     if (auto res = swapchain.initImageViews(); !res.has_value()) {
         return tl::unexpected(res.error());
     }
-
     return swapchain;
 }
 
 tl::expected<void, Error> Swapchain::recreate(
     DeviceContext const& deviceContext) {
-    vkb::SwapchainBuilder swapchainBuilder{deviceContext.logicalDevice};
-
-    int width, height;
-    glfwGetWindowSize(deviceContext.window, &width, &height);
-
-    auto newSwapchain = swapchainBuilder
-                            .set_desired_extent(static_cast<uint32_t>(width),
-                                                static_cast<uint32_t>(height))
-                            .set_old_swapchain(m_swapchain)
-                            .build();
-
+    auto newSwapchain = SwapchainBuilder::getSwapchain(
+        deviceContext.logicalDevice, deviceContext.window, m_swapchain);
     if (!newSwapchain) {
-        return tl::unexpected(mpvgl::Error{
-            EngineError::VulkanRuntimeError,
-            "Failed to recreate Swapchain: " + newSwapchain.error().message()});
+        return tl::unexpected(newSwapchain.error());
     }
 
     cleanup();
     m_swapchain = newSwapchain.value();
-
     if (auto images = m_swapchain.get_images(); images.has_value()) {
         m_images = images.value();
     } else {

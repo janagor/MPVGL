@@ -13,7 +13,7 @@ namespace mpvgl::vlk {
 struct SwapchainBuilder {
     static tl::expected<vkb::Swapchain, Error> getSwapchain(
         vkb::Device const& device, GLFWwindow* window,
-        vkb::Swapchain& oldSwapchain) {
+        vkb::Swapchain const& oldSwapchain = {}) {
         vkb::SwapchainBuilder swapchainBuilder{device};
         int width, height;
         glfwGetWindowSize(window, &width, &height);
@@ -28,7 +28,6 @@ struct SwapchainBuilder {
                 "Swapchain build error: " + newSwapchain.error().message();
             return tl::unexpected(mpvgl::Error{newSwapchain.error(), errorMsg});
         }
-        vkb::destroy_swapchain(oldSwapchain);
         return newSwapchain.value();
     }
 };
