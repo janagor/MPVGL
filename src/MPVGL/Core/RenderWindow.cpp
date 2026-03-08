@@ -28,11 +28,7 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
             .and_then([&] { return vlk::setupRenderingPipeline(vulkan); })
             .and_then([&] { return vlk::setupRenderTargets(vulkan); })
             .and_then([&] { return vlk::loadAndPrepareAssets(vulkan); })
-
-            .and_then([&] { return vlk::createDescriptorPool(vulkan); })
-            .and_then([&] { return vlk::createDescriptorSets(vulkan); })
-            .and_then([&] { return vlk::createCommandBuffers(vulkan); })
-            .and_then([&] { return vlk::createSyncObjects(vulkan); });
+            .and_then([&] { return vlk::setupDescriptorsAndSync(vulkan); });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
                   << result.error().message << "\n";

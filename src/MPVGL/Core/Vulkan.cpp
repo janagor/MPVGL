@@ -148,6 +148,13 @@ tl::expected<void, Error> loadAndPrepareAssets(Vulkan &vulkan) {
         .and_then([&] { return vlk::createUniformBuffers(vulkan); });
 }
 
+tl::expected<void, Error> setupDescriptorsAndSync(Vulkan &vulkan) {
+    return vlk::createDescriptorPool(vulkan)
+        .and_then([&] { return vlk::createDescriptorSets(vulkan); })
+        .and_then([&] { return vlk::createCommandBuffers(vulkan); })
+        .and_then([&] { return vlk::createSyncObjects(vulkan); });
+}
+
 tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     VkAttachmentDescription color_attachment = {
         .format = vulkan.swapchainContext.swapchain.image_format,
