@@ -399,11 +399,11 @@ tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
     }
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferAllocation;
-    if (auto result = createBuffer2(
-            vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_AUTO,
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-            stagingBuffer, stagingBufferAllocation);
+    if (auto result =
+            createBuffer(vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VMA_MEMORY_USAGE_AUTO,
+                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                         stagingBuffer, stagingBufferAllocation);
         !result.has_value()) {
         return result;
     }
@@ -520,11 +520,11 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
 
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferAllocation;
-    if (auto result = createBuffer2(
-            vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_AUTO,
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-            stagingBuffer, stagingBufferAllocation);
+    if (auto result =
+            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VMA_MEMORY_USAGE_AUTO,
+                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                         stagingBuffer, stagingBufferAllocation);
         !result.has_value()) {
         return result;
     }
@@ -534,12 +534,12 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
            static_cast<size_t>(bufferSize));
     vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
 
-    if (auto result = createBuffer2(vulkan, bufferSize,
-                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                    VMA_MEMORY_USAGE_AUTO, 0,
-                                    vulkan.sceneContext.vertexBuffer,
-                                    vulkan.sceneContext.vertexBufferAllocation);
+    if (auto result = createBuffer(vulkan, bufferSize,
+                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                   VMA_MEMORY_USAGE_AUTO, 0,
+                                   vulkan.sceneContext.vertexBuffer,
+                                   vulkan.sceneContext.vertexBufferAllocation);
         !result.has_value()) {
         return result;
     }
@@ -557,11 +557,11 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
 
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferAllocation;
-    if (auto result = createBuffer2(
-            vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_AUTO,
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-            stagingBuffer, stagingBufferAllocation);
+    if (auto result =
+            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VMA_MEMORY_USAGE_AUTO,
+                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                         stagingBuffer, stagingBufferAllocation);
         !result.has_value()) {
         return result;
     }
@@ -570,7 +570,7 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
     memcpy(d, vulkan.sceneContext.indices.data(), (size_t)bufferSize);
     vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
 
-    if (auto result = createBuffer2(
+    if (auto result = createBuffer(
             vulkan, bufferSize,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             VMA_MEMORY_USAGE_AUTO, 0, vulkan.sceneContext.indexBuffer,
@@ -596,7 +596,7 @@ tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
         vulkan.swapchainContext.swapchain.image_count);
 
     for (size_t i = 0; i < vulkan.swapchainContext.swapchain.image_count; ++i) {
-        if (auto result = createBuffer2(
+        if (auto result = createBuffer(
                 vulkan, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VMA_MEMORY_USAGE_AUTO,
                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,

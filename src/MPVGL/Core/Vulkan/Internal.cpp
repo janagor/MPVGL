@@ -124,12 +124,12 @@ tl::expected<std::uint32_t, Error> findMemoryType(
                                  "Failed to find suitable Memory Type"};
 }
 
-tl::expected<void, Error> createBuffer2(Vulkan &vulkan, VkDeviceSize size,
-                                        VkBufferUsageFlags usage,
-                                        VmaMemoryUsage memoryUsage,
-                                        VmaAllocationCreateFlags allocFlags,
-                                        VkBuffer &buffer,
-                                        VmaAllocation &bufferAllocation) {
+tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
+                                       VkBufferUsageFlags usage,
+                                       VmaMemoryUsage memoryUsage,
+                                       VmaAllocationCreateFlags allocFlags,
+                                       VkBuffer &buffer,
+                                       VmaAllocation &bufferAllocation) {
     auto bufferInfo = initializers::bufferCreateInfo(size, usage);
 
     VmaAllocationCreateInfo allocInfo = {};
@@ -141,39 +141,6 @@ tl::expected<void, Error> createBuffer2(Vulkan &vulkan, VkDeviceSize size,
         return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
                                      "Failed to create Buffer via VMA"};
     }
-    return {};
-}
-tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
-                                       VkBufferUsageFlags usage,
-                                       VkMemoryPropertyFlags properties,
-                                       VkBuffer &buffer,
-                                       VkDeviceMemory &bufferMemory) {
-    auto bufferInfo = initializers::bufferCreateInfo(size, usage);
-    if (vulkan.deviceContext.logDevDisp.createBuffer(&bufferInfo, nullptr,
-                                                     &buffer) != VK_SUCCESS) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to create Buffer"};
-    }
-
-    VkMemoryRequirements memRequirements;
-    vulkan.deviceContext.logDevDisp.getBufferMemoryRequirements(
-        buffer, &memRequirements);
-
-    auto memoryType =
-        findMemoryType(vulkan, memRequirements.memoryTypeBits, properties);
-    if (!memoryType.has_value()) {
-        return tl::unexpected<Error>{memoryType.error()};
-    }
-    auto allocInfo = initializers::memoryAllocateInfo(memRequirements.size,
-                                                      memoryType.value());
-
-    if (vulkan.deviceContext.logDevDisp.allocateMemory(
-            &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to allocate Buffer Memory"};
-    }
-
-    vulkan.deviceContext.logDevDisp.bindBufferMemory(buffer, bufferMemory, 0);
     return {};
 }
 
