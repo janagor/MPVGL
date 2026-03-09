@@ -120,30 +120,27 @@ tl::expected<Buffer, Error> Buffer::createWithStaging(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, const void* data, VkDeviceSize size,
     VkBufferUsageFlags usage) {
-    auto stagingBufferRes = Buffer::create(
-        device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_AUTO,
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-    if (!stagingBufferRes.has_value()) return stagingBufferRes;
-
-    auto stagingBuffer = std::move(stagingBufferRes.value());
-
-    if (auto d = stagingBuffer.map(); d.has_value()) {
-        std::memcpy(d.value(), data, static_cast<size_t>(size));
-        stagingBuffer.unmap();
-    } else {
-        return tl::unexpected<Error>{d.error()};
-    }
-
-    auto gpuBufferRes =
-        Buffer::create(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
-                       VMA_MEMORY_USAGE_AUTO, 0);
-    if (!gpuBufferRes.has_value()) return gpuBufferRes;
-
-    auto gpuBuffer = std::move(gpuBufferRes.value());
-    Buffer::copyBuffer(device, commandPool, graphicsQueue,
-                       stagingBuffer.handle(), gpuBuffer.handle(), size);
-
-    return std::move(gpuBuffer);
+    return Buffer::create(
+               device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+               VMA_MEMORY_USAGE_AUTO,
+               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+        .and_then([&](Buffer staging) {
+            return staging.map().transform([&](void* d) {
+                std::memcpy(d, data, static_cast<size_t>(size));
+                staging.unmap();
+                return std::move(staging);
+            });
+        })
+        .and_then([&](Buffer staging) {
+            return Buffer::create(device, size,
+                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
+                                  VMA_MEMORY_USAGE_AUTO, 0)
+                .transform([&](Buffer gpu) {
+                    Buffer::copyBuffer(device, commandPool, graphicsQueue,
+                                       staging.handle(), gpu.handle(), size);
+                    return std::move(gpu);
+                });
+        });
 }
 
 void Buffer::cleanup() noexcept {
