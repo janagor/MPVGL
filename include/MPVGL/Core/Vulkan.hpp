@@ -32,7 +32,7 @@ void cleanup(Vulkan &vulkan);
 
 // TODO: remove from public api
 tl::expected<void, Error> deviceInitialization(Vulkan &vulkan);
-tl::expected<void, Error> create_swapchain(Vulkan &vulkan);
+tl::expected<void, Error> createSwapchain(Vulkan &vulkan);
 tl::expected<void, Error> get_queues(Vulkan &vulkan);
 
 }  // namespace mpvgl::vlk

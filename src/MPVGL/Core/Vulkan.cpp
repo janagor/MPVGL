@@ -97,12 +97,11 @@ tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
         });
 }
 
-tl::expected<void, Error> create_swapchain(Vulkan &vulkan) {
-    auto swapchain = Swapchain::create(vulkan.deviceContext);
-    // TODO: Extend the error messages: vkb::Result<Swapchain>.vk_result()
-    if (!swapchain) return tl::unexpected(swapchain.error());
-    vulkan.swapchainContext.swapchain = std::move(swapchain.value());
-    return {};
+tl::expected<void, Error> createSwapchain(Vulkan &vulkan) {
+    return Swapchain::create(vulkan.deviceContext)
+        .transform([&vulkan](Swapchain swapchain) {
+            vulkan.swapchainContext.swapchain = std::move(swapchain);
+        });
 }
 
 tl::expected<void, Error> get_queues(Vulkan &vulkan) {
@@ -128,7 +127,7 @@ tl::expected<void, Error> get_queues(Vulkan &vulkan) {
 
 tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
     return deviceInitialization(vulkan)
-        .and_then([&] { return create_swapchain(vulkan); })
+        .and_then([&] { return createSwapchain(vulkan); })
         .and_then([&] { return get_queues(vulkan); });
 }
 
