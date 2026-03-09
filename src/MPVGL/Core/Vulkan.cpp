@@ -32,6 +32,7 @@
 #include "MPVGL/Core/Vulkan/Internal.hpp"
 #include "MPVGL/Core/Vulkan/LogicalDeviceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/PhysicalDeviceBuilder.hpp"
+#include "MPVGL/Core/Vulkan/Pipeline.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
@@ -239,6 +240,7 @@ tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
     auto vertCode =
         readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv");
     if (!vertCode.has_value()) return tl::unexpected<Error>{vertCode.error()};
+
     auto fragCode =
         readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv");
     if (!fragCode.has_value()) return tl::unexpected<Error>{fragCode.error()};
@@ -250,55 +252,9 @@ tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
             Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
     }
 
-    auto vertStageInfo = initializers::pipelineShaderStageCreateInfo(
-        VK_SHADER_STAGE_VERTEX_BIT, vertModule, "main");
-    auto fragStageInfo = initializers::pipelineShaderStageCreateInfo(
-        VK_SHADER_STAGE_FRAGMENT_BIT, fragModule, "main");
-    VkPipelineShaderStageCreateInfo shader_stages[] = {vertStageInfo,
-                                                       fragStageInfo};
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
-    auto vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo(
-        {&bindingDescription, 1}, attributeDescriptions);
-
-    auto inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE);
-
-    auto viewport_state = initializers::pipelineViewportStateCreateInfo(1, 1);
-
-    auto rasterizer = initializers::pipelineRasterizationStateCreateInfo(
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
-        VK_FRONT_FACE_COUNTER_CLOCKWISE);
-
-    auto multisampling =
-        initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
-
-    auto depthStencil = initializers::pipelineDepthStencilStateCreateInfo(
-        VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
-    depthStencil.minDepthBounds = 0.0f;
-    depthStencil.maxDepthBounds = 1.0f;
-
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-    colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
-
-    auto colorBlending = initializers::pipelineColorBlendStateCreateInfo(
-        {&colorBlendAttachment, 1}, VK_FALSE, VK_LOGIC_OP_COPY);
-    auto blendConstants = std::array{0.0f, 0.0f, 0.0f, 0.0f};
-    std::copy(blendConstants.begin(), blendConstants.end(),
-              colorBlending.blendConstants);
-
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
-    auto dynamicInfo =
-        initializers::pipelineDynamicStateCreateInfo(dynamicStates);
-
     auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
         {&vulkan.pipelineContext.descriptorSetLayout, 1}, {});
+
     if (vulkan.deviceContext.logDevDisp.createPipelineLayout(
             &pipelineLayoutInfo, nullptr,
             &vulkan.pipelineContext.pipelineLayout) != VK_SUCCESS) {
@@ -306,28 +262,31 @@ tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
                                     "Failed to create Pipeline Layout"}};
     }
 
-    auto pipelineInfo = initializers::graphicsPipelineCreateInfo();
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shader_stages;
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewport_state;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = &dynamicInfo;
-    pipelineInfo.layout = vulkan.pipelineContext.pipelineLayout;
-    pipelineInfo.renderPass = vulkan.swapchainContext.renderPass;
-    pipelineInfo.subpass = 0;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    PipelineBuilder builder{};
 
-    if (vulkan.deviceContext.logDevDisp.createGraphicsPipelines(
-            VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-            &vulkan.pipelineContext.graphicsPipeline) != VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Graphics Pipeline"}};
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto pipelineRes =
+        builder.setShaders(vertModule, fragModule)
+            .setVertexInput(
+                {Vertex::getBindingDescription()},
+                {attributeDescriptions.begin(), attributeDescriptions.end()})
+            .setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+            .setPolygonMode(VK_POLYGON_MODE_FILL)
+            .setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
+            .setMultisampling(VK_SAMPLE_COUNT_1_BIT)
+            .setDepthStencil(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS)
+            .disableColorBlending()
+            .setDynamicStates(
+                {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR})
+            .build(vulkan.deviceContext, vulkan.swapchainContext.renderPass,
+                   vulkan.pipelineContext.pipelineLayout);
+
+    if (!pipelineRes) {
+        return tl::unexpected(pipelineRes.error());
     }
+
+    vulkan.pipelineContext.graphicsPipeline = pipelineRes.value();
 
     vulkan.deviceContext.logDevDisp.destroyShaderModule(fragModule, nullptr);
     vulkan.deviceContext.logDevDisp.destroyShaderModule(vertModule, nullptr);
