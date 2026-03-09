@@ -119,6 +119,19 @@ struct PipelineContext {
     VkPipeline graphicsPipeline{};
 };
 
+class FrameData {
+   public:
+    FrameData() = default;
+
+    VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
+    Buffer uniformBuffer{};
+    void *uniformBufferMapped{nullptr};
+    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
+    VkSemaphore availableSemaphore{VK_NULL_HANDLE};
+    VkSemaphore finishedSemaphore{VK_NULL_HANDLE};
+    VkFence inFlightFence{VK_NULL_HANDLE};
+};
+
 struct Vulkan {
     Vulkan() = default;
 
@@ -133,17 +146,10 @@ struct Vulkan {
         RenderData() = default;
 
         VkCommandPool command_pool{};
-        std::vector<VkCommandBuffer> command_buffers{};
-
-        std::vector<Buffer> uniformBuffers{};
-        std::vector<void *> uniformBuffersMapped{};
-
         VkDescriptorPool descriptor_pool{};
-        std::vector<VkDescriptorSet> descriptor_sets{};
 
-        std::vector<VkSemaphore> available_semaphores{};
-        std::vector<VkSemaphore> finished_semaphore{};
-        std::vector<VkFence> in_flight_fences{};
+        std::vector<FrameData> frames{};
+
         std::vector<VkFence> image_in_flight{};
         size_t current_frame{};
     };

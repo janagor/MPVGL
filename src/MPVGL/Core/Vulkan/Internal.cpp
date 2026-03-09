@@ -358,7 +358,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
         vulkan.pipelineContext.pipelineLayout, 0, 1,
-        &vulkan.data.descriptor_sets.at(image_index), 0, nullptr);
+        &vulkan.data.frames.at(image_index).descriptorSet, 0, nullptr);
 
     vulkan.deviceContext.logDevDisp.cmdDrawIndexed(
         command_buffer,
@@ -394,7 +394,7 @@ void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 
-    memcpy(vulkan.data.uniformBuffersMapped.at(current_image), &ubo,
+    memcpy(vulkan.data.frames.at(current_image).uniformBufferMapped, &ubo,
            sizeof(ubo));
 }
 
