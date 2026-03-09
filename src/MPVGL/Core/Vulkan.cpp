@@ -408,11 +408,11 @@ tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> loadTexture(Vulkan &vulkan) {
-    return Texture2::loadFromFile(
-               vulkan.deviceContext, vulkan.data.command_pool,
-               vulkan.deviceContext.graphicsQueue, TEXTURE_PATH)
-        .transform([&](Texture2 texture) {
-            vulkan.sceneContext.texture2 = std::move(texture);
+    return Texture::loadFromFile(vulkan.deviceContext, vulkan.data.command_pool,
+                                 vulkan.deviceContext.graphicsQueue,
+                                 TEXTURE_PATH)
+        .transform([&](Texture texture) {
+            vulkan.sceneContext.texture = std::move(texture);
         });
 }
 
@@ -544,8 +544,8 @@ tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vulkan.sceneContext.texture2.imageView();
-        imageInfo.sampler = vulkan.sceneContext.texture2.sampler();
+        imageInfo.imageView = vulkan.sceneContext.texture.imageView();
+        imageInfo.sampler = vulkan.sceneContext.texture.sampler();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{
             initializers::writeDescriptorSet(
@@ -720,7 +720,7 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyRenderPass(
         vulkan.swapchainContext.renderPass, nullptr);
 
-    vulkan.sceneContext.texture2 = Texture2();
+    vulkan.sceneContext.texture = Texture{};
 
     vulkan.data.uniformBuffers.clear();
 
@@ -730,8 +730,8 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
         vulkan.pipelineContext.descriptorSetLayout, nullptr);
 
-    vulkan.sceneContext.vertexBuffer = Buffer();
-    vulkan.sceneContext.indexBuffer = Buffer();
+    vulkan.sceneContext.vertexBuffer = Buffer{};
+    vulkan.sceneContext.indexBuffer = Buffer{};
     vmaDestroyAllocator(vulkan.deviceContext.allocator);
 
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);

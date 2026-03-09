@@ -106,7 +106,7 @@ struct SceneContext {
     std::vector<uint32_t> indices;
     Buffer indexBuffer;
 
-    Texture2 texture2;
+    Texture texture;
 
     Camera camera{glm::vec3(2.0f, 2.0f, 2.0f)};
 };

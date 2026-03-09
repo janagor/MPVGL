@@ -37,9 +37,9 @@ void executeSingleTimeCommands(DeviceContext const& device,
 
 }  // namespace
 
-Texture2::Texture2(VkImage image, VkImageView imageView, VkSampler sampler,
-                   VmaAllocation allocation, uint32_t mipLevels,
-                   VmaAllocator allocator, vkb::DispatchTable disp) noexcept
+Texture::Texture(VkImage image, VkImageView imageView, VkSampler sampler,
+                 VmaAllocation allocation, uint32_t mipLevels,
+                 VmaAllocator allocator, vkb::DispatchTable disp) noexcept
     : m_image(image),
       m_imageView(imageView),
       m_sampler(sampler),
@@ -48,7 +48,7 @@ Texture2::Texture2(VkImage image, VkImageView imageView, VkSampler sampler,
       m_allocator(allocator),
       m_disp(disp) {}
 
-Texture2::Texture2(Texture2&& other) noexcept
+Texture::Texture(Texture&& other) noexcept
     : m_image(other.m_image),
       m_imageView(other.m_imageView),
       m_sampler(other.m_sampler),
@@ -62,7 +62,7 @@ Texture2::Texture2(Texture2&& other) noexcept
     other.m_allocation = VK_NULL_HANDLE;
 }
 
-Texture2& Texture2::operator=(Texture2&& other) noexcept {
+Texture& Texture::operator=(Texture&& other) noexcept {
     if (this != &other) {
         cleanup();
         m_image = other.m_image;
@@ -81,9 +81,9 @@ Texture2& Texture2::operator=(Texture2&& other) noexcept {
     return *this;
 }
 
-Texture2::~Texture2() { cleanup(); }
+Texture::~Texture() { cleanup(); }
 
-void Texture2::cleanup() noexcept {
+void Texture::cleanup() noexcept {
     if (m_sampler != VK_NULL_HANDLE) {
         m_disp.destroySampler(m_sampler, nullptr);
         m_sampler = VK_NULL_HANDLE;
@@ -99,7 +99,7 @@ void Texture2::cleanup() noexcept {
     }
 }
 
-tl::expected<void, Error> Texture2::transitionImageLayout(
+tl::expected<void, Error> Texture::transitionImageLayout(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, VkFormat format,
     VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
@@ -143,11 +143,11 @@ tl::expected<void, Error> Texture2::transitionImageLayout(
     return result;
 }
 
-void Texture2::copyBufferToImage(DeviceContext const& device,
-                                 VkCommandPool commandPool,
-                                 VkQueue graphicsQueue, VkBuffer buffer,
-                                 VkImage image, uint32_t width,
-                                 uint32_t height) {
+void Texture::copyBufferToImage(DeviceContext const& device,
+                                VkCommandPool commandPool,
+                                VkQueue graphicsQueue, VkBuffer buffer,
+                                VkImage image, uint32_t width,
+                                uint32_t height) {
     executeSingleTimeCommands(
         device, commandPool, graphicsQueue, [&](VkCommandBuffer cmd) {
             VkBufferImageCopy region{};
@@ -167,7 +167,7 @@ void Texture2::copyBufferToImage(DeviceContext const& device,
         });
 }
 
-tl::expected<void, Error> Texture2::generateMipmaps(
+tl::expected<void, Error> Texture::generateMipmaps(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
     int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
@@ -259,7 +259,7 @@ tl::expected<void, Error> Texture2::generateMipmaps(
     return {};
 }
 
-tl::expected<Texture2, Error> Texture2::loadFromFile(
+tl::expected<Texture, Error> Texture::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
     auto pixelsRes = loadRawPixels(filepath);
@@ -296,18 +296,18 @@ tl::expected<Texture2, Error> Texture2::loadFromFile(
         return tl::unexpected(samplerRes.error());
     }
 
-    return Texture2(image, viewRes.value(), samplerRes.value(), allocation,
-                    pixels.mipLevels, device.allocator, device.logDevDisp);
+    return Texture(image, viewRes.value(), samplerRes.value(), allocation,
+                   pixels.mipLevels, device.allocator, device.logDevDisp);
 }
 
-void Texture2::RawPixels::free() noexcept {
+void Texture::RawPixels::free() noexcept {
     if (data) {
         stbi_image_free(data);
         data = nullptr;
     }
 }
 
-tl::expected<Texture2::RawPixels, Error> Texture2::loadRawPixels(
+tl::expected<Texture::RawPixels, Error> Texture::loadRawPixels(
     std::string const& filepath) {
     RawPixels pixels{};
     int channels;
@@ -326,8 +326,8 @@ tl::expected<Texture2::RawPixels, Error> Texture2::loadRawPixels(
 }
 
 tl::expected<std::pair<VkImage, VmaAllocation>, Error>
-Texture2::createAllocatedImage(DeviceContext const& device, uint32_t width,
-                               uint32_t height, uint32_t mipLevels) {
+Texture::createAllocatedImage(DeviceContext const& device, uint32_t width,
+                              uint32_t height, uint32_t mipLevels) {
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent = {width, height, 1};
@@ -355,7 +355,7 @@ Texture2::createAllocatedImage(DeviceContext const& device, uint32_t width,
     return std::make_pair(image, allocation);
 }
 
-tl::expected<void, Error> Texture2::uploadAndGenerateMipmaps(
+tl::expected<void, Error> Texture::uploadAndGenerateMipmaps(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, RawPixels const& pixels) {
     auto stagingRes =
@@ -391,7 +391,7 @@ tl::expected<void, Error> Texture2::uploadAndGenerateMipmaps(
                            pixels.mipLevels);
 }
 
-tl::expected<VkImageView, Error> Texture2::createImageView(
+tl::expected<VkImageView, Error> Texture::createImageView(
     DeviceContext const& device, VkImage image, uint32_t mipLevels) {
     auto subresourceRange = VkImageSubresourceRange{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -413,7 +413,7 @@ tl::expected<VkImageView, Error> Texture2::createImageView(
     return imageView;
 }
 
-tl::expected<VkSampler, Error> Texture2::createSampler(
+tl::expected<VkSampler, Error> Texture::createSampler(
     DeviceContext const& device) {
     VkPhysicalDeviceProperties properties{};
     device.instDisp.getPhysicalDeviceProperties(

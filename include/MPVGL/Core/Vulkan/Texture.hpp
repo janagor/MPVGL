@@ -12,16 +12,16 @@
 
 namespace mpvgl::vlk {
 
-class Texture2 {
+class Texture {
    public:
-    Texture2() = default;
-    Texture2(const Texture2&) = delete;
-    Texture2& operator=(const Texture2&) = delete;
-    Texture2(Texture2&& other) noexcept;
-    Texture2& operator=(Texture2&& other) noexcept;
-    ~Texture2();
+    Texture() = default;
+    Texture(const Texture&) = delete;
+    Texture& operator=(const Texture&) = delete;
+    Texture(Texture&& other) noexcept;
+    Texture& operator=(Texture&& other) noexcept;
+    ~Texture();
 
-    [[nodiscard]] static tl::expected<Texture2, Error> loadFromFile(
+    [[nodiscard]] static tl::expected<Texture, Error> loadFromFile(
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, std::string const& filepath);
 
@@ -41,9 +41,9 @@ class Texture2 {
     uint32_t m_mipLevels{0};
 
    private:
-    Texture2(VkImage image, VkImageView imageView, VkSampler sampler,
-             VmaAllocation allocation, uint32_t mipLevels,
-             VmaAllocator allocator, vkb::DispatchTable disp) noexcept;
+    Texture(VkImage image, VkImageView imageView, VkSampler sampler,
+            VmaAllocation allocation, uint32_t mipLevels,
+            VmaAllocator allocator, vkb::DispatchTable disp) noexcept;
 
     void cleanup() noexcept;
 
