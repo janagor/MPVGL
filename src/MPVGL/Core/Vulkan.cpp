@@ -356,7 +356,7 @@ tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
          i < vulkan.swapchainContext.swapchain.imageViews().size(); ++i) {
         std::array<VkImageView, 2> attachments = {
             vulkan.swapchainContext.swapchain.imageViews().at(i),
-            vulkan.swapchainContext.depthImageView};
+            vulkan.swapchainContext.depthTexture.imageView()};
 
         auto framebufferInfo = initializers::framebufferCreateInfo(
             vulkan.swapchainContext.renderPass, attachments,
@@ -389,20 +389,12 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     return findDepthFormat(vulkan).and_then([&vulkan](VkFormat format) {
-        return createImage(
-                   vulkan, vulkan.swapchainContext.swapchain.extent().width,
-                   vulkan.swapchainContext.swapchain.extent().height, 1, format,
-                   VK_IMAGE_TILING_OPTIMAL,
-                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                   VMA_MEMORY_USAGE_AUTO, 0, vulkan.swapchainContext.depthImage,
-                   vulkan.swapchainContext.depthImageAllocation)
-            .and_then([&vulkan, format]() {
-                return createImageView(vulkan,
-                                       vulkan.swapchainContext.depthImage,
-                                       format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-            })
-            .transform([&vulkan](VkImageView imageView) {
-                vulkan.swapchainContext.depthImageView = imageView;
+        return Texture::createDepthTexture(
+                   vulkan.deviceContext,
+                   vulkan.swapchainContext.swapchain.extent().width,
+                   vulkan.swapchainContext.swapchain.extent().height, format)
+            .transform([&vulkan](Texture depthTex) {
+                vulkan.swapchainContext.depthTexture = std::move(depthTex);
             });
     });
 }

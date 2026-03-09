@@ -91,11 +91,7 @@ struct SwapchainContext {
     SwapchainContext() = default;
 
     Swapchain swapchain{};
-
-    VkImage depthImage{VK_NULL_HANDLE};
-    VmaAllocation depthImageAllocation{VK_NULL_HANDLE};
-    VkImageView depthImageView{VK_NULL_HANDLE};
-
+    Texture depthTexture{};
     VkRenderPass renderPass{VK_NULL_HANDLE};
     std::vector<VkFramebuffer> framebuffers{};
 };

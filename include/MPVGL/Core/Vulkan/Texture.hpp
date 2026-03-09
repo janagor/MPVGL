@@ -24,6 +24,9 @@ class Texture {
     [[nodiscard]] static tl::expected<Texture, Error> loadFromFile(
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, std::string const& filepath);
+    [[nodiscard]] static tl::expected<Texture, Error> createDepthTexture(
+        DeviceContext const& device, uint32_t width, uint32_t height,
+        VkFormat format);
 
     [[nodiscard]] VkImage handle() const noexcept { return m_image; }
     [[nodiscard]] VkImageView imageView() const noexcept { return m_imageView; }

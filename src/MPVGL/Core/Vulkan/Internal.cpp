@@ -274,17 +274,7 @@ bool has_stencil_component(VkFormat format) {
 }
 
 void cleanupSwapChain(Vulkan &vulkan) {
-    if (vulkan.swapchainContext.depthImageView != VK_NULL_HANDLE) {
-        vulkan.deviceContext.logDevDisp.destroyImageView(
-            vulkan.swapchainContext.depthImageView, nullptr);
-        vulkan.deviceContext.logDevDisp.destroyImage(
-            vulkan.swapchainContext.depthImage, nullptr);
-        vmaFreeMemory(vulkan.deviceContext.allocator,
-                      vulkan.swapchainContext.depthImageAllocation);
-        vulkan.swapchainContext.depthImageView = VK_NULL_HANDLE;
-        vulkan.swapchainContext.depthImage = VK_NULL_HANDLE;
-    }
-
+    vulkan.swapchainContext.depthTexture = Texture{};
     for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
         vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
                                                            nullptr);
@@ -296,15 +286,7 @@ void cleanupSwapChain(Vulkan &vulkan) {
 tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.deviceWaitIdle();
 
-    if (vulkan.swapchainContext.depthImageView != VK_NULL_HANDLE) {
-        vulkan.deviceContext.logDevDisp.destroyImageView(
-            vulkan.swapchainContext.depthImageView, nullptr);
-        vulkan.deviceContext.logDevDisp.destroyImage(
-            vulkan.swapchainContext.depthImage, nullptr);
-        vmaFreeMemory(vulkan.deviceContext.allocator,
-                      vulkan.swapchainContext.depthImageAllocation);
-    }
-
+    vulkan.swapchainContext.depthTexture = Texture{};
     vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
                                                        nullptr);
     for (auto framebuffer : vulkan.swapchainContext.framebuffers) {

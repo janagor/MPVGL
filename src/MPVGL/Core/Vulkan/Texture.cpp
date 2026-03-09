@@ -445,4 +445,52 @@ tl::expected<VkSampler, Error> Texture::createSampler(
     return sampler;
 }
 
+tl::expected<Texture, Error> Texture::createDepthTexture(
+    DeviceContext const& device, uint32_t width, uint32_t height,
+    VkFormat format) {
+    auto imageInfo = initializers::imageCreateInfo();
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent = {width, height, 1};
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+
+    VkImage image;
+    VmaAllocation allocation;
+    if (vmaCreateImage(device.allocator, &imageInfo, &allocInfo, &image,
+                       &allocation, nullptr) != VK_SUCCESS) {
+        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Depth Image via VMA"});
+    }
+
+    auto subresourceRange = VkImageSubresourceRange{
+        .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .baseMipLevel = 0,
+        .levelCount = 1,
+        .baseArrayLayer = 0,
+        .layerCount = 1,
+    };
+    auto viewInfo = initializers::imageViewCreateInfo(
+        image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
+
+    VkImageView imageView;
+    if (device.logDevDisp.createImageView(&viewInfo, nullptr, &imageView) !=
+        VK_SUCCESS) {
+        vmaDestroyImage(device.allocator, image, allocation);
+        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Depth Image View"});
+    }
+
+    return Texture(image, imageView, VK_NULL_HANDLE, allocation, 1,
+                   device.allocator, device.logDevDisp);
+}
+
 }  // namespace mpvgl::vlk
