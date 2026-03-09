@@ -521,7 +521,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
         command_buffer, 0, 1, vertexBuffers, offsets);
 
     vulkan.deviceContext.logDevDisp.cmdBindIndexBuffer(
-        command_buffer, vulkan.sceneContext.indexBuffer, 0,
+        command_buffer, vulkan.sceneContext.indexBuffer.handle(), 0,
         VK_INDEX_TYPE_UINT32);
 
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(

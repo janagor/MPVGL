@@ -108,8 +108,7 @@ struct SceneContext {
     Buffer vertexBuffer;
 
     std::vector<uint32_t> indices;
-    VkBuffer indexBuffer;
-    VmaAllocation indexBufferAllocation;
+    Buffer indexBuffer;
 
     Texture texture;
 

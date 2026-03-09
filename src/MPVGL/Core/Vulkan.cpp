@@ -550,37 +550,14 @@ tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
-    VkDeviceSize bufferSize = sizeof(vulkan.sceneContext.indices.at(0)) *
-                              vulkan.sceneContext.indices.size();
+    auto result = Buffer::createFromData(
+        vulkan.deviceContext, vulkan.data.command_pool,
+        vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.indices,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferAllocation;
-    if (auto result =
-            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VMA_MEMORY_USAGE_AUTO,
-                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-                         stagingBuffer, stagingBufferAllocation);
-        !result.has_value()) {
-        return result;
-    }
-    void *d;
-    vmaMapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation, &d);
-    memcpy(d, vulkan.sceneContext.indices.data(), (size_t)bufferSize);
-    vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
+    if (!result) return tl::unexpected(result.error());
 
-    if (auto result = createBuffer(
-            vulkan, bufferSize,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VMA_MEMORY_USAGE_AUTO, 0, vulkan.sceneContext.indexBuffer,
-            vulkan.sceneContext.indexBufferAllocation);
-        !result.has_value()) {
-        return result;
-    }
-    copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.indexBuffer,
-                bufferSize);
-
-    vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
-    vmaFreeMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
+    vulkan.sceneContext.indexBuffer = std::move(result.value());
     return {};
 }
 
@@ -854,10 +831,7 @@ void cleanup(Vulkan &vulkan) {
         vulkan.pipelineContext.descriptorSetLayout, nullptr);
 
     vulkan.sceneContext.vertexBuffer = Buffer();
-    vulkan.deviceContext.logDevDisp.destroyBuffer(
-        vulkan.sceneContext.indexBuffer, nullptr);
-    vmaFreeMemory(vulkan.deviceContext.allocator,
-                  vulkan.sceneContext.indexBufferAllocation);
+    vulkan.sceneContext.indexBuffer = Buffer();
     vmaDestroyAllocator(vulkan.deviceContext.allocator);
 
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);
