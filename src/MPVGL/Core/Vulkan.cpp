@@ -1,3 +1,4 @@
+#include <vulkan/vulkan_core.h>
 #define GLM_FORCE_RADIANS
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -561,27 +562,26 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
 
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-    vulkan.data.uniform_buffers.resize(
+    vulkan.data.uniformBuffers.resize(
         vulkan.swapchainContext.swapchain.imageCount());
-    vulkan.data.uniformBufferAllocations.resize(
-        vulkan.swapchainContext.swapchain.imageCount());
-    vulkan.data.uniform_buffers_mapped.resize(
+    vulkan.data.uniformBuffersMapped.resize(
         vulkan.swapchainContext.swapchain.imageCount());
 
     for (size_t i = 0; i < vulkan.swapchainContext.swapchain.imageCount();
          ++i) {
-        if (auto result = createBuffer(
-                vulkan, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VMA_MEMORY_USAGE_AUTO,
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-                vulkan.data.uniform_buffers.at(i),
-                vulkan.data.uniformBufferAllocations.at(i));
-            !result.has_value()) {
-            return result;
+        auto &buffer = vulkan.data.uniformBuffers.at(i);
+        auto &mapped = vulkan.data.uniformBuffersMapped.at(i);
+        auto buff = Buffer::create(
+            vulkan.deviceContext, bufferSize,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+        if (buff.has_value()) {
+            buffer = std::move(buff.value());
         }
-        vmaMapMemory(vulkan.deviceContext.allocator,
-                     vulkan.data.uniformBufferAllocations.at(i),
-                     &vulkan.data.uniform_buffers_mapped.at(i));
+        auto mappedData = buffer.map();
+        if (mappedData.has_value()) {
+            mapped = mappedData.value();
+        }
     }
     return {};
 }
@@ -624,7 +624,7 @@ tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
     for (size_t i = 0; i < vulkan.swapchainContext.swapchain.imageCount();
          ++i) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = vulkan.data.uniform_buffers.at(i);
+        bufferInfo.buffer = vulkan.data.uniformBuffers.at(i).handle();
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -815,12 +815,7 @@ void cleanup(Vulkan &vulkan) {
     vmaFreeMemory(vulkan.deviceContext.allocator,
                   vulkan.sceneContext.texture.imageAllocation);
 
-    for (size_t i = {}; i < vulkan.data.uniform_buffers.size(); i++) {
-        vulkan.deviceContext.logDevDisp.destroyBuffer(
-            vulkan.data.uniform_buffers.at(i), nullptr);
-        vmaFreeMemory(vulkan.deviceContext.allocator,
-                      vulkan.data.uniformBufferAllocations.at(i));
-    }
+    vulkan.data.uniformBuffers.clear();
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorPool(
         vulkan.data.descriptor_pool, nullptr);

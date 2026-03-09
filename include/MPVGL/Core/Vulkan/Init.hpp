@@ -136,9 +136,8 @@ struct Vulkan {
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
 
-        std::vector<VkBuffer> uniform_buffers;
-        std::vector<VmaAllocation> uniformBufferAllocations;
-        std::vector<void *> uniform_buffers_mapped;
+        std::vector<Buffer> uniformBuffers;
+        std::vector<void *> uniformBuffersMapped;
 
         VkDescriptorPool descriptor_pool;
         std::vector<VkDescriptorSet> descriptor_sets;

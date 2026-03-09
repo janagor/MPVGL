@@ -563,7 +563,7 @@ void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 
-    memcpy(vulkan.data.uniform_buffers_mapped.at(current_image), &ubo,
+    memcpy(vulkan.data.uniformBuffersMapped.at(current_image), &ubo,
            sizeof(ubo));
 }
 
