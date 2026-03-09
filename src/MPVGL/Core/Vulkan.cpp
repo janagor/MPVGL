@@ -39,6 +39,8 @@
 
 namespace mpvgl::vlk {
 
+constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
+
 tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
     if (auto window = createWindow("Vulkan Triangle", true);
         window.has_value()) {
@@ -221,32 +223,16 @@ tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType =
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
-        uboLayoutBinding, samplerLayoutBinding};
-    auto layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
-    if (vulkan.deviceContext.logDevDisp.createDescriptorSetLayout(
-            &layoutInfo, nullptr,
-            &vulkan.pipelineContext.descriptorSetLayout) != VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Descriptor Set Layout"}};
-    }
-
-    return {};
+    DescriptorLayoutBuilder builder{};
+    return builder
+        .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    VK_SHADER_STAGE_VERTEX_BIT)
+        .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    VK_SHADER_STAGE_FRAGMENT_BIT)
+        .build(vulkan.deviceContext)
+        .transform([&](VkDescriptorSetLayout layout) {
+            vulkan.pipelineContext.descriptorSetLayout = layout;
+        });
 }
 
 tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
@@ -467,9 +453,9 @@ tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
     auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
 
     vulkan.data.frames.clear();
-    vulkan.data.frames.resize(imageCount);
+    vulkan.data.frames.resize(MAX_FRAMES_IN_FLIGHT);
 
-    for (size_t i = {}; i < imageCount; ++i) {
+    for (size_t i = {}; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         auto result =
             Buffer::create(
                 vulkan.deviceContext, bufferSize,
@@ -491,74 +477,45 @@ tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan) {
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount =
-        static_cast<uint32_t>(vulkan.swapchainContext.framebuffers.size());
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount =
-        static_cast<uint32_t>(vulkan.swapchainContext.framebuffers.size());
+    std::vector<DescriptorAllocator::PoolSizeRatio> ratios = {
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1.0f},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f}};
 
-    auto poolInfo = initializers::descriptorPoolCreateInfo(
-        poolSizes, vulkan.swapchainContext.framebuffers.size());
-
-    if (vulkan.deviceContext.logDevDisp.createDescriptorPool(
-            &poolInfo, nullptr, &vulkan.data.descriptor_pool) != VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Descriptor Pool"}};
-    }
-    return {};
+    return vulkan.data.descriptorAllocator.init(
+        vulkan.deviceContext, static_cast<uint32_t>(vulkan.data.frames.size()),
+        ratios);
 }
 
 tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
-    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
-    std::vector<VkDescriptorSetLayout> layouts(
-        imageCount, vulkan.pipelineContext.descriptorSetLayout);
+    for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
+        auto setRes = vulkan.data.descriptorAllocator.allocate(
+            vulkan.deviceContext, vulkan.pipelineContext.descriptorSetLayout);
+        if (!setRes) return tl::unexpected(setRes.error());
 
-    auto allocInfo = initializers::descriptorSetAllocateInfo(
-        vulkan.data.descriptor_pool, layouts);
+        vulkan.data.frames.at(i).descriptorSet = setRes.value();
 
-    std::vector<VkDescriptorSet> allocatedSets(imageCount);
-    if (vulkan.deviceContext.logDevDisp.allocateDescriptorSets(
-            &allocInfo, allocatedSets.data()) != VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to allocate Descriptor Sets"}};
-    }
-
-    for (size_t i = 0; i < imageCount; ++i) {
-        vulkan.data.frames.at(i).descriptorSet = allocatedSets.at(i);
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = vulkan.data.frames.at(i).uniformBuffer.handle();
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vulkan.sceneContext.texture.imageView();
-        imageInfo.sampler = vulkan.sceneContext.texture.sampler();
-
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites{
-            initializers::writeDescriptorSet(
-                vulkan.data.frames.at(i).descriptorSet, 0, 0,
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, {&bufferInfo, 1}),
-            initializers::writeDescriptorSet(
-                vulkan.data.frames.at(i).descriptorSet, 1, 0,
-                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, {&imageInfo, 1})};
-
-        vulkan.deviceContext.logDevDisp.updateDescriptorSets(
-            static_cast<uint32_t>(descriptorWrites.size()),
-            descriptorWrites.data(), 0, nullptr);
+        DescriptorWriter writer{};
+        writer
+            .writeBuffer(0, vulkan.data.frames.at(i).uniformBuffer.handle(),
+                         sizeof(UniformBufferObject), 0,
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            .writeImage(1, vulkan.sceneContext.texture.imageView(),
+                        vulkan.sceneContext.texture.sampler(),
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+            .updateSet(vulkan.deviceContext,
+                       vulkan.data.frames.at(i).descriptorSet);
     }
     return {};
 }
 
 tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan) {
-    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
-    std::vector<VkCommandBuffer> allocatedBuffers(imageCount);
+    auto framesCount = vulkan.data.frames.size();
+    std::vector<VkCommandBuffer> allocatedBuffers(framesCount);
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        static_cast<std::uint32_t>(imageCount));
+        static_cast<std::uint32_t>(framesCount));
 
     if (vulkan.deviceContext.logDevDisp.allocateCommandBuffers(
             &allocInfo, allocatedBuffers.data()) != VK_SUCCESS) {
@@ -566,7 +523,7 @@ tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan) {
                                     "Failed to allocate Command Buffers"}};
     }
 
-    for (size_t i = {}; i < imageCount; ++i) {
+    for (size_t i = {}; i < framesCount; ++i) {
         vulkan.data.frames.at(i).commandBuffer = allocatedBuffers.at(i);
     }
     return {};
@@ -576,6 +533,8 @@ tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
     auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
     vulkan.data.image_in_flight.clear();
     vulkan.data.image_in_flight.resize(imageCount, VK_NULL_HANDLE);
+    vulkan.data.finishedSemaphores.clear();
+    vulkan.data.finishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
 
     auto semaphoreInfo = initializers::semaphoreCreateInfo();
     auto fenceInfo =
@@ -583,11 +542,18 @@ tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
 
     for (size_t i = 0; i < imageCount; ++i) {
         if (vulkan.deviceContext.logDevDisp.createSemaphore(
+                &semaphoreInfo, nullptr, &vulkan.data.finishedSemaphores[i]) !=
+            VK_SUCCESS) {
+            return tl::unexpected{
+                Error{EngineError::VulkanRuntimeError,
+                      "Failed to create Synchronization Objects"}};
+        }
+    }
+
+    for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
+        if (vulkan.deviceContext.logDevDisp.createSemaphore(
                 &semaphoreInfo, nullptr,
                 &vulkan.data.frames[i].availableSemaphore) != VK_SUCCESS ||
-            vulkan.deviceContext.logDevDisp.createSemaphore(
-                &semaphoreInfo, nullptr,
-                &vulkan.data.frames[i].finishedSemaphore) != VK_SUCCESS ||
             vulkan.deviceContext.logDevDisp.createFence(
                 &fenceInfo, nullptr, &vulkan.data.frames[i].inFlightFence) !=
                 VK_SUCCESS) {
@@ -632,12 +598,14 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
         return res;
     }
 
+    VkSemaphore finishedSemaphore = vulkan.data.finishedSemaphores[image_index];
+
     VkPipelineStageFlags wait_stages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     auto submitInfo = initializers::submitInfo(
         {&currentFrame.availableSemaphore, 1}, {wait_stages, 1},
-        {&currentFrame.commandBuffer, 1}, {&currentFrame.finishedSemaphore, 1});
+        {&currentFrame.commandBuffer, 1}, {&finishedSemaphore, 1});
 
     vulkan.deviceContext.logDevDisp.resetFences(1, &currentFrame.inFlightFence);
 
@@ -650,9 +618,8 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
 
     auto swapchainKRH =
         static_cast<VkSwapchainKHR>(vulkan.swapchainContext.swapchain.handle());
-    auto presentInfoKHR =
-        initializers::presentInfoKHR({&currentFrame.finishedSemaphore, 1},
-                                     {&swapchainKRH, 1}, {&image_index, 1});
+    auto presentInfoKHR = initializers::presentInfoKHR(
+        {&finishedSemaphore, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
     result = vulkan.deviceContext.logDevDisp.queuePresentKHR(
         vulkan.deviceContext.presentQueue, &presentInfoKHR);
@@ -684,13 +651,15 @@ void cleanup(Vulkan &vulkan) {
     cleanupSwapChain(vulkan);
     for (auto &frame : vulkan.data.frames) {
         vulkan.deviceContext.logDevDisp.destroySemaphore(
-            frame.finishedSemaphore, nullptr);
-        vulkan.deviceContext.logDevDisp.destroySemaphore(
             frame.availableSemaphore, nullptr);
         vulkan.deviceContext.logDevDisp.destroyFence(frame.inFlightFence,
                                                      nullptr);
     }
     vulkan.data.frames.clear();
+    for (auto &sem : vulkan.data.finishedSemaphores) {
+        vulkan.deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
+    }
+    vulkan.data.finishedSemaphores.clear();
 
     vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
                                                        nullptr);
@@ -704,8 +673,7 @@ void cleanup(Vulkan &vulkan) {
 
     vulkan.sceneContext.texture = Texture{};
 
-    vulkan.deviceContext.logDevDisp.destroyDescriptorPool(
-        vulkan.data.descriptor_pool, nullptr);
+    vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
         vulkan.pipelineContext.descriptorSetLayout, nullptr);

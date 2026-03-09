@@ -16,6 +16,7 @@
 
 #include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
+#include "MPVGL/Core/Vulkan/Descriptor.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
@@ -128,7 +129,6 @@ class FrameData {
     void *uniformBufferMapped{nullptr};
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
     VkSemaphore availableSemaphore{VK_NULL_HANDLE};
-    VkSemaphore finishedSemaphore{VK_NULL_HANDLE};
     VkFence inFlightFence{VK_NULL_HANDLE};
 };
 
@@ -146,9 +146,10 @@ struct Vulkan {
         RenderData() = default;
 
         VkCommandPool command_pool{};
-        VkDescriptorPool descriptor_pool{};
+        DescriptorAllocator descriptorAllocator{};
 
         std::vector<FrameData> frames{};
+        std::vector<VkSemaphore> finishedSemaphores{};
 
         std::vector<VkFence> image_in_flight{};
         size_t current_frame{};

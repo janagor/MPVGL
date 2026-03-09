@@ -358,7 +358,8 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
         vulkan.pipelineContext.pipelineLayout, 0, 1,
-        &vulkan.data.frames.at(image_index).descriptorSet, 0, nullptr);
+        &vulkan.data.frames.at(vulkan.data.current_frame).descriptorSet, 0,
+        nullptr);
 
     vulkan.deviceContext.logDevDisp.cmdDrawIndexed(
         command_buffer,
