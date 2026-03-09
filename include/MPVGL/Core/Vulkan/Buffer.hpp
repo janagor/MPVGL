@@ -39,8 +39,14 @@ class Buffer {
     [[nodiscard]] VkDeviceSize size() const noexcept;
 
     [[nodiscard]] tl::expected<void*, Error> map() noexcept;
-
     void unmap() noexcept;
+
+   private:
+    VmaAllocator m_allocator{VK_NULL_HANDLE};
+
+    VkBuffer m_buffer{VK_NULL_HANDLE};
+    VmaAllocation m_allocation{VK_NULL_HANDLE};
+    VkDeviceSize m_size{0};
 
    private:
     Buffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize size,
@@ -54,13 +60,6 @@ class Buffer {
                            VkBuffer srcBuffer, VkBuffer dstBuffer,
                            VkDeviceSize size);
     void cleanup() noexcept;
-
-   private:
-    VkBuffer m_buffer{VK_NULL_HANDLE};
-    VmaAllocation m_allocation{VK_NULL_HANDLE};
-    VkDeviceSize m_size{0};
-
-    VmaAllocator m_allocator{VK_NULL_HANDLE};
 };
 
 }  // namespace mpvgl::vlk

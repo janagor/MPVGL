@@ -1,20 +1,97 @@
 #pragma once
 
+#include <string>
+
+#include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
+#include <tl/expected.hpp>
+#include <vk-bootstrap/src/VkBootstrap.h>
 #include <vulkan/vulkan.h>
+
+#include "MPVGL/Core/Error.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 
 namespace mpvgl::vlk {
 
-struct Vulkan;
+class Texture2 {
+   public:
+    Texture2() = default;
+    Texture2(const Texture2&) = delete;
+    Texture2& operator=(const Texture2&) = delete;
+    Texture2(Texture2&& other) noexcept;
+    Texture2& operator=(Texture2&& other) noexcept;
+    ~Texture2();
 
-struct Texture {
-    Texture(Vulkan& vulkan);
-    uint32_t mipLevels;
-    VkImage image;
-    VkImageView imageView;
-    VkSampler sampler;
-    VmaAllocation imageAllocation;
+    [[nodiscard]] static tl::expected<Texture2, Error> loadFromFile(
+        DeviceContext const& device, VkCommandPool commandPool,
+        VkQueue graphicsQueue, std::string const& filepath);
 
-    Vulkan& vulkan;
+    [[nodiscard]] VkImage handle() const noexcept { return m_image; }
+    [[nodiscard]] VkImageView imageView() const noexcept { return m_imageView; }
+    [[nodiscard]] VkSampler sampler() const noexcept { return m_sampler; }
+    [[nodiscard]] uint32_t mipLevels() const noexcept { return m_mipLevels; }
+
+   private:
+    VmaAllocator m_allocator{VK_NULL_HANDLE};
+    vkb::DispatchTable m_disp{};
+
+    VkImage m_image{VK_NULL_HANDLE};
+    VkImageView m_imageView{VK_NULL_HANDLE};
+    VkSampler m_sampler{VK_NULL_HANDLE};
+    VmaAllocation m_allocation{VK_NULL_HANDLE};
+    uint32_t m_mipLevels{0};
+
+   private:
+    Texture2(VkImage image, VkImageView imageView, VkSampler sampler,
+             VmaAllocation allocation, uint32_t mipLevels,
+             VmaAllocator allocator, vkb::DispatchTable disp) noexcept;
+
+    void cleanup() noexcept;
+
+    static tl::expected<void, Error> transitionImageLayout(
+        DeviceContext const& device, VkCommandPool commandPool,
+        VkQueue graphicsQueue, VkImage image, VkFormat format,
+        VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+
+    static tl::expected<void, Error> generateMipmaps(
+        DeviceContext const& device, VkCommandPool commandPool,
+        VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
+        int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+
+    static void copyBufferToImage(DeviceContext const& device,
+                                  VkCommandPool commandPool,
+                                  VkQueue graphicsQueue, VkBuffer buffer,
+                                  VkImage image, uint32_t width,
+                                  uint32_t height);
+
+   private:
+    struct RawPixels {
+        unsigned char* data{nullptr};
+        int width{0};
+        int height{0};
+        uint32_t mipLevels{0};
+
+        [[nodiscard]] VkDeviceSize size() const noexcept {
+            return width * height * 4;
+        }
+        void free() noexcept;
+    };
+
+    static tl::expected<RawPixels, Error> loadRawPixels(
+        std::string const& filepath);
+
+    static tl::expected<std::pair<VkImage, VmaAllocation>, Error>
+    createAllocatedImage(DeviceContext const& device, uint32_t width,
+                         uint32_t height, uint32_t mipLevels);
+
+    static tl::expected<void, Error> uploadAndGenerateMipmaps(
+        DeviceContext const& device, VkCommandPool commandPool,
+        VkQueue graphicsQueue, VkImage image, RawPixels const& pixels);
+
+    static tl::expected<VkImageView, Error> createImageView(
+        DeviceContext const& device, VkImage image, uint32_t mipLevels);
+
+    static tl::expected<VkSampler, Error> createSampler(
+        DeviceContext const& device);
 };
 
 }  // namespace mpvgl::vlk

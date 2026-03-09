@@ -2,6 +2,6 @@
 // #include "MPVGL.hpp"
 
 int main() {
-  mpvgl::RenderWindow window(100, 100, "kaczka");
-  window.draw();
+    mpvgl::RenderWindow window{100, 100, "kaczka"};
+    window.draw();
 }

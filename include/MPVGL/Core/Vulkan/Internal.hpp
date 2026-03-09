@@ -36,17 +36,6 @@ tl::expected<void, Error> createImage(
     VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
     VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
     VkImage &image, VmaAllocation &imageAllocation);
-tl::expected<void, Error> transitionImageLayout(Vulkan &vulkan, VkImage image,
-                                                VkFormat format,
-                                                VkImageLayout oldLayout,
-                                                VkImageLayout newLayout,
-                                                uint32_t mipLevels);
-tl::expected<void, Error> generateMipmaps(Vulkan &vulkan, VkImage image,
-                                          VkFormat imageFormat,
-                                          int32_t texWidth, int32_t texHeight,
-                                          uint32_t mipLevels);
-void copy_buffer_to_image(Vulkan &vulkan, VkBuffer buffer, VkImage image,
-                          uint32_t width, uint32_t height);
 tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
                                                  VkFormat format,
                                                  VkImageAspectFlags aspectFlags,

@@ -17,8 +17,7 @@ namespace mpvgl {
 RenderWindow::RenderWindow(int width, int height, std::string const &title,
                            GLFWmonitor *monitor,
                            GLFWwindow *share) noexcept(false)
-    : vulkan(),
-      shader_watcher(
+    : shader_watcher(
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
     shader_watcher.compileAll();

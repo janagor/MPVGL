@@ -139,9 +139,7 @@ tl::expected<void, Error> setupRenderTargets(Vulkan &vulkan) {
 
 tl::expected<void, Error> loadAndPrepareAssets(Vulkan &vulkan) {
     return vlk::createCommandPool(vulkan)
-        .and_then([&] { return vlk::createTextureImage(vulkan); })
-        .and_then([&] { return vlk::createTextureImageView(vulkan); })
-        .and_then([&] { return vlk::createTextureSampler(vulkan); })
+        .and_then([&] { return vlk::loadTexture(vulkan); })
         .and_then([&] { return vlk::loadModel(vulkan); })
         .and_then([&] { return vlk::createVertexBuffer(vulkan); })
         .and_then([&] { return vlk::createIndexBuffer(vulkan); })
@@ -409,101 +407,13 @@ tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
     });
 }
 
-tl::expected<void, Error> createTextureImage(Vulkan &vulkan) {
-    int texWidth, texHeight, texChannels;
-    stbi_uc *pixels = stbi_load(TEXTURE_PATH, &texWidth, &texHeight,
-                                &texChannels, STBI_rgb_alpha);
-    vulkan.sceneContext.texture.mipLevels =
-        static_cast<uint32_t>(
-            std::floor(std::log2(std::max(texWidth, texHeight)))) +
-        1;
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
-    if (!pixels) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to load Texture Image"}};
-    }
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferAllocation;
-    if (auto result =
-            createBuffer(vulkan, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VMA_MEMORY_USAGE_AUTO,
-                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-                         stagingBuffer, stagingBufferAllocation);
-        !result.has_value()) {
-        return result;
-    }
-    void *d;
-    vmaMapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation, &d);
-    memcpy(d, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
-    stbi_image_free(pixels);
-    if (auto result = createImage(
-            vulkan, texWidth, texHeight, vulkan.sceneContext.texture.mipLevels,
-            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_AUTO, 0, vulkan.sceneContext.texture.image,
-            vulkan.sceneContext.texture.imageAllocation);
-        !result.has_value()) {
-        return result;
-    }
-    if (auto result = transitionImageLayout(
-            vulkan, vulkan.sceneContext.texture.image, VK_FORMAT_R8G8B8A8_SRGB,
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            vulkan.sceneContext.texture.mipLevels);
-        !result.has_value()) {
-        return tl::unexpected<Error>{result.error()};
-    }
-    copy_buffer_to_image(
-        vulkan, stagingBuffer, vulkan.sceneContext.texture.image,
-        static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-    vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
-    vmaFreeMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
-
-    auto result = generateMipmaps(vulkan, vulkan.sceneContext.texture.image,
-                                  VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight,
-                                  vulkan.sceneContext.texture.mipLevels);
-
-    return result;
-}
-
-tl::expected<void, Error> createTextureImageView(Vulkan &vulkan) {
-    return createImageView(vulkan, vulkan.sceneContext.texture.image,
-                           VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT,
-                           vulkan.sceneContext.texture.mipLevels)
-        .transform([&vulkan](VkImageView view) {
-            vulkan.sceneContext.texture.imageView = view;
+tl::expected<void, Error> loadTexture(Vulkan &vulkan) {
+    return Texture2::loadFromFile(
+               vulkan.deviceContext, vulkan.data.command_pool,
+               vulkan.deviceContext.graphicsQueue, TEXTURE_PATH)
+        .transform([&](Texture2 texture) {
+            vulkan.sceneContext.texture2 = std::move(texture);
         });
-}
-
-tl::expected<void, Error> createTextureSampler(Vulkan &vulkan) {
-    VkPhysicalDeviceProperties properties{};
-    vulkan.deviceContext.instDisp.getPhysicalDeviceProperties(
-        vulkan.deviceContext.logicalDevice.physical_device, &properties);
-
-    auto samplerInfo = initializers::samplerCreateInfo();
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    if (vulkan.deviceContext.logDevDisp.createSampler(
-            &samplerInfo, nullptr, &vulkan.sceneContext.texture.sampler) !=
-        VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Texture Sampler"}};
-    }
-    return {};
 }
 
 tl::expected<void, Error> loadModel(Vulkan &vulkan) {
@@ -634,8 +544,8 @@ tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vulkan.sceneContext.texture.imageView;
-        imageInfo.sampler = vulkan.sceneContext.texture.sampler;
+        imageInfo.imageView = vulkan.sceneContext.texture2.imageView();
+        imageInfo.sampler = vulkan.sceneContext.texture2.sampler();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{
             initializers::writeDescriptorSet(
@@ -810,14 +720,7 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyRenderPass(
         vulkan.swapchainContext.renderPass, nullptr);
 
-    vulkan.deviceContext.logDevDisp.destroyImageView(
-        vulkan.sceneContext.texture.imageView, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyImage(
-        vulkan.sceneContext.texture.image, nullptr);
-    vulkan.deviceContext.logDevDisp.destroySampler(
-        vulkan.sceneContext.texture.sampler, nullptr);
-    vmaFreeMemory(vulkan.deviceContext.allocator,
-                  vulkan.sceneContext.texture.imageAllocation);
+    vulkan.sceneContext.texture2 = Texture2();
 
     vulkan.data.uniformBuffers.clear();
 

@@ -27,7 +27,7 @@ class RenderWindow {
     int draw() noexcept;
 
    private:
-    vlk::Vulkan vulkan;
+    vlk::Vulkan vulkan{};
     GLFWwindow *window;
     ShaderWatcher shader_watcher;
 };

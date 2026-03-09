@@ -23,8 +23,6 @@
 
 namespace mpvgl {
 
-struct Texture;
-
 struct Vertex {
     Vertex(glm::vec3 pos, Color color, glm::vec2 texCoord)
         : pos(pos),
@@ -101,8 +99,6 @@ struct SwapchainContext {
 };
 
 struct SceneContext {
-    SceneContext(Vulkan &vulkan);
-
     std::vector<Vertex> vertices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
     Buffer vertexBuffer;
@@ -110,7 +106,7 @@ struct SceneContext {
     std::vector<uint32_t> indices;
     Buffer indexBuffer;
 
-    Texture texture;
+    Texture2 texture2;
 
     Camera camera{glm::vec3(2.0f, 2.0f, 2.0f)};
 };
@@ -122,7 +118,6 @@ struct PipelineContext {
 };
 
 struct Vulkan {
-    Vulkan();
     DeviceContext deviceContext;
     SwapchainContext swapchainContext;
     SceneContext sceneContext;
@@ -131,8 +126,6 @@ struct Vulkan {
     VkSurfaceKHR surface;
 
     struct RenderData {
-        RenderData();
-
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
 
