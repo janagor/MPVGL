@@ -561,26 +561,30 @@ tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-    vulkan.data.uniformBuffers.resize(
-        vulkan.swapchainContext.swapchain.imageCount());
-    vulkan.data.uniformBuffersMapped.resize(
-        vulkan.swapchainContext.swapchain.imageCount());
+    auto bufferSize = sizeof(UniformBufferObject);
+    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
 
-    for (size_t i = 0; i < vulkan.swapchainContext.swapchain.imageCount();
-         ++i) {
-        auto &buffer = vulkan.data.uniformBuffers.at(i);
-        auto &mapped = vulkan.data.uniformBuffersMapped.at(i);
-        auto buff = Buffer::create(
-            vulkan.deviceContext, bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-        if (buff.has_value()) {
-            buffer = std::move(buff.value());
-        }
-        auto mappedData = buffer.map();
-        if (mappedData.has_value()) {
-            mapped = mappedData.value();
+    vulkan.data.uniformBuffers.clear();
+    vulkan.data.uniformBuffersMapped.clear();
+    vulkan.data.uniformBuffers.reserve(imageCount);
+    vulkan.data.uniformBuffersMapped.reserve(imageCount);
+
+    for (size_t i = {}; i < imageCount; ++i) {
+        auto result =
+            Buffer::create(
+                vulkan.deviceContext, bufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+                .and_then([&](Buffer buffer) {
+                    return buffer.map().transform([&](void *mappedData) {
+                        vulkan.data.uniformBuffersMapped.emplace_back(
+                            mappedData);
+                        vulkan.data.uniformBuffers.emplace_back(
+                            std::move(buffer));
+                    });
+                });
+        if (!result.has_value()) {
+            return tl::unexpected<Error>{result.error()};
         }
     }
     return {};
