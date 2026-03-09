@@ -538,27 +538,25 @@ tl::expected<void, Error> loadModel(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
-    auto result = Buffer::createFromData(
-        vulkan.deviceContext, vulkan.data.command_pool,
-        vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.vertices,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-
-    if (!result) return tl::unexpected(result.error());
-
-    vulkan.sceneContext.vertexBuffer = std::move(result.value());
-    return {};
+    return Buffer::createFromData(
+               vulkan.deviceContext, vulkan.data.command_pool,
+               vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.vertices,
+               VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
+        .transform([&](Buffer buffer) {
+            vulkan.sceneContext.vertexBuffer = std::move(buffer);
+        });
 }
 
 tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
-    auto result = Buffer::createFromData(
-        vulkan.deviceContext, vulkan.data.command_pool,
-        vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.indices,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-    if (!result) return tl::unexpected(result.error());
-
-    vulkan.sceneContext.indexBuffer = std::move(result.value());
-    return {};
+    return Buffer::createFromData(
+               vulkan.deviceContext, vulkan.data.command_pool,
+               vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.indices,
+               VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
+        .transform([&](Buffer buffer) {
+            vulkan.sceneContext.indexBuffer = std::move(buffer);
+        });
 }
 
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
