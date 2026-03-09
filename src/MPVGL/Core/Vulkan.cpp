@@ -36,6 +36,7 @@
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/PhysicalDeviceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
+#include "MPVGL/Core/Vulkan/RenderPass.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
@@ -159,7 +160,9 @@ tl::expected<void, Error> setupDescriptorsAndSync(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
-    VkAttachmentDescription color_attachment = {
+    RenderPassBuilder builder{};
+
+    VkAttachmentDescription colorAttachment = {
         .format = vulkan.swapchainContext.swapchain.format(),
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -169,36 +172,32 @@ tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     };
+    builder.addAttachment(colorAttachment);
 
-    VkAttachmentReference color_attachment_ref = {};
-    color_attachment_ref.attachment = 0;
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    SubpassInfo mainSubpass{};
+    mainSubpass.colorAttachments.push_back(
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
 
-    VkAttachmentDescription depth_attachment{};
     if (auto depthFormat = findDepthFormat(vulkan); depthFormat.has_value()) {
-        depth_attachment.format = depthFormat.value();
-        depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depth_attachment.finalLayout =
+        VkAttachmentDescription depthAttachment{};
+        depthAttachment.format = depthFormat.value();
+        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthAttachment.finalLayout =
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        builder.addAttachment(depthAttachment);
+        mainSubpass.depthAttachment = VkAttachmentReference{
+            1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
     } else {
         return tl::unexpected<Error>{depthFormat.error()};
     }
 
-    VkAttachmentReference depth_attachment_ref{};
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref;
+    builder.addSubpass(mainSubpass);
 
     VkSubpassDependency dependency = {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -211,18 +210,12 @@ tl::expected<void, Error> createRenderPass(Vulkan &vulkan) {
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    std::array<VkAttachmentDescription, 2> attachments = {color_attachment,
-                                                          depth_attachment};
-    auto render_pass_info = initializers::renderPassCreateInfo(
-        attachments, {&subpass, 1}, {&dependency, 1}, 0);
+    builder.addDependency(dependency);
 
-    if (vulkan.deviceContext.logDevDisp.createRenderPass(
-            &render_pass_info, nullptr, &vulkan.swapchainContext.renderPass) !=
-        VK_SUCCESS) {
-        return tl::unexpected(Error(EngineError::VulkanRuntimeError,
-                                    "Failed to create Render Pass"));
-    }
-    return {};
+    return builder.build(vulkan.deviceContext)
+        .transform([&](VkRenderPass renderPass) {
+            vulkan.swapchainContext.renderPass = renderPass;
+        });
 }
 
 tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
