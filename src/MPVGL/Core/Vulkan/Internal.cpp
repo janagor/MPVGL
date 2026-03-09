@@ -515,7 +515,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     vulkan.deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1,
                                                   &scissor);
 
-    VkBuffer vertexBuffers[] = {vulkan.sceneContext.vertexBuffer};
+    VkBuffer vertexBuffers[] = {vulkan.sceneContext.vertexBuffer.handle()};
     VkDeviceSize offsets[] = {0};
     vulkan.deviceContext.logDevDisp.cmdBindVertexBuffers(
         command_buffer, 0, 1, vertexBuffers, offsets);

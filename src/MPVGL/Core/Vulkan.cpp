@@ -24,6 +24,7 @@
 #include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
+#include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/InstanceBuilder.hpp"
@@ -537,39 +538,14 @@ tl::expected<void, Error> loadModel(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
-    VkDeviceSize bufferSize = sizeof(vulkan.sceneContext.vertices.at(0)) *
-                              vulkan.sceneContext.vertices.size();
+    auto result = Buffer::createFromData(
+        vulkan.deviceContext, vulkan.data.command_pool,
+        vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.vertices,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferAllocation;
-    if (auto result =
-            createBuffer(vulkan, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VMA_MEMORY_USAGE_AUTO,
-                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-                         stagingBuffer, stagingBufferAllocation);
-        !result.has_value()) {
-        return result;
-    }
-    void *d;
-    vmaMapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation, &d);
-    memcpy(d, vulkan.sceneContext.vertices.data(),
-           static_cast<size_t>(bufferSize));
-    vmaUnmapMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
+    if (!result) return tl::unexpected(result.error());
 
-    if (auto result = createBuffer(vulkan, bufferSize,
-                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                   VMA_MEMORY_USAGE_AUTO, 0,
-                                   vulkan.sceneContext.vertexBuffer,
-                                   vulkan.sceneContext.vertexBufferAllocation);
-        !result.has_value()) {
-        return result;
-    }
-
-    copy_buffer(vulkan, stagingBuffer, vulkan.sceneContext.vertexBuffer,
-                bufferSize);
-    vulkan.deviceContext.logDevDisp.destroyBuffer(stagingBuffer, nullptr);
-    vmaFreeMemory(vulkan.deviceContext.allocator, stagingBufferAllocation);
+    vulkan.sceneContext.vertexBuffer = std::move(result.value());
     return {};
 }
 
@@ -877,11 +853,7 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
         vulkan.pipelineContext.descriptorSetLayout, nullptr);
 
-    vulkan.deviceContext.logDevDisp.destroyBuffer(
-        vulkan.sceneContext.vertexBuffer, nullptr);
-    vmaFreeMemory(vulkan.deviceContext.allocator,
-                  vulkan.sceneContext.vertexBufferAllocation);
-
+    vulkan.sceneContext.vertexBuffer = Buffer();
     vulkan.deviceContext.logDevDisp.destroyBuffer(
         vulkan.sceneContext.indexBuffer, nullptr);
     vmaFreeMemory(vulkan.deviceContext.allocator,

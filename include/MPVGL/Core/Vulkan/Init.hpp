@@ -15,6 +15,7 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Camera.hpp"
+#include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
@@ -104,8 +105,7 @@ struct SceneContext {
 
     std::vector<Vertex> vertices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
-    VkBuffer vertexBuffer;
-    VmaAllocation vertexBufferAllocation;
+    Buffer vertexBuffer;
 
     std::vector<uint32_t> indices;
     VkBuffer indexBuffer;
