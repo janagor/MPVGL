@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -48,55 +47,54 @@ namespace mpvgl::vlk {
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 
 tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
-    if (auto window = createWindow("Vulkan Triangle", true);
-        window.has_value()) {
-        vulkan.deviceContext.window = window.value();
-    } else {
-        return tl::unexpected{Error{window.error()}};
-    }
+    return createWindow("Vulkan Triangle", true)
+        .transform_error([](auto e) { return Error{e}; })
+        .and_then([&vulkan](auto window) {
+            vulkan.deviceContext.window = window;
 
-    if (auto instance = InstanceBuilder::getInstance(); instance.has_value()) {
-        vulkan.deviceContext.instance = instance.value();
-    } else {
-        return tl::unexpected{
-            Error{instance.error(), "Failed to create Instance"}};
-    }
+            return InstanceBuilder::getInstance().transform_error(
+                [](auto e) { return Error{e, "Failed to create Instance"}; });
+        })
+        .and_then([&vulkan](auto instance) {
+            vulkan.deviceContext.instance = instance;
+            vulkan.deviceContext.instDisp =
+                vulkan.deviceContext.instance.make_table();
+            vulkan.surface =
+                create_surface_glfw(vulkan.deviceContext.instance,
+                                    vulkan.deviceContext.window, nullptr);
 
-    vulkan.deviceContext.instDisp = vulkan.deviceContext.instance.make_table();
-    vulkan.surface = create_surface_glfw(vulkan.deviceContext.instance,
-                                         vulkan.deviceContext.window, nullptr);
+            return PhysicalDeviceBuilder::getPhysicalDevice(
+                       vulkan.deviceContext.instance, vulkan.surface)
+                .transform_error([](auto e) {
+                    return Error{e, "Failed to create Physical Device"};
+                });
+        })
+        .and_then([&vulkan](auto physicalDevice) {
+            return LogicalDeviceBuilder::getLogicalDevice(physicalDevice)
+                .transform_error([](auto e) {
+                    return Error{e, "Failed to create Logical Device"};
+                });
+        })
+        .and_then([&vulkan](auto logicalDevice) -> tl::expected<void, Error> {
+            vulkan.deviceContext.logicalDevice = logicalDevice;
+            vulkan.deviceContext.logDevDisp =
+                vulkan.deviceContext.logicalDevice.make_table();
 
-    auto physicalDevice = PhysicalDeviceBuilder::getPhysicalDevice(
-        vulkan.deviceContext.instance, vulkan.surface);
-    if (!physicalDevice) {
-        return tl::unexpected{
-            Error{physicalDevice.error(), "Failed to create Physical Device"}};
-    }
+            VmaAllocatorCreateInfo allocatorInfo = {};
+            allocatorInfo.physicalDevice =
+                vulkan.deviceContext.logicalDevice.physical_device;
+            allocatorInfo.device = vulkan.deviceContext.logicalDevice.device;
+            allocatorInfo.instance = vulkan.deviceContext.instance.instance;
 
-    if (auto logicalDevice =
-            LogicalDeviceBuilder::getLogicalDevice(physicalDevice.value());
-        logicalDevice.has_value()) {
-        vulkan.deviceContext.logicalDevice = logicalDevice.value();
-    } else {
-        return tl::unexpected{
-            Error{logicalDevice.error(), "Failed to create Logical Device"}};
-    }
+            if (vmaCreateAllocator(&allocatorInfo,
+                                   &vulkan.deviceContext.allocator) !=
+                VK_SUCCESS) {
+                return tl::unexpected(Error{EngineError::VulkanInitFailed,
+                                            "Failed to create VMA Allocator"});
+            }
 
-    vulkan.deviceContext.logDevDisp =
-        vulkan.deviceContext.logicalDevice.make_table();
-
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice =
-        vulkan.deviceContext.logicalDevice.physical_device;
-    allocatorInfo.device = vulkan.deviceContext.logicalDevice.device;
-    allocatorInfo.instance = vulkan.deviceContext.instance.instance;
-    if (vmaCreateAllocator(&allocatorInfo, &vulkan.deviceContext.allocator) !=
-        VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanInitFailed,
-                                    "Failed to create VMA Allocator"}};
-    }
-
-    return {};
+            return {};
+        });
 }
 
 tl::expected<void, Error> create_swapchain(Vulkan &vulkan) {
