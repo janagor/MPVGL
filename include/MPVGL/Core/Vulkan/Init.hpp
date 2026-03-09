@@ -88,61 +88,71 @@ struct hash<mpvgl::Vertex> {
 namespace mpvgl::vlk {
 
 struct SwapchainContext {
-    Swapchain swapchain;
+    SwapchainContext() = default;
+
+    Swapchain swapchain{};
 
     VkImage depthImage{VK_NULL_HANDLE};
     VmaAllocation depthImageAllocation{VK_NULL_HANDLE};
     VkImageView depthImageView{VK_NULL_HANDLE};
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
-    std::vector<VkFramebuffer> framebuffers;
+    std::vector<VkFramebuffer> framebuffers{};
 };
 
 struct SceneContext {
-    std::vector<Vertex> vertices;
-    std::unordered_map<Vertex, uint32_t> uniqueVertices;
-    Buffer vertexBuffer;
+    SceneContext() = default;
 
-    std::vector<uint32_t> indices;
-    Buffer indexBuffer;
+    std::vector<Vertex> vertices{};
+    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+    Buffer vertexBuffer{};
 
-    Texture texture;
+    std::vector<uint32_t> indices{};
+    Buffer indexBuffer{};
 
-    Camera camera{glm::vec3(2.0f, 2.0f, 2.0f)};
+    Texture texture{};
+
+    Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
 };
 
 struct PipelineContext {
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
+    PipelineContext() = default;
+
+    VkDescriptorSetLayout descriptorSetLayout{};
+    VkPipelineLayout pipelineLayout{};
+    VkPipeline graphicsPipeline{};
 };
 
 struct Vulkan {
-    DeviceContext deviceContext;
-    SwapchainContext swapchainContext;
-    SceneContext sceneContext;
-    PipelineContext pipelineContext;
+    Vulkan() = default;
 
-    VkSurfaceKHR surface;
+    DeviceContext deviceContext{};
+    SwapchainContext swapchainContext{};
+    SceneContext sceneContext{};
+    PipelineContext pipelineContext{};
+
+    VkSurfaceKHR surface{};
 
     struct RenderData {
-        VkCommandPool command_pool;
-        std::vector<VkCommandBuffer> command_buffers;
+        RenderData() = default;
 
-        std::vector<Buffer> uniformBuffers;
-        std::vector<void *> uniformBuffersMapped;
+        VkCommandPool command_pool{};
+        std::vector<VkCommandBuffer> command_buffers{};
 
-        VkDescriptorPool descriptor_pool;
-        std::vector<VkDescriptorSet> descriptor_sets;
+        std::vector<Buffer> uniformBuffers{};
+        std::vector<void *> uniformBuffersMapped{};
 
-        std::vector<VkSemaphore> available_semaphores;
-        std::vector<VkSemaphore> finished_semaphore;
-        std::vector<VkFence> in_flight_fences;
-        std::vector<VkFence> image_in_flight;
-        size_t current_frame = 0;
+        VkDescriptorPool descriptor_pool{};
+        std::vector<VkDescriptorSet> descriptor_sets{};
+
+        std::vector<VkSemaphore> available_semaphores{};
+        std::vector<VkSemaphore> finished_semaphore{};
+        std::vector<VkFence> in_flight_fences{};
+        std::vector<VkFence> image_in_flight{};
+        size_t current_frame{};
     };
 
-    RenderData data;
+    RenderData data{};
 };
 
 }  // namespace mpvgl::vlk
