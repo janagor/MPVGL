@@ -1,9 +1,10 @@
 #pragma once
 
-#include <cinttypes>
+#include <cstddef>
+#include <cstdint>
 #include <span>
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan_core.h>
 
 namespace mpvgl::vlk::initializers {
 

@@ -1,8 +1,11 @@
 #pragma once
 
+#include <system_error>
+
 #include <tl/expected.hpp>
 #include <vk-bootstrap/src/VkBootstrap.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace mpvgl::vlk {
 

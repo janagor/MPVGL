@@ -1,10 +1,14 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
 #include <vector>
 
 #include <tl/expected.hpp>
 #include <vk-bootstrap/src/VkBootstrap.h>
+#include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
 

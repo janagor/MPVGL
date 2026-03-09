@@ -1,10 +1,13 @@
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <stop_token>
 #include <string>
+#include <thread>
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/RenderWindow.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"

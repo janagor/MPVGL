@@ -1,3 +1,14 @@
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <utility>
+#include <vector>
+
+#include <tl/expected.hpp>
+#include <vulkan/vulkan_core.h>
+
+#include "MPVGL/Core/Error.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
 

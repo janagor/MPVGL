@@ -4,7 +4,9 @@
 
 #include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <vk-bootstrap/src/VkBootstrap.h>
+#include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
 

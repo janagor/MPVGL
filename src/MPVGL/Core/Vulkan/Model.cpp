@@ -1,8 +1,16 @@
+#include <cstdint>
+#include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include <tinyobjloader/tiny_obj_loader.h>
 #include <tl/expected.hpp>
+#include <vulkan/vulkan_core.h>
 
+#include "MPVGL/Core/Error.hpp"
+#include "MPVGL/Core/Vulkan/Buffer.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
 

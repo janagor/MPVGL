@@ -1,4 +1,14 @@
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <vector>
+
+#include <tl/expected.hpp>
+#include <vulkan/vulkan_core.h>
+
+#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 
 namespace mpvgl::vlk {

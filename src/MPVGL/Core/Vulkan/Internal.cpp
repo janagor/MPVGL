@@ -1,10 +1,23 @@
+#include <array>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <span>
 #include <string>
+#include <vector>
 
 #include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
-#include <glm/glm.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/trigonometric.hpp>
+#include <tl/expected.hpp>
+#include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
 
@@ -15,8 +28,8 @@
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
-
-#include "tl/expected.hpp"
+#include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/Texture.hpp"
 
 namespace mpvgl::vlk {
 

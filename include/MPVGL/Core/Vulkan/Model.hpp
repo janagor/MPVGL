@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <utility>
 
 #include <tl/expected.hpp>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"

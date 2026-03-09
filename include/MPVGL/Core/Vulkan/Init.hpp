@@ -1,14 +1,11 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
-
+#include <cstddef>
 #include <vector>
 
-#include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
-#include <vk-bootstrap/src/VkBootstrap.h>
+#include <glm/ext/vector_float3.hpp>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
 
@@ -19,7 +16,6 @@
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
-#include "MPVGL/Core/Vulkan/Vertex.hpp"
 
 namespace mpvgl::vlk {
 
@@ -35,11 +31,6 @@ struct SwapchainContext {
 struct SceneContext {
     SceneContext() = default;
 
-    // std::vector<Vertex> vertices{};
-    // std::vector<uint32_t> indices{};
-    // std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-    // Buffer vertexBuffer{};
-    // Buffer indexBuffer{};
     Model model{};
 
     Texture texture{};

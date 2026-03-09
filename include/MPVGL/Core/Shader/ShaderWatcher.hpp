@@ -1,10 +1,13 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <stdexcept>
 #include <stop_token>
 #include <string>
 #include <thread>

@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <span>
 #include <vector>
 
 #include <tl/expected.hpp>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
@@ -14,7 +17,8 @@ namespace mpvgl::vlk {
 
 class DescriptorLayoutBuilder {
    public:
-    DescriptorLayoutBuilder& addBinding(uint32_t binding, VkDescriptorType type,
+    DescriptorLayoutBuilder& addBinding(std::uint32_t binding,
+                                        VkDescriptorType type,
                                         VkShaderStageFlags stageFlags);
     void clear();
     tl::expected<VkDescriptorSetLayout, Error> build(

@@ -1,15 +1,17 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <tl/expected.hpp>
+#include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Error.hpp"
+#include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
-
-#include "tl/expected.hpp"
 
 namespace mpvgl::vlk {
 
