@@ -22,8 +22,6 @@ tl::expected<void, Error> createDepthResources(Vulkan &vulkan);
 tl::expected<void, Error> createFramebuffers(Vulkan &vulkan);
 tl::expected<void, Error> loadTexture(Vulkan &vulkan);
 tl::expected<void, Error> loadModel(Vulkan &vulkan);
-tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan);
-tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan);
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan);
 tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan);

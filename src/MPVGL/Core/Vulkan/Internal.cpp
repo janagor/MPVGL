@@ -362,13 +362,14 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     vulkan.deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1,
                                                   &scissor);
 
-    VkBuffer vertexBuffers[] = {vulkan.sceneContext.vertexBuffer.handle()};
+    VkBuffer vertexBuffers[] = {
+        vulkan.sceneContext.model.vertexBuffer().handle()};  // ZMIANA
     VkDeviceSize offsets[] = {0};
     vulkan.deviceContext.logDevDisp.cmdBindVertexBuffers(
         command_buffer, 0, 1, vertexBuffers, offsets);
 
     vulkan.deviceContext.logDevDisp.cmdBindIndexBuffer(
-        command_buffer, vulkan.sceneContext.indexBuffer.handle(), 0,
+        command_buffer, vulkan.sceneContext.model.indexBuffer().handle(), 0,
         VK_INDEX_TYPE_UINT32);
 
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
@@ -378,8 +379,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
         nullptr);
 
     vulkan.deviceContext.logDevDisp.cmdDrawIndexed(
-        command_buffer,
-        static_cast<uint32_t>(vulkan.sceneContext.indices.size()), 1, 0, 0, 0);
+        command_buffer, vulkan.sceneContext.model.indexCount(), 1, 0, 0, 0);
 
     vulkan.deviceContext.logDevDisp.cmdEndRenderPass(command_buffer);
 

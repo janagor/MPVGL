@@ -34,6 +34,7 @@
 #include "MPVGL/Core/Vulkan/PhysicalDeviceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/Vertex.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 #include "config.hpp"
@@ -144,8 +145,6 @@ tl::expected<void, Error> loadAndPrepareAssets(Vulkan &vulkan) {
     return vlk::createCommandPool(vulkan)
         .and_then([&] { return vlk::loadTexture(vulkan); })
         .and_then([&] { return vlk::loadModel(vulkan); })
-        .and_then([&] { return vlk::createVertexBuffer(vulkan); })
-        .and_then([&] { return vlk::createIndexBuffer(vulkan); })
         .and_then([&] { return vlk::createUniformBuffers(vulkan); });
 }
 
@@ -354,57 +353,10 @@ tl::expected<void, Error> loadTexture(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> loadModel(Vulkan &vulkan) {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
-                          MODEL_PATH)) {
-        return tl::unexpected{
-            Error{EngineError::VulkanRuntimeError, "Failed to load Model"}};
-    }
-    for (auto const &shape : shapes) {
-        for (const auto &index : shape.mesh.indices) {
-            auto vertex =
-                Vertex{{attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2]},
-                       {255, 255, 255},
-                       {attrib.texcoords[2 * index.texcoord_index + 0],
-                        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}};
-            if (vulkan.sceneContext.uniqueVertices.count(vertex) == 0) {
-                vulkan.sceneContext.uniqueVertices[vertex] =
-                    static_cast<uint32_t>(vulkan.sceneContext.vertices.size());
-                vulkan.sceneContext.vertices.push_back(vertex);
-            }
-            vulkan.sceneContext.indices.push_back(
-                vulkan.sceneContext.uniqueVertices.at(vertex));
-        };
-    };
-    return {};
-}
-
-tl::expected<void, Error> createVertexBuffer(Vulkan &vulkan) {
-    return Buffer::createFromData(
-               vulkan.deviceContext, vulkan.data.command_pool,
-               vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.vertices,
-               VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
-        .transform([&](Buffer buffer) {
-            vulkan.sceneContext.vertexBuffer = std::move(buffer);
-        });
-}
-
-tl::expected<void, Error> createIndexBuffer(Vulkan &vulkan) {
-    return Buffer::createFromData(
-               vulkan.deviceContext, vulkan.data.command_pool,
-               vulkan.deviceContext.graphicsQueue, vulkan.sceneContext.indices,
-               VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
-        .transform([&](Buffer buffer) {
-            vulkan.sceneContext.indexBuffer = std::move(buffer);
-        });
+    return Model::loadFromFile(vulkan.deviceContext, vulkan.data.command_pool,
+                               vulkan.deviceContext.graphicsQueue, MODEL_PATH)
+        .transform(
+            [&](Model model) { vulkan.sceneContext.model = std::move(model); });
 }
 
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
@@ -637,8 +589,7 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
         vulkan.pipelineContext.descriptorSetLayout, nullptr);
 
-    vulkan.sceneContext.vertexBuffer = Buffer{};
-    vulkan.sceneContext.indexBuffer = Buffer{};
+    vulkan.sceneContext.model = Model{};
     vmaDestroyAllocator(vulkan.deviceContext.allocator);
 
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);
