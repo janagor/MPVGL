@@ -287,20 +287,36 @@ tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.deviceWaitIdle();
 
     vulkan.swapchainContext.depthTexture = Texture{};
-    vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
-                                                       nullptr);
     for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
         vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
                                                            nullptr);
     }
-
     vulkan.swapchainContext.framebuffers.clear();
 
     return vulkan.swapchainContext.swapchain.recreate(vulkan.deviceContext)
         .and_then([&vulkan]() { return createDepthResources(vulkan); })
         .and_then([&vulkan]() { return createFramebuffers(vulkan); })
-        .and_then([&vulkan]() { return createCommandPool(vulkan); })
-        .and_then([&vulkan]() { return createCommandBuffers(vulkan); });
+        .and_then([&vulkan]() -> tl::expected<void, Error> {
+            auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
+            vulkan.data.image_in_flight.assign(imageCount, VK_NULL_HANDLE);
+            for (auto &sem : vulkan.data.finishedSemaphores) {
+                vulkan.deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
+            }
+            vulkan.data.finishedSemaphores.clear();
+            vulkan.data.finishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
+
+            auto semaphoreInfo = initializers::semaphoreCreateInfo();
+            for (size_t i = 0; i < imageCount; ++i) {
+                if (vulkan.deviceContext.logDevDisp.createSemaphore(
+                        &semaphoreInfo, nullptr,
+                        &vulkan.data.finishedSemaphores[i]) != VK_SUCCESS) {
+                    return tl::unexpected(
+                        Error(EngineError::VulkanRuntimeError,
+                              "Failed to recreate semaphores"));
+                }
+            }
+            return {};
+        });
 }
 
 tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
