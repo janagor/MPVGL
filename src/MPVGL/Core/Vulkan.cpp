@@ -42,6 +42,17 @@
 
 #include "config.hpp"
 
+namespace {
+
+template <typename T>
+tl::expected<T, mpvgl::Error> vkb_to_expected(vkb::Result<T> &&res,
+                                              const std::string &msg) {
+    if (!res) return tl::unexpected(mpvgl::Error{res.error(), msg});
+    return std::move(res.value());
+}
+
+}  // namespace
+
 namespace mpvgl::vlk {
 
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -104,31 +115,24 @@ tl::expected<void, Error> createSwapchain(Vulkan &vulkan) {
         });
 }
 
-tl::expected<void, Error> get_queues(Vulkan &vulkan) {
-    if (auto gq = vulkan.deviceContext.logicalDevice.get_queue(
-            vkb::QueueType::graphics);
-        gq.has_value()) {
-        vulkan.deviceContext.graphicsQueue = std::move(gq.value());
-    } else {
-        return tl::unexpected{
-            Error{gq.error(), "Failed to get Graphics Queue"}};
-    }
-
-    if (auto pq = vulkan.deviceContext.logicalDevice.get_queue(
-            vkb::QueueType::present);
-        pq.has_value()) {
-        vulkan.deviceContext.presentQueue = std::move(pq.value());
-    } else {
-        return tl::unexpected(Error{pq.error(), "Failed to get Present Queue"});
-    }
-
-    return {};
+tl::expected<void, Error> getQueues(Vulkan &vulkan) {
+    auto &device = vulkan.deviceContext.logicalDevice;
+    return vkb_to_expected(device.get_queue(vkb::QueueType::graphics),
+                           "Failed to get Graphics Queue")
+        .and_then([&vulkan, &device](VkQueue gQueue) {
+            vulkan.deviceContext.graphicsQueue = gQueue;
+            return vkb_to_expected(device.get_queue(vkb::QueueType::present),
+                                   "Failed to get Present Queue");
+        })
+        .transform([&vulkan](VkQueue pQueue) {
+            vulkan.deviceContext.presentQueue = pQueue;
+        });
 }
 
 tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
     return deviceInitialization(vulkan)
         .and_then([&] { return createSwapchain(vulkan); })
-        .and_then([&] { return get_queues(vulkan); });
+        .and_then([&] { return getQueues(vulkan); });
 }
 
 tl::expected<void, Error> setupRenderingPipeline(Vulkan &vulkan) {
