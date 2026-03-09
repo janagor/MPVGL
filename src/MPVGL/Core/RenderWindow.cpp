@@ -114,14 +114,16 @@ int RenderWindow::draw() noexcept {
             return -1;
         }
 
-        if (time++ >= 10'000) {
+        if (shader_watcher.consumeChange()) {
+            vulkan.deviceContext.logDevDisp.deviceWaitIdle();
             if (auto result = vlk::reloadShadersAndPipeline(vulkan);
                 !result.has_value()) {
-                std::cout << result.error().message << "\n";
-                vulkan.deviceContext.logDevDisp.deviceWaitIdle();
-                return 0;
+                std::cerr << "[Hot-Reload] Pipeline creation failed: "
+                          << result.error().message << "\n";
+            } else {
+                std::cout << "[Hot-Reload] Pipeline successfully updated in "
+                             "real-time!\n";
             }
-            time = 0;
         }
     }
 

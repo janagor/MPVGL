@@ -1,19 +1,14 @@
 #pragma once
 
-#include <chrono>
-#include <cstdint>
-#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <stdexcept>
 #include <stop_token>
-#include <string>
-#include <thread>
 
 #include <glslang/Public/ShaderLang.h>
+#include <tl/expected.hpp>
 
+#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Shader/ShaderCompiler.hpp"
 
 namespace mpvgl {
@@ -34,80 +29,93 @@ class ShaderWatcher {
     inline void run(std::stop_token stopToken) {
         while (!stopToken.stop_requested()) {
             scanAndCompile();
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         };
     }
 
     inline void compileAll() {
         for (const auto &entry :
              std::filesystem::directory_iterator(shaderDir)) {
-            if (!isShaderFile(entry.path()))
-                continue;
-            else
-                compile(entry.path());
+            if (!isShaderFile(entry.path())) continue;
+
+            if (auto result = compile(entry.path()); !result.has_value()) {
+                std::cerr << "[ShaderWatcher] Initial Compilation Error: "
+                          << result.error().message << "\n";
+            }
         }
     }
+
+    bool consumeChange() { return m_shadersChanged.exchange(false); }
 
    private:
     std::string shaderDir;
     std::string outputDir;
     std::map<std::string, std::filesystem::file_time_type> timestamps;
+    std::atomic<bool> m_shadersChanged{false};
 
    private:
     inline bool isShaderFile(std::filesystem::path const &path) {
         return path.extension() == ".vert" || path.extension() == ".frag";
     }
+
     inline std::string outputPath(std::filesystem::path const &input) {
         return outputDir + "/" + input.filename().string() + ".spv";
     }
 
-    inline void compile2(const std::filesystem::path &shaderPath) {
-        std::string command = "glslangValidator -V " + shaderPath.string() +
-                              " -o " + outputPath(shaderPath);
+    inline tl::expected<void, Error> compile(
+        std::filesystem::path const &shaderPath) {
         std::cout << "[ShaderWatcher] Compiling: " << shaderPath.filename()
-                  << "\n";
+                  << std::endl;
 
-        int result = std::system(command.c_str());
-        if (result != 0) {
-            std::cerr << "[ShaderWatcher] Compilation failed: " << shaderPath
-                      << "\n";
-        }
-    }
-
-    inline void compile(std::filesystem::path const &shaderPath) {
-        std::cout << shaderPath << std::endl;
         std::ifstream file(shaderPath, std::ios::binary | std::ios::ate);
-        if (!file) throw std::runtime_error("Cannot open file");
+        if (!file) {
+            return tl::unexpected(
+                Error{EngineError::FileNotFound,
+                      "Failed to open a file: " + shaderPath.string()});
+        }
 
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
 
         std::string result(size, '\0');
         if (!file.read(&result[0], size)) {
-            throw std::runtime_error("Cannot read file");
+            return tl::unexpected(
+                Error{EngineError::ShaderError,
+                      "Cannot read file: " + shaderPath.string()});
         }
+
         ShaderCompiler compiler{};
         auto extention = shaderPath.extension();
         auto language = extention == ".vert" ? EShLanguage::EShLangVertex
                                              : EShLanguage::EShLangFragment;
-        auto data = compiler.compile(result, language);
 
+        auto dataRes = compiler.compile(result, language);
+        if (!dataRes.has_value()) {
+            return tl::unexpected(dataRes.error());
+        }
+
+        auto &data = dataRes.value();
         std::ofstream ofile(outputPath(shaderPath), std::ios::binary);
-        if (!file) {
-            throw std::runtime_error("Cannot open file for writing: " +
-                                     outputPath(shaderPath));
+        if (!ofile) {
+            return tl::unexpected(Error{
+                EngineError::FileNotFound,
+                "Cannot open file for writing: " + outputPath(shaderPath)});
         }
 
         ofile.write(reinterpret_cast<const char *>(data.data()),
                     data.size() * sizeof(uint32_t));
 
         if (!ofile) {
-            throw std::runtime_error("Failed to write data to file: " +
-                                     outputPath(shaderPath));
+            return tl::unexpected(Error{
+                EngineError::ShaderError,
+                "Failed to write data to file: " + outputPath(shaderPath)});
         }
+
+        return {};
     }
 
     inline void scanAndCompile() {
+        bool compiledSomething = false;
         for (const auto &entry :
              std::filesystem::directory_iterator(shaderDir)) {
             if (!isShaderFile(entry.path())) continue;
@@ -118,8 +126,18 @@ class ShaderWatcher {
             if (timestamps.find(pathStr) == timestamps.end() ||
                 timestamps[pathStr] != currentTime) {
                 timestamps[pathStr] = currentTime;
-                compile(entry.path());
+
+                if (auto res = compile(entry.path()); res.has_value()) {
+                    compiledSomething = true;
+                } else {
+                    std::cerr << "[ShaderWatcher] Hot-Reload Error: "
+                              << res.error().message << "\n";
+                }
             }
+        }
+
+        if (compiledSomething) {
+            m_shadersChanged = true;
         }
     }
 };

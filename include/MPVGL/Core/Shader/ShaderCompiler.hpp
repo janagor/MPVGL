@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -11,11 +10,13 @@
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include <tl/expected.hpp>
+
+#include "MPVGL/Core/Error.hpp"
 
 namespace mpvgl {
 
 struct GlslShaderIncluder : public glslang::TShader::Includer {
-    // TODO: implement in order to support #include directives
     virtual IncludeResult *includeSystem(const char *headerName,
                                          const char *includerName,
                                          size_t inclusionDepth) override {
@@ -35,7 +36,6 @@ struct GlslShaderIncluder : public glslang::TShader::Includer {
     static inline IncludeResult smFailResult =
         IncludeResult(sEmpty, "Header does not exist!", 0, nullptr);
 
-    //    const fileio::Directory* mShaderdir {nullptr};
     std::map<std::string, IncludeResult *> mIncludes;
     std::map<std::string, std::vector<char>> mSources;
 };
@@ -50,8 +50,9 @@ struct ShaderCompiler {
     ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
 
    public:
-    std::vector<uint32_t> compile(const std::string &source, EShLanguage lang) {
-        std::cout << source << std::endl;
+    // ZMIANA: Zwracamy tl::expected zamiast samego wektora!
+    tl::expected<std::vector<uint32_t>, Error> compile(
+        const std::string &source, EShLanguage lang) {
         glslang::TShader shader(lang);
         const char *sources[1] = {source.data()};
         shader.setStrings(sources, 1);
@@ -79,23 +80,28 @@ struct ShaderCompiler {
         if (!shader.preprocess(resources, defaultVersion, defaultProfile,
                                forceDefaultVersionAndProfile, forwardCompatible,
                                messageFlags, &preprocessedStr, includer)) {
-            std::cout << "Failed to preprocess shader: " << shader.getInfoLog()
-                      << std::endl;
+            return tl::unexpected(
+                Error{EngineError::ShaderError,
+                      std::string("Shader Preprocess failed: ") +
+                          shader.getInfoLog()});
         }
+
         const char *preprocessedSources[1] = {preprocessedStr.c_str()};
         shader.setStrings(preprocessedSources, 1);
 
         if (!shader.parse(resources, defaultVersion, defaultProfile, false,
                           forwardCompatible, messageFlags, includer)) {
-            std::cout << "Failed to parse shader: " << shader.getInfoLog()
-                      << std::endl;
+            return tl::unexpected(Error{
+                EngineError::ShaderError,
+                std::string("Shader Parse failed:\n") + shader.getInfoLog()});
         }
 
         glslang::TProgram program;
         program.addShader(&shader);
         if (!program.link(messageFlags)) {
-            std::cout << "Failed to link shader: " << program.getInfoLog()
-                      << std::endl;
+            return tl::unexpected(Error{
+                EngineError::ShaderError,
+                std::string("Shader Link failed: ") + program.getInfoLog()});
         }
 
         glslang::TIntermediate &intermediateRef =
@@ -104,10 +110,9 @@ struct ShaderCompiler {
         glslang::SpvOptions options{};
         options.validate = true;
         glslang::GlslangToSpv(intermediateRef, spirv, &options);
+
         return spirv;
     };
-
-   private:
 };
 
 }  // namespace mpvgl
