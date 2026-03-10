@@ -63,14 +63,14 @@ class RenderData {
    public:
     RenderData() = default;
 
-    VkCommandPool command_pool{};
+    VkCommandPool commandPool{};
     DescriptorAllocator descriptorAllocator{};
 
     std::vector<FrameData> frames{};
     std::vector<VkSemaphore> finishedSemaphores{};
 
-    std::vector<VkFence> image_in_flight{};
-    size_t current_frame{};
+    std::vector<VkFence> imageInFlight{};
+    size_t currentFrame{};
 };
 
 class Vulkan {

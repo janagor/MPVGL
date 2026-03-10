@@ -145,7 +145,7 @@ VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
     auto &deviceContext = vulkan.deviceContext;
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
-        vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+        vulkan.data.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer commandBuffer;
     deviceContext.logDevDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
@@ -166,7 +166,7 @@ void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer) {
     deviceContext.logDevDisp.queueSubmit(deviceContext.graphicsQueue, 1,
                                          &submitInfo, VK_NULL_HANDLE);
     deviceContext.logDevDisp.queueWaitIdle(deviceContext.graphicsQueue);
-    deviceContext.logDevDisp.freeCommandBuffers(vulkan.data.command_pool, 1,
+    deviceContext.logDevDisp.freeCommandBuffers(vulkan.data.commandPool, 1,
                                                 &commandBuffer);
 }
 
@@ -323,7 +323,7 @@ tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
         .and_then([&]() { return createFramebuffers(vulkan); })
         .and_then([&]() -> tl::expected<void, Error> {
             auto imageCount = swapchainContext.swapchain.imageCount();
-            vulkan.data.image_in_flight.assign(imageCount, VK_NULL_HANDLE);
+            vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
             for (auto &sem : vulkan.data.finishedSemaphores) {
                 deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
             }
@@ -402,7 +402,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineContext.graphicsPipeline.layout(), 0, 1,
-        &vulkan.data.frames.at(vulkan.data.current_frame).descriptorSet, 0,
+        &vulkan.data.frames.at(vulkan.data.currentFrame).descriptorSet, 0,
         nullptr);
 
     deviceContext.logDevDisp.cmdDrawIndexed(
