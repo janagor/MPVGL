@@ -220,8 +220,8 @@ tl::expected<void, Error<EngineError>> createRenderPass(Vulkan &vulkan) {
     builder.addDependency(dependency);
 
     return builder.build(vulkan.deviceContext)
-        .transform([&](VkRenderPass renderPass) {
-            vulkan.swapchainContext.renderPass = renderPass;
+        .transform([&](RenderPass renderPass) {
+            vulkan.swapchainContext.renderPass = std::move(renderPass);
         });
 }
 
@@ -245,7 +245,7 @@ tl::expected<void, Error<EngineError>> createGraphicsPipeline(Vulkan &vulkan) {
     auto &swapchainContext = vulkan.swapchainContext;
 
     return GraphicsPipeline::create(
-               deviceContext, swapchainContext.renderPass,
+               deviceContext, swapchainContext.renderPass.handle(),
                pipelineContext.descriptorSetLayout,
                std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv",
                std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv")
@@ -269,7 +269,7 @@ tl::expected<void, Error<EngineError>> createFramebuffers(Vulkan &vulkan) {
             swapchainContext.depthTexture.imageView()};
 
         auto framebufferInfo = initializers::framebufferCreateInfo(
-            swapchainContext.renderPass, attachments,
+            swapchainContext.renderPass.handle(), attachments,
             swapchainContext.swapchain.extent(), 1);
 
         if (deviceContext.logDevDisp.createFramebuffer(
@@ -540,8 +540,7 @@ void cleanup(Vulkan &vulkan) {
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
         vulkan.pipelineContext.descriptorSetLayout, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyRenderPass(
-        vulkan.swapchainContext.renderPass, nullptr);
+    vulkan.swapchainContext.renderPass = {};
 
     vmaDestroyAllocator(vulkan.deviceContext.allocator);
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);

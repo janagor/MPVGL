@@ -360,7 +360,7 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     clearValues[1].depthStencil = {1.0f, 0};
 
     auto renderPassInfo = initializers::renderPassBeginInfo(
-        swapchainContext.renderPass,
+        swapchainContext.renderPass.handle(),
         swapchainContext.framebuffers.at(image_index),
         VkRect2D{VkOffset2D{0, 0}, swapchainContext.swapchain.extent()},
         clearValues);

@@ -12,6 +12,28 @@
 
 namespace mpvgl::vlk {
 
+class RenderPass {
+   public:
+    RenderPass() = default;
+    ~RenderPass() noexcept;
+
+    RenderPass(RenderPass const&) = delete;
+    RenderPass& operator=(RenderPass const&) = delete;
+
+    RenderPass(RenderPass&& other) noexcept;
+    RenderPass& operator=(RenderPass&& other) noexcept;
+
+    [[nodiscard]] VkRenderPass handle() const noexcept { return m_renderPass; }
+
+    RenderPass(VkRenderPass renderPass, vkb::DispatchTable disp) noexcept;
+
+   private:
+    void cleanup() noexcept;
+
+    VkRenderPass m_renderPass{VK_NULL_HANDLE};
+    vkb::DispatchTable m_disp{};
+};
+
 struct SubpassInfo {
     VkPipelineBindPoint bindPoint{VK_PIPELINE_BIND_POINT_GRAPHICS};
     std::vector<VkAttachmentReference> colorAttachments{};
@@ -26,7 +48,7 @@ class RenderPassBuilder {
     RenderPassBuilder& addSubpass(SubpassInfo const& subpass);
     RenderPassBuilder& addDependency(VkSubpassDependency const& dependency);
 
-    tl::expected<VkRenderPass, Error<EngineError>> build(
+    tl::expected<RenderPass, Error<EngineError>> build(
         DeviceContext const& device);
 
    private:
