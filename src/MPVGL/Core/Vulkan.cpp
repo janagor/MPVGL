@@ -34,11 +34,9 @@
 #include "MPVGL/Core/Vulkan/LogicalDeviceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/PhysicalDeviceBuilder.hpp"
-#include "MPVGL/Core/Vulkan/Pipeline.hpp"
 #include "MPVGL/Core/Vulkan/RenderPass.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
-#include "MPVGL/Core/Vulkan/Vertex.hpp"
 
 #include "config.hpp"
 
@@ -233,60 +231,14 @@ tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
-    auto vertCode =
-        readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv");
-    if (!vertCode.has_value()) return tl::unexpected<Error>{vertCode.error()};
-
-    auto fragCode =
-        readFile(std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv");
-    if (!fragCode.has_value()) return tl::unexpected<Error>{fragCode.error()};
-
-    auto vertModule = createShaderModule(vulkan, vertCode.value());
-    auto fragModule = createShaderModule(vulkan, fragCode.value());
-    if (vertModule == VK_NULL_HANDLE || fragModule == VK_NULL_HANDLE) {
-        return tl::unexpected{
-            Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
-    }
-
-    auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
-        {&vulkan.pipelineContext.descriptorSetLayout, 1}, {});
-
-    if (vulkan.deviceContext.logDevDisp.createPipelineLayout(
-            &pipelineLayoutInfo, nullptr,
-            &vulkan.pipelineContext.pipelineLayout) != VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Pipeline Layout"}};
-    }
-
-    PipelineBuilder builder{};
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-    auto pipelineRes =
-        builder.setShaders(vertModule, fragModule)
-            .setVertexInput(
-                {Vertex::getBindingDescription()},
-                {attributeDescriptions.begin(), attributeDescriptions.end()})
-            .setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-            .setPolygonMode(VK_POLYGON_MODE_FILL)
-            .setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-            .setMultisampling(VK_SAMPLE_COUNT_1_BIT)
-            .setDepthStencil(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS)
-            .disableColorBlending()
-            .setDynamicStates(
-                {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR})
-            .build(vulkan.deviceContext, vulkan.swapchainContext.renderPass,
-                   vulkan.pipelineContext.pipelineLayout);
-
-    if (!pipelineRes) {
-        return tl::unexpected(pipelineRes.error());
-    }
-
-    vulkan.pipelineContext.graphicsPipeline = pipelineRes.value();
-
-    vulkan.deviceContext.logDevDisp.destroyShaderModule(fragModule, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyShaderModule(vertModule, nullptr);
-    return {};
+    return GraphicsPipeline::create(
+               vulkan.deviceContext, vulkan.swapchainContext.renderPass,
+               vulkan.pipelineContext.descriptorSetLayout,
+               std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv",
+               std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv")
+        .transform([&vulkan](GraphicsPipeline pipeline) {
+            vulkan.pipelineContext.graphicsPipeline = std::move(pipeline);
+        });
 }
 
 tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
@@ -546,12 +498,6 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
 tl::expected<void, Error> reloadShadersAndPipeline(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.queueWaitIdle(
         vulkan.deviceContext.graphicsQueue);
-
-    vulkan.deviceContext.logDevDisp.destroyPipeline(
-        vulkan.pipelineContext.graphicsPipeline, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
-        vulkan.pipelineContext.pipelineLayout, nullptr);
-
     return createGraphicsPipeline(vulkan);
 }
 
@@ -572,23 +518,18 @@ void cleanup(Vulkan &vulkan) {
     vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
                                                        nullptr);
 
-    vulkan.deviceContext.logDevDisp.destroyPipeline(
-        vulkan.pipelineContext.graphicsPipeline, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyPipelineLayout(
-        vulkan.pipelineContext.pipelineLayout, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyRenderPass(
-        vulkan.swapchainContext.renderPass, nullptr);
-
+    vulkan.pipelineContext.graphicsPipeline = {};
     vulkan.sceneContext.texture = Texture{};
 
     vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 
     vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
         vulkan.pipelineContext.descriptorSetLayout, nullptr);
-
+    vulkan.deviceContext.logDevDisp.destroyRenderPass(
+        vulkan.swapchainContext.renderPass, nullptr);
     vulkan.sceneContext.model = Model{};
-    vmaDestroyAllocator(vulkan.deviceContext.allocator);
 
+    vmaDestroyAllocator(vulkan.deviceContext.allocator);
     vkb::destroy_device(vulkan.deviceContext.logicalDevice);
     vkb::destroy_surface(vulkan.deviceContext.instance, vulkan.surface);
     vkb::destroy_instance(vulkan.deviceContext.instance);

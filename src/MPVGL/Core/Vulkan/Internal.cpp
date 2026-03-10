@@ -25,6 +25,7 @@
 #include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
@@ -102,9 +103,9 @@ tl::expected<std::vector<char>, Error> readFile(const std::string &filename) {
     return buffer;
 }
 
-// TODO: createShaderModule(Vulkan&vulkan, std::span<const std::uint32_t>
-// &code);
-VkShaderModule createShaderModule(Vulkan &vulkan,
+// TODO: createShaderModule(DeviceContext&context, std::span<const
+// std::uint32_t> code);
+VkShaderModule createShaderModule(DeviceContext const &context,
                                   const std::vector<char> &code) {
     std::span<const std::uint32_t> code_span{
         reinterpret_cast<const std::uint32_t *>(code.data()),
@@ -112,9 +113,9 @@ VkShaderModule createShaderModule(Vulkan &vulkan,
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
     VkShaderModule shaderModule;
-    if (vulkan.deviceContext.logDevDisp.createShaderModule(
-            &create_info, nullptr, &shaderModule) != VK_SUCCESS) {
-        return VK_NULL_HANDLE;  // failed to create shader module
+    if (context.logDevDisp.createShaderModule(&create_info, nullptr,
+                                              &shaderModule) != VK_SUCCESS) {
+        return VK_NULL_HANDLE;
     }
 
     return shaderModule;
@@ -357,7 +358,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
         command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vulkan.deviceContext.logDevDisp.cmdBindPipeline(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.pipelineContext.graphicsPipeline);
+        vulkan.pipelineContext.graphicsPipeline.handle());
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -387,7 +388,7 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
 
     vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.pipelineContext.pipelineLayout, 0, 1,
+        vulkan.pipelineContext.graphicsPipeline.layout(), 0, 1,
         &vulkan.data.frames.at(vulkan.data.current_frame).descriptorSet, 0,
         nullptr);
 

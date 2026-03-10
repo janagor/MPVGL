@@ -11,6 +11,7 @@
 
 #include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 
 namespace mpvgl::vlk {
@@ -21,8 +22,8 @@ void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator);
 tl::expected<std::vector<char>, Error> readFile(const std::string &filename);
-VkShaderModule createShaderModule(Vulkan &vulkan,
-                                  const std::vector<char> &code);
+VkShaderModule createShaderModule(DeviceContext const &context,
+                                  std::vector<char> const &code);
 tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
                                        VkBufferUsageFlags usage,
                                        VmaMemoryUsage memoryUsage,

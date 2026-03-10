@@ -13,6 +13,7 @@
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Core/Vulkan/GraphicsPipeline.hpp"
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
@@ -41,9 +42,10 @@ struct SceneContext {
 struct PipelineContext {
     PipelineContext() = default;
 
+    GraphicsPipeline graphicsPipeline{};
     VkDescriptorSetLayout descriptorSetLayout{};
-    VkPipelineLayout pipelineLayout{};
-    VkPipeline graphicsPipeline{};
+    // VkPipelineLayout pipelineLayout{};
+    // VkPipeline graphicsPipeline{};
 };
 
 class FrameData {
