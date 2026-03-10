@@ -125,7 +125,7 @@ void Buffer::copyBuffer(DeviceContext const& device, VkCommandPool commandPool,
 
 tl::expected<Buffer, Error<EngineError>> Buffer::createWithStaging(
     DeviceContext const& device, VkCommandPool commandPool,
-    VkQueue graphicsQueue, const void* data, VkDeviceSize size,
+    VkQueue graphicsQueue, void const* data, VkDeviceSize size,
     VkBufferUsageFlags usage) {
     return Buffer::create(
                device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

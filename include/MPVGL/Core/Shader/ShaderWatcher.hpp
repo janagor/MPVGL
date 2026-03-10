@@ -21,8 +21,8 @@ class ShaderWatcher {
         std::filesystem::create_directories(outputDir);
     }
 
-    ShaderWatcher(const ShaderWatcher &other) noexcept = delete;
-    ShaderWatcher &operator=(const ShaderWatcher &other) noexcept = delete;
+    ShaderWatcher(ShaderWatcher const &other) noexcept = delete;
+    ShaderWatcher &operator=(ShaderWatcher const &other) noexcept = delete;
     ShaderWatcher(ShaderWatcher &&other) noexcept = delete;
     ShaderWatcher &operator=(ShaderWatcher &&other) noexcept = delete;
 
@@ -35,7 +35,7 @@ class ShaderWatcher {
     }
 
     inline void compileAll() {
-        for (const auto &entry :
+        for (auto const &entry :
              std::filesystem::directory_iterator(shaderDir)) {
             if (!isShaderFile(entry.path())) continue;
 
@@ -103,7 +103,7 @@ class ShaderWatcher {
                 "Cannot open file for writing: " + outputPath(shaderPath)});
         }
 
-        ofile.write(reinterpret_cast<const char *>(data.data()),
+        ofile.write(reinterpret_cast<char const *>(data.data()),
                     data.size() * sizeof(uint32_t));
 
         if (!ofile) {
@@ -117,7 +117,7 @@ class ShaderWatcher {
 
     inline void scanAndCompile() {
         bool compiledSomething = false;
-        for (const auto &entry :
+        for (auto const &entry :
              std::filesystem::directory_iterator(shaderDir)) {
             if (!isShaderFile(entry.path())) continue;
 

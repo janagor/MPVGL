@@ -140,11 +140,11 @@ struct Map {
     uint8_t* dataPtr() noexcept {
         return reinterpret_cast<uint8_t*>(m_data.data());
     }
-    const uint8_t* dataPtr() const noexcept {
-        return reinterpret_cast<const uint8_t*>(m_data.data());
+    uint8_t const* dataPtr() const noexcept {
+        return reinterpret_cast<uint8_t const*>(m_data.data());
     }
     std::vector<PixelT>& data() noexcept { return m_data; }
-    const std::vector<PixelT>& data() const noexcept { return m_data; }
+    std::vector<PixelT> const& data() const noexcept { return m_data; }
     uint32_t height() const noexcept { return m_height; }
     uint32_t width() const noexcept { return m_width; }
     std::size_t channels() const noexcept { return PixelT::channels(); }

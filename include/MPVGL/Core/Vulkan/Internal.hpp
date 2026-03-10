@@ -18,12 +18,12 @@
 namespace mpvgl::vlk {
 
 tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
-    const char *window_name, bool resize);
+    char const *window_name, bool resize);
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator);
 tl::expected<std::vector<char>, Error<EngineError>> readFile(
-    const std::string &filename);
+    std::string const &filename);
 VkShaderModule createShaderModule(DeviceContext const &context,
                                   std::vector<char> const &code);
 tl::expected<void, Error<EngineError>> createBuffer(
@@ -44,7 +44,7 @@ tl::expected<VkImageView, Error<EngineError>> createImageView(
     VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan);
 tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
-    Vulkan &vulkan, const std::vector<VkFormat> &candidates,
+    Vulkan &vulkan, std::vector<VkFormat> const &candidates,
     VkImageTiling tiling, VkFormatFeatureFlags features);
 tl::expected<VkFormat, Error<EngineError>> findDepthFormat(Vulkan &vulkan);
 bool has_stencil_component(VkFormat format);

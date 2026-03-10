@@ -44,8 +44,8 @@ struct SwapchainBuilder {
 class Swapchain {
    public:
     Swapchain() = default;
-    Swapchain(const Swapchain&) = delete;
-    Swapchain& operator=(const Swapchain&) = delete;
+    Swapchain(Swapchain const&) = delete;
+    Swapchain& operator=(Swapchain const&) = delete;
     Swapchain(Swapchain&& other) noexcept;
     Swapchain& operator=(Swapchain&& other) noexcept;
     ~Swapchain();

@@ -9,9 +9,9 @@
 namespace mpvgl::vlk::initializers {
 
 inline VkRenderPassCreateInfo renderPassCreateInfo(
-    std::span<const VkAttachmentDescription> attachments,
-    std::span<const VkSubpassDescription> subpasses,
-    std::span<const VkSubpassDependency> dependencies,
+    std::span<VkAttachmentDescription const> attachments,
+    std::span<VkSubpassDescription const> subpasses,
+    std::span<VkSubpassDependency const> dependencies,
     VkRenderPassCreateFlags flags = 0) {
     return VkRenderPassCreateInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
@@ -27,7 +27,7 @@ inline VkRenderPassCreateInfo renderPassCreateInfo(
 }
 
 inline VkShaderModuleCreateInfo shaderModuleCreateInfo(
-    std::span<const std::uint32_t> code) {
+    std::span<std::uint32_t const> code) {
     return VkShaderModuleCreateInfo{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .pNext = nullptr,
@@ -38,7 +38,7 @@ inline VkShaderModuleCreateInfo shaderModuleCreateInfo(
 }
 
 inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
-    std::span<const VkDescriptorSetLayoutBinding> bindings,
+    std::span<VkDescriptorSetLayoutBinding const> bindings,
     VkDescriptorSetLayoutCreateFlags flags = 0) {
     return VkDescriptorSetLayoutCreateInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -65,8 +65,8 @@ inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(
 }
 
 inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(
-    std::span<const VkVertexInputBindingDescription> bindingDescriptions,
-    std::span<const VkVertexInputAttributeDescription> attributeDescriptions) {
+    std::span<VkVertexInputBindingDescription const> bindingDescriptions,
+    std::span<VkVertexInputAttributeDescription const> attributeDescriptions) {
     return VkPipelineVertexInputStateCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -106,7 +106,7 @@ inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
 }
 
 inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
-    std::span<const VkViewport> viewports, std::span<const VkRect2D> scissors) {
+    std::span<VkViewport const> viewports, std::span<VkRect2D const> scissors) {
     return VkPipelineViewportStateCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -176,7 +176,7 @@ pipelineDepthStencilStateCreateInfo(
 }
 
 inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
-    std::span<const VkPipelineColorBlendAttachmentState> states,
+    std::span<VkPipelineColorBlendAttachmentState const> states,
     VkBool32 logicOpEnable, VkLogicOp logicOp,
     VkPipelineColorBlendStateCreateFlags flags = 0) {
     return VkPipelineColorBlendStateCreateInfo{
@@ -191,7 +191,7 @@ inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
 }
 
 inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
-    std::span<const VkDynamicState> states) {
+    std::span<VkDynamicState const> states) {
     return VkPipelineDynamicStateCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -202,8 +202,8 @@ inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
 }
 
 inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(
-    std::span<const VkDescriptorSetLayout> setLayouts,
-    std::span<const VkPushConstantRange> pushConstantRanges,
+    std::span<VkDescriptorSetLayout const> setLayouts,
+    std::span<VkPushConstantRange const> pushConstantRanges,
     VkPipelineLayoutCreateFlags flags = 0) {
     return VkPipelineLayoutCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -224,7 +224,7 @@ inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo() {
 }
 
 inline VkFramebufferCreateInfo framebufferCreateInfo(
-    VkRenderPass renderPass, std::span<const VkImageView> attachments,
+    VkRenderPass renderPass, std::span<VkImageView const> attachments,
     VkExtent2D const& extent2D, uint32_t layers,
     VkFramebufferCreateFlags flags = 0) {
     return VkFramebufferCreateInfo{
@@ -284,7 +284,7 @@ inline VkWriteDescriptorSet writeDescriptorSet(
 inline VkWriteDescriptorSet writeDescriptorSet(
     VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
     VkDescriptorType descriptorType,
-    std::span<const VkDescriptorImageInfo> descriptorImageInfos) {
+    std::span<VkDescriptorImageInfo const> descriptorImageInfos) {
     return writeDescriptorSet(
         dstSet, dstBinding, dstArrayElement,
         static_cast<std::uint32_t>(descriptorImageInfos.size()), descriptorType,
@@ -294,7 +294,7 @@ inline VkWriteDescriptorSet writeDescriptorSet(
 inline VkWriteDescriptorSet writeDescriptorSet(
     VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
     VkDescriptorType descriptorType,
-    std::span<const VkDescriptorBufferInfo> descriptorBufferInfos) {
+    std::span<VkDescriptorBufferInfo const> descriptorBufferInfos) {
     return writeDescriptorSet(
         dstSet, dstBinding, dstArrayElement,
         static_cast<std::uint32_t>(descriptorBufferInfos.size()),
@@ -304,7 +304,7 @@ inline VkWriteDescriptorSet writeDescriptorSet(
 inline VkWriteDescriptorSet writeDescriptorSet(
     VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
     VkDescriptorType descriptorType,
-    std::span<const VkBufferView> texelBufferViews) {
+    std::span<VkBufferView const> texelBufferViews) {
     return writeDescriptorSet(
         dstSet, dstBinding, dstArrayElement,
         static_cast<std::uint32_t>(texelBufferViews.size()), descriptorType,
@@ -313,7 +313,7 @@ inline VkWriteDescriptorSet writeDescriptorSet(
 
 inline VkRenderPassBeginInfo renderPassBeginInfo(
     VkRenderPass renderPass, VkFramebuffer framebuffer,
-    VkRect2D const& renderArea, std::span<const VkClearValue> clearValues) {
+    VkRect2D const& renderArea, std::span<VkClearValue const> clearValues) {
     return VkRenderPassBeginInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .pNext = nullptr,
@@ -391,7 +391,7 @@ inline VkSamplerCreateInfo samplerCreateInfo() {
 }
 
 inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(
-    std::span<const VkDescriptorPoolSize> sizes, std::uint32_t maxSets) {
+    std::span<VkDescriptorPoolSize const> sizes, std::uint32_t maxSets) {
     VkDescriptorPoolCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     info.poolSizeCount = static_cast<std::uint32_t>(sizes.size());
@@ -402,7 +402,7 @@ inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(
 
 inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo(
     VkDescriptorPool descriptorPool,
-    std::span<const VkDescriptorSetLayout> descriptorSetLayouts) {
+    std::span<VkDescriptorSetLayout const> descriptorSetLayouts) {
     return VkDescriptorSetAllocateInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext = nullptr,
@@ -451,10 +451,10 @@ inline VkCommandBufferBeginInfo commandBufferBeginInfo(
 }
 
 inline VkSubmitInfo submitInfo(
-    std::span<const VkSemaphore> waitSemaphores,
-    std::span<const VkPipelineStageFlags> waitDstStageMask,
-    std::span<const VkCommandBuffer> commandBuffers,
-    std::span<const VkSemaphore> signalSemaphores) {
+    std::span<VkSemaphore const> waitSemaphores,
+    std::span<VkPipelineStageFlags const> waitDstStageMask,
+    std::span<VkCommandBuffer const> commandBuffers,
+    std::span<VkSemaphore const> signalSemaphores) {
     return VkSubmitInfo{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
@@ -470,9 +470,9 @@ inline VkSubmitInfo submitInfo(
 }
 
 inline VkPresentInfoKHR presentInfoKHR(
-    std::span<const VkSemaphore> waitSemaphores,
-    std::span<const VkSwapchainKHR> swapchains,
-    std::span<const std::uint32_t> indices) {
+    std::span<VkSemaphore const> waitSemaphores,
+    std::span<VkSwapchainKHR const> swapchains,
+    std::span<std::uint32_t const> indices) {
     return VkPresentInfoKHR{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = nullptr,

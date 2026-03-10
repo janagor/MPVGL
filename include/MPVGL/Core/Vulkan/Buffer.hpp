@@ -17,8 +17,8 @@ namespace mpvgl::vlk {
 class Buffer {
    public:
     Buffer() = default;
-    Buffer(const Buffer&) = delete;
-    Buffer& operator=(const Buffer&) = delete;
+    Buffer(Buffer const&) = delete;
+    Buffer& operator=(Buffer const&) = delete;
     Buffer(Buffer&& other) noexcept;
     Buffer& operator=(Buffer&& other) noexcept;
     ~Buffer();
@@ -57,7 +57,7 @@ class Buffer {
            VmaAllocator allocator) noexcept;
     static tl::expected<Buffer, Error<EngineError>> createWithStaging(
         DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, const void* data, VkDeviceSize size,
+        VkQueue graphicsQueue, void const* data, VkDeviceSize size,
         VkBufferUsageFlags usage);
     static void copyBuffer(DeviceContext const& device,
                            VkCommandPool commandPool, VkQueue graphicsQueue,

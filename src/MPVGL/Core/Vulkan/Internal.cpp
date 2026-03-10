@@ -36,8 +36,8 @@
 namespace mpvgl::vlk {
 
 tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
-    const char *window_name, bool resize) {
-    glfwSetErrorCallback([](int error, const char *description) {
+    char const *window_name, bool resize) {
+    glfwSetErrorCallback([](int error, char const *description) {
         fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
     });
 
@@ -73,7 +73,7 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
     VkResult err =
         glfwCreateWindowSurface(instance, window, allocator, &surface);
     if (err) {
-        const char *error_msg;
+        char const *error_msg;
         int ret = glfwGetError(&error_msg);
         if (ret != 0) {
             std::cout << ret << " ";
@@ -86,7 +86,7 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
 }
 
 tl::expected<std::vector<char>, Error<EngineError>> readFile(
-    const std::string &filename) {
+    std::string const &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -108,9 +108,9 @@ tl::expected<std::vector<char>, Error<EngineError>> readFile(
 // TODO: createShaderModule(DeviceContext&context, std::span<const
 // std::uint32_t> code);
 VkShaderModule createShaderModule(DeviceContext const &context,
-                                  const std::vector<char> &code) {
-    std::span<const std::uint32_t> code_span{
-        reinterpret_cast<const std::uint32_t *>(code.data()),
+                                  std::vector<char> const &code) {
+    std::span<std::uint32_t const> code_span{
+        reinterpret_cast<std::uint32_t const *>(code.data()),
         code.size() / sizeof(std::uint32_t)};
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
@@ -259,7 +259,7 @@ tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan) {
 }
 
 tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
-    Vulkan &vulkan, const std::vector<VkFormat> &candidates,
+    Vulkan &vulkan, std::vector<VkFormat> const &candidates,
     VkImageTiling tiling, VkFormatFeatureFlags features) {
     auto &deviceContext = vulkan.deviceContext;
 

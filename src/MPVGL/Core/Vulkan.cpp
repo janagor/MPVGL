@@ -45,7 +45,7 @@ namespace {
 
 template <typename T>
 tl::expected<T, mpvgl::Error<mpvgl::EngineError>> vkb_to_expected(
-    vkb::Result<T> &&res, const std::string &msg) {
+    vkb::Result<T> &&res, std::string const &msg) {
     if (!res)
         return tl::unexpected(
             mpvgl::Error<mpvgl::EngineError>{res.error(), msg});

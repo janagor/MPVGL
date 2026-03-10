@@ -18,14 +18,14 @@
 namespace mpvgl {
 
 struct GlslShaderIncluder : public glslang::TShader::Includer {
-    virtual IncludeResult *includeSystem(const char *headerName,
-                                         const char *includerName,
+    virtual IncludeResult *includeSystem(char const *headerName,
+                                         char const *includerName,
                                          size_t inclusionDepth) override {
         return nullptr;
     };
 
-    virtual IncludeResult *includeLocal(const char *headerName,
-                                        const char *includerName,
+    virtual IncludeResult *includeLocal(char const *headerName,
+                                        char const *includerName,
                                         size_t inclusionDepth) override {
         return nullptr;
     };
@@ -33,7 +33,7 @@ struct GlslShaderIncluder : public glslang::TShader::Includer {
     virtual void releaseInclude(IncludeResult *) override {};
 
    private:
-    static inline const std::string sEmpty = "";
+    static inline std::string const sEmpty = "";
     static inline IncludeResult smFailResult =
         IncludeResult(sEmpty, "Header does not exist!", 0, nullptr);
 
@@ -45,17 +45,17 @@ struct ShaderCompiler {
    public:
     ShaderCompiler() noexcept {};
 
-    ShaderCompiler(const ShaderCompiler &) = delete;
-    ShaderCompiler &operator=(const ShaderCompiler &) = delete;
+    ShaderCompiler(ShaderCompiler const &) = delete;
+    ShaderCompiler &operator=(ShaderCompiler const &) = delete;
     ShaderCompiler(ShaderCompiler &&other) noexcept = delete;
     ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
 
    public:
     // ZMIANA: Zwracamy tl::expected zamiast samego wektora!
     tl::expected<std::vector<uint32_t>, Error<EngineError>> compile(
-        const std::string &source, EShLanguage lang) {
+        std::string const &source, EShLanguage lang) {
         glslang::TShader shader(lang);
-        const char *sources[1] = {source.data()};
+        char const *sources[1] = {source.data()};
         shader.setStrings(sources, 1);
         glslang::EShTargetClientVersion targetApiVersion =
             glslang::EShTargetVulkan_1_0;
@@ -67,13 +67,13 @@ struct ShaderCompiler {
 
         shader.setEntryPoint("main");
 
-        const auto resources = GetResources();
+        auto const resources = GetResources();
         resources->maxDrawBuffers = 1;
-        const auto defaultVersion = 450;
-        const auto defaultProfile = ENoProfile;
-        const auto forceDefaultVersionAndProfile = false;
-        const auto forwardCompatible = false;
-        const auto messageFlags =
+        auto const defaultVersion = 450;
+        auto const defaultProfile = ENoProfile;
+        auto const forceDefaultVersionAndProfile = false;
+        auto const forwardCompatible = false;
+        auto const messageFlags =
             (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
         GlslShaderIncluder includer{};
 
@@ -87,7 +87,7 @@ struct ShaderCompiler {
                           shader.getInfoLog()});
         }
 
-        const char *preprocessedSources[1] = {preprocessedStr.c_str()};
+        char const *preprocessedSources[1] = {preprocessedStr.c_str()};
         shader.setStrings(preprocessedSources, 1);
 
         if (!shader.parse(resources, defaultVersion, defaultProfile, false,

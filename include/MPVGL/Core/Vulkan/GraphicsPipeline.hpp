@@ -17,8 +17,8 @@ class GraphicsPipeline {
     GraphicsPipeline() = default;
     ~GraphicsPipeline() noexcept;
 
-    GraphicsPipeline(const GraphicsPipeline&) = delete;
-    GraphicsPipeline& operator=(const GraphicsPipeline&) = delete;
+    GraphicsPipeline(GraphicsPipeline const&) = delete;
+    GraphicsPipeline& operator=(GraphicsPipeline const&) = delete;
 
     GraphicsPipeline(GraphicsPipeline&& other) noexcept;
     GraphicsPipeline& operator=(GraphicsPipeline&& other) noexcept;

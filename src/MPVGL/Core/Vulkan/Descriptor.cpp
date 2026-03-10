@@ -90,7 +90,7 @@ DescriptorWriter& DescriptorWriter::writeBuffer(uint32_t binding,
 
     VkWriteDescriptorSet write = initializers::writeDescriptorSet(
         VK_NULL_HANDLE, binding, 0, type,
-        std::span<const VkDescriptorBufferInfo>{&info, 1});
+        std::span<VkDescriptorBufferInfo const>{&info, 1});
     m_writes.push_back(write);
     return *this;
 }
@@ -105,7 +105,7 @@ DescriptorWriter& DescriptorWriter::writeImage(uint32_t binding,
 
     VkWriteDescriptorSet write = initializers::writeDescriptorSet(
         VK_NULL_HANDLE, binding, 0, type,
-        std::span<const VkDescriptorImageInfo>{&info, 1});
+        std::span<VkDescriptorImageInfo const>{&info, 1});
     m_writes.push_back(write);
     return *this;
 }

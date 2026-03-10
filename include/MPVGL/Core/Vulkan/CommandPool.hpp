@@ -13,8 +13,8 @@ namespace mpvgl::vlk {
 class CommandPool {
    public:
     CommandPool() = default;
-    CommandPool(const CommandPool&) = delete;
-    CommandPool& operator=(const CommandPool&) = delete;
+    CommandPool(CommandPool const&) = delete;
+    CommandPool& operator=(CommandPool const&) = delete;
     CommandPool(CommandPool&& other) noexcept;
     CommandPool& operator=(CommandPool&& other) noexcept;
     ~CommandPool() noexcept;

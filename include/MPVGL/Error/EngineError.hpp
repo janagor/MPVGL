@@ -50,7 +50,7 @@ class EngineErrorCategory_impl : public std::error_category {
     }
 };
 
-[[nodiscard]] inline const std::error_category& EngineErrorCategory() {
+[[nodiscard]] inline std::error_category const& EngineErrorCategory() {
     static EngineErrorCategory_impl instance;
     return instance;
 }

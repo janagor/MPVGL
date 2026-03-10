@@ -36,7 +36,7 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
 
     for (auto const& shape : shapes) {
-        for (const auto& index : shape.mesh.indices) {
+        for (auto const& index : shape.mesh.indices) {
             auto vertex =
                 Vertex{{attrib.vertices[3 * index.vertex_index + 0],
                         attrib.vertices[3 * index.vertex_index + 1],

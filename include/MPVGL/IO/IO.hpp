@@ -4,7 +4,7 @@
 
 #include <tl/expected.hpp>
 
-tl::expected<std::vector<char>, Error> readFile(const std::string &filename) {
+tl::expected<std::vector<char>, Error> readFile(std::string const &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {

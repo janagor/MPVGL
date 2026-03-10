@@ -20,8 +20,8 @@ namespace mpvgl::vlk {
 class Texture {
    public:
     Texture() = default;
-    Texture(const Texture&) = delete;
-    Texture& operator=(const Texture&) = delete;
+    Texture(Texture const&) = delete;
+    Texture& operator=(Texture const&) = delete;
     Texture(Texture&& other) noexcept;
     Texture& operator=(Texture&& other) noexcept;
     ~Texture();
