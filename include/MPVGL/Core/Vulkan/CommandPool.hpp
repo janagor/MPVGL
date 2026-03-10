@@ -4,8 +4,9 @@
 #include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -18,7 +19,7 @@ class CommandPool {
     CommandPool& operator=(CommandPool&& other) noexcept;
     ~CommandPool() noexcept;
 
-    [[nodiscard]] static tl::expected<CommandPool, Error> create(
+    [[nodiscard]] static tl::expected<CommandPool, Error<EngineError>> create(
         DeviceContext const& device, uint32_t queueFamilyIndex);
 
     [[nodiscard]] VkCommandPool handle() const noexcept { return m_pool; }

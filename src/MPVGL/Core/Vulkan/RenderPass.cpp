@@ -20,7 +20,7 @@ RenderPassBuilder& RenderPassBuilder::addDependency(
     return *this;
 }
 
-tl::expected<VkRenderPass, Error> RenderPassBuilder::build(
+tl::expected<VkRenderPass, Error<EngineError>> RenderPassBuilder::build(
     DeviceContext const& device) {
     std::vector<VkSubpassDescription> subpasses;
     subpasses.reserve(m_subpassInfos.size());

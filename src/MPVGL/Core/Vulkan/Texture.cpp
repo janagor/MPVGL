@@ -13,11 +13,12 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -110,11 +111,11 @@ void Texture::cleanup() noexcept {
     }
 }
 
-tl::expected<void, Error> Texture::transitionImageLayout(
+tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, VkFormat format,
     VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
-    tl::expected<void, Error> result = {};
+    tl::expected<void, Error<EngineError>> result = {};
     executeSingleTimeCommands(
         device, commandPool, graphicsQueue, [&](VkCommandBuffer cmd) {
             auto subresourceRange = VkImageSubresourceRange{
@@ -178,7 +179,7 @@ void Texture::copyBufferToImage(DeviceContext const& device,
         });
 }
 
-tl::expected<void, Error> Texture::generateMipmaps(
+tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
     int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
@@ -270,11 +271,12 @@ tl::expected<void, Error> Texture::generateMipmaps(
     return {};
 }
 
-tl::expected<Texture, Error> Texture::loadFromFile(
+tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
     auto pixelsRes = loadRawPixels(filepath);
-    if (!pixelsRes) return tl::unexpected(pixelsRes.error());
+    if (!pixelsRes)
+        return tl::unexpected<Error<EngineError>>(pixelsRes.error());
     auto& pixels = pixelsRes.value();
 
     auto imageRes = createAllocatedImage(device, pixels.width, pixels.height,
@@ -318,7 +320,7 @@ void Texture::RawPixels::free() noexcept {
     }
 }
 
-tl::expected<Texture::RawPixels, Error> Texture::loadRawPixels(
+tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
     std::string const& filepath) {
     RawPixels pixels{};
     int channels;
@@ -336,7 +338,7 @@ tl::expected<Texture::RawPixels, Error> Texture::loadRawPixels(
     return pixels;
 }
 
-tl::expected<std::pair<VkImage, VmaAllocation>, Error>
+tl::expected<std::pair<VkImage, VmaAllocation>, Error<EngineError>>
 Texture::createAllocatedImage(DeviceContext const& device, uint32_t width,
                               uint32_t height, uint32_t mipLevels) {
     auto imageInfo = initializers::imageCreateInfo();
@@ -366,7 +368,7 @@ Texture::createAllocatedImage(DeviceContext const& device, uint32_t width,
     return std::make_pair(image, allocation);
 }
 
-tl::expected<void, Error> Texture::uploadAndGenerateMipmaps(
+tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, RawPixels const& pixels) {
     auto stagingRes =
@@ -374,7 +376,8 @@ tl::expected<void, Error> Texture::uploadAndGenerateMipmaps(
                        VMA_MEMORY_USAGE_AUTO,
                        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-    if (!stagingRes) return tl::unexpected(stagingRes.error());
+    if (!stagingRes)
+        return tl::unexpected<Error<EngineError>>(stagingRes.error());
     auto stagingBuffer = std::move(stagingRes.value());
 
     if (auto mapRes = stagingBuffer.map()) {
@@ -402,7 +405,7 @@ tl::expected<void, Error> Texture::uploadAndGenerateMipmaps(
                            pixels.mipLevels);
 }
 
-tl::expected<VkImageView, Error> Texture::createImageView(
+tl::expected<VkImageView, Error<EngineError>> Texture::createImageView(
     DeviceContext const& device, VkImage image, uint32_t mipLevels) {
     auto subresourceRange = VkImageSubresourceRange{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -418,13 +421,14 @@ tl::expected<VkImageView, Error> Texture::createImageView(
     VkImageView imageView;
     if (device.logDevDisp.createImageView(&viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Texture Image View"});
+        return tl::unexpected<Error<EngineError>>(
+            EngineError::VulkanRuntimeError,
+            "Failed to create Texture Image View");
     }
     return imageView;
 }
 
-tl::expected<VkSampler, Error> Texture::createSampler(
+tl::expected<VkSampler, Error<EngineError>> Texture::createSampler(
     DeviceContext const& device) {
     VkPhysicalDeviceProperties properties{};
     device.instDisp.getPhysicalDeviceProperties(
@@ -456,7 +460,7 @@ tl::expected<VkSampler, Error> Texture::createSampler(
     return sampler;
 }
 
-tl::expected<Texture, Error> Texture::createDepthTexture(
+tl::expected<Texture, Error<EngineError>> Texture::createDepthTexture(
     DeviceContext const& device, uint32_t width, uint32_t height,
     VkFormat format) {
     auto imageInfo = initializers::imageCreateInfo();

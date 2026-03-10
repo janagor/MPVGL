@@ -12,7 +12,8 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <tl/expected.hpp>
 
-#include "MPVGL/Core/Error.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl {
 
@@ -51,7 +52,7 @@ struct ShaderCompiler {
 
    public:
     // ZMIANA: Zwracamy tl::expected zamiast samego wektora!
-    tl::expected<std::vector<uint32_t>, Error> compile(
+    tl::expected<std::vector<uint32_t>, Error<EngineError>> compile(
         const std::string &source, EShLanguage lang) {
         glslang::TShader shader(lang);
         const char *sources[1] = {source.data()};

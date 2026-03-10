@@ -3,20 +3,19 @@
 #include <string>
 #include <system_error>
 #include <type_traits>
-#include <utility>
 
 namespace mpvgl {
 
 enum class EngineError {
-    VulkanInitFailed = 1,
+    Unknown = 1,
+    VulkanInitFailed,
     VulkanRuntimeError,
     ShaderError,
     FileNotFound,
     WindowError,
-    Unknown
 };
 
-}  // namespace mpvgl
+}
 
 namespace std {
 
@@ -59,16 +58,5 @@ class EngineErrorCategory_impl : public std::error_category {
 [[nodiscard]] inline std::error_code make_error_code(EngineError e) {
     return {static_cast<int>(e), EngineErrorCategory()};
 }
-
-struct Error {
-    Error(std::error_code ec, std::string msg = "")
-        : code(ec), message(msg.empty() ? ec.message() : std::move(msg)) {}
-
-    Error(EngineError err, std::string msg = "")
-        : code(err), message(msg.empty() ? code.message() : std::move(msg)) {}
-
-    std::error_code code;
-    std::string message;
-};
 
 }  // namespace mpvgl

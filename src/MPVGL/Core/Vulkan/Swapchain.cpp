@@ -7,10 +7,11 @@
 #include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -57,7 +58,7 @@ void Swapchain::cleanup() noexcept {
     m_images.clear();
 }
 
-tl::expected<Swapchain, Error> Swapchain::create(
+tl::expected<Swapchain, Error<EngineError>> Swapchain::create(
     DeviceContext const& deviceContext) {
     auto vkbSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window);
@@ -70,7 +71,7 @@ tl::expected<Swapchain, Error> Swapchain::create(
     return swapchain;
 }
 
-tl::expected<void, Error> Swapchain::recreate(
+tl::expected<void, Error<EngineError>> Swapchain::recreate(
     DeviceContext const& deviceContext) {
     auto newSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window, m_swapchain);
@@ -89,7 +90,7 @@ tl::expected<void, Error> Swapchain::recreate(
     return initImageViews();
 }
 
-tl::expected<void, Error> Swapchain::initImageViews() {
+tl::expected<void, Error<EngineError>> Swapchain::initImageViews() {
     m_imageViews.resize(m_images.size());
     for (size_t i = 0; i < m_images.size(); ++i) {
         auto subresourceRange = VkImageSubresourceRange{

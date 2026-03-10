@@ -7,10 +7,11 @@
 #include <vk-bootstrap/src/VkBootstrap.h>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -46,7 +47,7 @@ Buffer& Buffer::operator=(Buffer&& other) noexcept {
 
 Buffer::~Buffer() { cleanup(); }
 
-tl::expected<Buffer, Error> Buffer::create(
+tl::expected<Buffer, Error<EngineError>> Buffer::create(
     DeviceContext const& device, VkDeviceSize size, VkBufferUsageFlags usage,
     VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags) {
     auto bufferInfo = initializers::bufferCreateInfo(size, usage);
@@ -60,8 +61,8 @@ tl::expected<Buffer, Error> Buffer::create(
 
     if (vmaCreateBuffer(device.allocator, &bufferInfo, &allocInfo, &buffer,
                         &allocation, nullptr) != VK_SUCCESS) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to create Buffer via VMA"};
+        return tl::unexpected<Error<EngineError>>{
+            EngineError::VulkanRuntimeError, "Failed to create Buffer via VMA"};
     }
     return Buffer{buffer, allocation, size, device.allocator};
 }
@@ -72,16 +73,18 @@ VmaAllocation Buffer::allocation() const noexcept { return m_allocation; }
 
 VkDeviceSize Buffer::size() const noexcept { return m_size; }
 
-tl::expected<void*, Error> Buffer::map() noexcept {
+tl::expected<void*, Error<EngineError>> Buffer::map() noexcept {
     if (m_allocation == VK_NULL_HANDLE || m_allocator == VK_NULL_HANDLE) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Cannot map an uninitialized buffer"};
+        return tl::unexpected<Error<EngineError>>{
+            EngineError::VulkanRuntimeError,
+            "Cannot map an uninitialized buffer"};
     }
 
     void* mappedData = nullptr;
     if (vmaMapMemory(m_allocator, m_allocation, &mappedData) != VK_SUCCESS) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to map Buffer memory via VMA"};
+        return tl::unexpected<Error<EngineError>>{
+            EngineError::VulkanRuntimeError,
+            "Failed to map Buffer memory via VMA"};
     }
 
     return mappedData;
@@ -120,7 +123,7 @@ void Buffer::copyBuffer(DeviceContext const& device, VkCommandPool commandPool,
     device.logDevDisp.freeCommandBuffers(commandPool, 1, &commandBuffer);
 }
 
-tl::expected<Buffer, Error> Buffer::createWithStaging(
+tl::expected<Buffer, Error<EngineError>> Buffer::createWithStaging(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, const void* data, VkDeviceSize size,
     VkBufferUsageFlags usage) {

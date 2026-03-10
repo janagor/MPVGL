@@ -6,8 +6,9 @@
 #include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -22,11 +23,11 @@ class GraphicsPipeline {
     GraphicsPipeline(GraphicsPipeline&& other) noexcept;
     GraphicsPipeline& operator=(GraphicsPipeline&& other) noexcept;
 
-    [[nodiscard]] static tl::expected<GraphicsPipeline, Error> create(
-        DeviceContext const& device, VkRenderPass renderPass,
-        VkDescriptorSetLayout descriptorSetLayout,
-        std::string const& vertexShaderPath,
-        std::string const& fragmentShaderPath);
+    [[nodiscard]] static tl::expected<GraphicsPipeline, Error<EngineError>>
+    create(DeviceContext const& device, VkRenderPass renderPass,
+           VkDescriptorSetLayout descriptorSetLayout,
+           std::string const& vertexShaderPath,
+           std::string const& fragmentShaderPath);
 
     [[nodiscard]] VkPipeline handle() const noexcept { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const noexcept { return m_layout; }

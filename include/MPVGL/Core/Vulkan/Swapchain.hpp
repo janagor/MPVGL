@@ -12,13 +12,14 @@
 
 #include <GLFW/glfw3.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
 struct SwapchainBuilder {
-    static tl::expected<vkb::Swapchain, Error> getSwapchain(
+    static tl::expected<vkb::Swapchain, Error<EngineError>> getSwapchain(
         vkb::Device const& device, GLFWwindow* window,
         vkb::Swapchain const& oldSwapchain = {}) {
         vkb::SwapchainBuilder swapchainBuilder{device};
@@ -33,7 +34,8 @@ struct SwapchainBuilder {
         if (!newSwapchain) {
             std::string errorMsg =
                 "Swapchain build error: " + newSwapchain.error().message();
-            return tl::unexpected(mpvgl::Error{newSwapchain.error(), errorMsg});
+            return tl::unexpected(
+                mpvgl::Error<EngineError>{newSwapchain.error(), errorMsg});
         }
         return newSwapchain.value();
     }
@@ -48,9 +50,9 @@ class Swapchain {
     Swapchain& operator=(Swapchain&& other) noexcept;
     ~Swapchain();
 
-    [[nodiscard]] static tl::expected<Swapchain, Error> create(
+    [[nodiscard]] static tl::expected<Swapchain, Error<EngineError>> create(
         DeviceContext const& deviceContext);
-    [[nodiscard]] tl::expected<void, Error> recreate(
+    [[nodiscard]] tl::expected<void, Error<EngineError>> recreate(
         DeviceContext const& deviceContext);
 
     [[nodiscard]] VkSwapchainKHR handle() const noexcept {
@@ -86,7 +88,7 @@ class Swapchain {
    private:
     Swapchain(vkb::Swapchain vkbSwapchain, vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
-    tl::expected<void, Error> initImageViews();
+    tl::expected<void, Error<EngineError>> initImageViews();
 };
 
 }  // namespace mpvgl::vlk

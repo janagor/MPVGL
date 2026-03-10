@@ -47,21 +47,17 @@ void GraphicsPipeline::cleanup() noexcept {
     }
 }
 
-tl::expected<GraphicsPipeline, Error> GraphicsPipeline::create(
+tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     DeviceContext const& device, VkRenderPass renderPass,
     VkDescriptorSetLayout descriptorSetLayout,
     std::string const& vertexShaderPath,
     std::string const& fragmentShaderPath) {
-    // 1. Wczytywanie shaderów
     auto vertCode = readFile(vertexShaderPath);
-    if (!vertCode) return tl::unexpected<Error>{vertCode.error()};
+    if (!vertCode) return tl::unexpected<Error<EngineError>>{vertCode.error()};
 
     auto fragCode = readFile(fragmentShaderPath);
-    if (!fragCode) return tl::unexpected<Error>{fragCode.error()};
+    if (!fragCode) return tl::unexpected<Error<EngineError>>{fragCode.error()};
 
-    // Uwaga: Funkcja createShaderModule musi przyjmować samo logDevDisp lub
-    // DeviceContext zamiast całego obiektu Vulkan! Zakładam, że zaktualizujesz
-    // API `createShaderModule`.
     auto vertModule = createShaderModule(device, vertCode.value());
     auto fragModule = createShaderModule(device, fragCode.value());
 
@@ -74,7 +70,6 @@ tl::expected<GraphicsPipeline, Error> GraphicsPipeline::create(
             Error{EngineError::ShaderError, "Failed to create Shader Modules"});
     }
 
-    // 2. Tworzenie Pipeline Layout
     auto pipelineLayoutInfo =
         initializers::pipelineLayoutCreateInfo({&descriptorSetLayout, 1}, {});
     VkPipelineLayout pipelineLayout;
@@ -87,7 +82,6 @@ tl::expected<GraphicsPipeline, Error> GraphicsPipeline::create(
                                     "Failed to create Pipeline Layout"});
     }
 
-    // 3. Budowanie potoku za pomocą PipelineBuilder
     PipelineBuilder builder{};
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
@@ -107,8 +101,6 @@ tl::expected<GraphicsPipeline, Error> GraphicsPipeline::create(
                 {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR})
             .build(device, renderPass, pipelineLayout);
 
-    // 4. Sprzątanie modułów shaderów (nie są już potrzebne po zbudowaniu
-    // potoku)
     device.logDevDisp.destroyShaderModule(fragModule, nullptr);
     device.logDevDisp.destroyShaderModule(vertModule, nullptr);
 

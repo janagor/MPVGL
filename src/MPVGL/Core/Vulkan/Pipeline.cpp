@@ -7,10 +7,11 @@
 #include <tl/expected.hpp>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -93,7 +94,7 @@ PipelineBuilder& PipelineBuilder::setDynamicStates(
     return *this;
 }
 
-tl::expected<VkPipeline, Error> PipelineBuilder::build(
+tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
     DeviceContext const& device, VkRenderPass pass, VkPipelineLayout layout) {
     auto vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo(
         m_vertexBindings, m_vertexAttributes);

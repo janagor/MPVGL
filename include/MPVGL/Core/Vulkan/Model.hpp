@@ -8,9 +8,10 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -22,7 +23,7 @@ class Model {
           m_indexBuffer(std::move(indexBuffer)),
           m_indexCount(indexCount) {}
 
-    [[nodiscard]] static tl::expected<Model, Error> loadFromFile(
+    [[nodiscard]] static tl::expected<Model, Error<EngineError>> loadFromFile(
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, std::string const& filepath);
 

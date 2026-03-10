@@ -6,8 +6,9 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -31,9 +32,9 @@ class PipelineBuilder {
     PipelineBuilder& disableColorBlending();
     PipelineBuilder& setDynamicStates(std::vector<VkDynamicState> states);
 
-    tl::expected<VkPipeline, Error> build(DeviceContext const& device,
-                                          VkRenderPass pass,
-                                          VkPipelineLayout layout);
+    tl::expected<VkPipeline, Error<EngineError>> build(
+        DeviceContext const& device, VkRenderPass pass,
+        VkPipelineLayout layout);
 
    private:
     std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages{};

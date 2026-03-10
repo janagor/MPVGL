@@ -6,10 +6,11 @@
 #include <tl/expected.hpp>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -27,19 +28,20 @@ DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(
 
 void DescriptorLayoutBuilder::clear() { m_bindings.clear(); }
 
-tl::expected<VkDescriptorSetLayout, Error> DescriptorLayoutBuilder::build(
-    DeviceContext const& device) {
+tl::expected<VkDescriptorSetLayout, Error<EngineError>>
+DescriptorLayoutBuilder::build(DeviceContext const& device) {
     auto info = initializers::descriptorSetLayoutCreateInfo(m_bindings);
     VkDescriptorSetLayout layout;
     if (device.logDevDisp.createDescriptorSetLayout(&info, nullptr, &layout) !=
         VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Descriptor Set Layout"});
+        return tl::unexpected<Error<EngineError>>{
+            EngineError::VulkanRuntimeError,
+            "Failed to create Descriptor Set Layout"};
     }
     return layout;
 }
 
-tl::expected<void, Error> DescriptorAllocator::init(
+tl::expected<void, Error<EngineError>> DescriptorAllocator::init(
     DeviceContext const& device, uint32_t maxSets,
     std::span<PoolSizeRatio> poolRatios) {
     std::vector<VkDescriptorPoolSize> poolSizes;
@@ -65,15 +67,16 @@ void DescriptorAllocator::cleanup(DeviceContext const& device) {
     }
 }
 
-tl::expected<VkDescriptorSet, Error> DescriptorAllocator::allocate(
+tl::expected<VkDescriptorSet, Error<EngineError>> DescriptorAllocator::allocate(
     DeviceContext const& device, VkDescriptorSetLayout layout) {
     auto allocInfo =
         initializers::descriptorSetAllocateInfo(m_pool, {&layout, 1});
     VkDescriptorSet set;
     if (device.logDevDisp.allocateDescriptorSets(&allocInfo, &set) !=
         VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to allocate Descriptor Set"});
+        return tl::unexpected<Error<EngineError>>{
+            EngineError::VulkanRuntimeError,
+            "Failed to allocate Descriptor Set"};
     }
     return set;
 }

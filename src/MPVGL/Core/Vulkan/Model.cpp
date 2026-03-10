@@ -8,18 +8,18 @@
 #include <tl/expected.hpp>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
-tl::expected<Model, Error> Model::loadFromFile(DeviceContext const& device,
-                                               VkCommandPool commandPool,
-                                               VkQueue graphicsQueue,
-                                               std::string const& filepath) {
+tl::expected<Model, Error<EngineError>> Model::loadFromFile(
+    DeviceContext const& device, VkCommandPool commandPool,
+    VkQueue graphicsQueue, std::string const& filepath) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;

@@ -8,8 +8,9 @@
 #include <glslang/Public/ShaderLang.h>
 #include <tl/expected.hpp>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Shader/ShaderCompiler.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl {
 
@@ -62,7 +63,7 @@ class ShaderWatcher {
         return outputDir + "/" + input.filename().string() + ".spv";
     }
 
-    inline tl::expected<void, Error> compile(
+    inline tl::expected<void, Error<EngineError>> compile(
         std::filesystem::path const &shaderPath) {
         std::cout << "[ShaderWatcher] Compiling: " << shaderPath.filename()
                   << std::endl;

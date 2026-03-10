@@ -10,8 +10,9 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include "MPVGL/Core/Error.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 
@@ -21,7 +22,7 @@ class DescriptorLayoutBuilder {
                                         VkDescriptorType type,
                                         VkShaderStageFlags stageFlags);
     void clear();
-    tl::expected<VkDescriptorSetLayout, Error> build(
+    tl::expected<VkDescriptorSetLayout, Error<EngineError>> build(
         DeviceContext const& device);
 
    private:
@@ -35,13 +36,13 @@ class DescriptorAllocator {
         float ratio;
     };
 
-    tl::expected<void, Error> init(DeviceContext const& device,
-                                   uint32_t maxSets,
-                                   std::span<PoolSizeRatio> poolRatios);
+    tl::expected<void, Error<EngineError>> init(
+        DeviceContext const& device, uint32_t maxSets,
+        std::span<PoolSizeRatio> poolRatios);
     void cleanup(DeviceContext const& device);
 
-    tl::expected<VkDescriptorSet, Error> allocate(DeviceContext const& device,
-                                                  VkDescriptorSetLayout layout);
+    tl::expected<VkDescriptorSet, Error<EngineError>> allocate(
+        DeviceContext const& device, VkDescriptorSetLayout layout);
 
    private:
     VkDescriptorPool m_pool{VK_NULL_HANDLE};
