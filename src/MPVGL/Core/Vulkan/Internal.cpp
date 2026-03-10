@@ -42,8 +42,8 @@ tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
     });
 
     if (!glfwInit()) {
-        return tl::unexpected<Error<EngineError>>{EngineError::VulkanInitFailed,
-                                                  "Failed to initialize GLFW"};
+        return tl::unexpected{
+            Error{EngineError::VulkanInitFailed, "Failed to initialize GLFW"}};
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -56,8 +56,8 @@ tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
 
     if (!window) {
         glfwTerminate();
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::WindowError, "Failed to create GLFW window!"};
+        return tl::unexpected{
+            Error{EngineError::WindowError, "Failed to create GLFW window!"}};
     }
     return window;
 }
@@ -90,8 +90,8 @@ tl::expected<std::vector<char>, Error<EngineError>> readFile(
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError, "Failed to open a File"};
+        return tl::unexpected{
+            Error{EngineError::VulkanRuntimeError, "Failed to open a File"}};
     }
 
     size_t file_size = (size_t)file.tellg();
@@ -135,8 +135,8 @@ tl::expected<void, Error<EngineError>> createBuffer(
 
     if (vmaCreateBuffer(vulkan.deviceContext.allocator, &bufferInfo, &allocInfo,
                         &buffer, &bufferAllocation, nullptr) != VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError, "Failed to create Buffer via VMA"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Buffer via VMA"}};
     }
     return {};
 }
@@ -210,8 +210,8 @@ tl::expected<void, Error<EngineError>> createImage(
 
     if (vmaCreateImage(deviceContext.allocator, &imageInfo, &allocInfo, &image,
                        &imageAllocation, nullptr) != VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError, "Failed to create Image via VMA"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Image via VMA"}};
     }
     return {};
 }
@@ -234,8 +234,8 @@ tl::expected<VkImageView, Error<EngineError>> createImageView(
     VkImageView imageView;
     if (deviceContext.logDevDisp.createImageView(&viewInfo, nullptr,
                                                  &imageView) != VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError, "Failed to create Image View"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Image View"}};
     }
 
     return imageView;
@@ -251,7 +251,7 @@ tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan) {
             vulkan, swapchainContext.swapchain.images().at(i),
             swapchainContext.swapchain.format(), VK_IMAGE_ASPECT_COLOR_BIT, 1);
         if (!imageView.has_value()) {
-            return tl::unexpected<Error<EngineError>>(imageView.error());
+            return tl::unexpected{imageView.error()};
         }
         swapchainContext.swapchain.imageViews().at(i) = imageView.value();
     }
@@ -275,8 +275,8 @@ tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
             return format;
         }
     }
-    return tl::unexpected<Error<EngineError>>{
-        EngineError::VulkanRuntimeError, "Failed to find supported Format"};
+    return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                "Failed to find supported Format"}};
 }
 
 tl::expected<VkFormat, Error<EngineError>> findDepthFormat(Vulkan &vulkan) {
@@ -334,9 +334,9 @@ tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
                 if (deviceContext.logDevDisp.createSemaphore(
                         &semaphoreInfo, nullptr,
                         &vulkan.data.finishedSemaphores[i]) != VK_SUCCESS) {
-                    return tl::unexpected<Error<EngineError>>{
-                        EngineError::VulkanRuntimeError,
-                        "Failed to recreate semaphores"};
+                    return tl::unexpected{
+                        Error{EngineError::VulkanRuntimeError,
+                              "Failed to recreate semaphores"}};
                 }
             }
             return {};
@@ -353,9 +353,9 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     auto beginInfo = initializers::commandBufferBeginInfo();
     if (deviceContext.logDevDisp.beginCommandBuffer(command_buffer,
                                                     &beginInfo) != VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError,
-            "Failed to begin recording Command Buffer"};
+        return tl::unexpected{
+            Error{EngineError::VulkanRuntimeError,
+                  "Failed to begin recording Command Buffer"}};
     }
 
     std::array<VkClearValue, 2> clearValues{};
@@ -410,8 +410,8 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
 
     if (deviceContext.logDevDisp.endCommandBuffer(command_buffer) !=
         VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError, "Failed to record Command Buffer"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to record Command Buffer"}};
     }
     return {};
 }

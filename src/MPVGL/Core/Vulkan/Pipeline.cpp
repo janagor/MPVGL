@@ -129,8 +129,8 @@ tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
     if (device.logDevDisp.createGraphicsPipelines(VK_NULL_HANDLE, 1,
                                                   &pipelineInfo, nullptr,
                                                   &newPipeline) != VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Graphics Pipeline"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Graphics Pipeline"}};
     }
     return newPipeline;
 }

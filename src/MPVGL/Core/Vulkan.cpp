@@ -47,8 +47,8 @@ template <typename T>
 tl::expected<T, mpvgl::Error<mpvgl::EngineError>> vkb_to_expected(
     vkb::Result<T> &&res, std::string const &msg) {
     if (!res)
-        return tl::unexpected(
-            mpvgl::Error<mpvgl::EngineError>{res.error(), msg});
+        return tl::unexpected{
+            mpvgl::Error<mpvgl::EngineError>{res.error(), msg}};
     return std::move(res.value());
 }
 
@@ -104,8 +104,8 @@ tl::expected<void, Error<EngineError>> deviceInitialization(Vulkan &vulkan) {
 
             if (vmaCreateAllocator(&allocatorInfo, &deviceContext.allocator) !=
                 VK_SUCCESS) {
-                return tl::unexpected(Error{EngineError::VulkanInitFailed,
-                                            "Failed to create VMA Allocator"});
+                return tl::unexpected{Error{EngineError::VulkanInitFailed,
+                                            "Failed to create VMA Allocator"}};
             }
 
             return {};
@@ -201,7 +201,7 @@ tl::expected<void, Error<EngineError>> createRenderPass(Vulkan &vulkan) {
         mainSubpass.depthAttachment = VkAttachmentReference{
             1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
     } else {
-        return tl::unexpected{Error{depthFormat.error()}};
+        return tl::unexpected{depthFormat.error()};
     }
 
     builder.addSubpass(mainSubpass);
@@ -352,7 +352,7 @@ tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan) {
                     });
                 });
         if (!result.has_value()) {
-            return tl::unexpected<Error<EngineError>>{result.error()};
+            return tl::unexpected{result.error()};
         }
     }
     return {};
@@ -376,7 +376,7 @@ tl::expected<void, Error<EngineError>> createDescriptorSets(Vulkan &vulkan) {
     for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
         auto setRes = vulkan.data.descriptorAllocator.allocate(
             deviceContext, pipelineContext.descriptorSetLayout);
-        if (!setRes) return tl::unexpected(Error{setRes.error()});
+        if (!setRes) return tl::unexpected{setRes.error()};
 
         vulkan.data.frames.at(i).descriptorSet = setRes.value();
 

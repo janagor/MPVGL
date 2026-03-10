@@ -81,10 +81,10 @@ struct ShaderCompiler {
         if (!shader.preprocess(resources, defaultVersion, defaultProfile,
                                forceDefaultVersionAndProfile, forwardCompatible,
                                messageFlags, &preprocessedStr, includer)) {
-            return tl::unexpected(
+            return tl::unexpected{
                 Error{EngineError::ShaderError,
                       std::string("Shader Preprocess failed: ") +
-                          shader.getInfoLog()});
+                          shader.getInfoLog()}};
         }
 
         char const *preprocessedSources[1] = {preprocessedStr.c_str()};
@@ -92,17 +92,17 @@ struct ShaderCompiler {
 
         if (!shader.parse(resources, defaultVersion, defaultProfile, false,
                           forwardCompatible, messageFlags, includer)) {
-            return tl::unexpected(Error{
+            return tl::unexpected{Error{
                 EngineError::ShaderError,
-                std::string("Shader Parse failed:\n") + shader.getInfoLog()});
+                std::string("Shader Parse failed:\n") + shader.getInfoLog()}};
         }
 
         glslang::TProgram program;
         program.addShader(&shader);
         if (!program.link(messageFlags)) {
-            return tl::unexpected(Error{
+            return tl::unexpected{Error{
                 EngineError::ShaderError,
-                std::string("Shader Link failed: ") + program.getInfoLog()});
+                std::string("Shader Link failed: ") + program.getInfoLog()}};
         }
 
         glslang::TIntermediate &intermediateRef =

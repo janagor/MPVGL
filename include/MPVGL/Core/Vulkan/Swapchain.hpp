@@ -34,8 +34,8 @@ struct SwapchainBuilder {
         if (!newSwapchain) {
             std::string errorMsg =
                 "Swapchain build error: " + newSwapchain.error().message();
-            return tl::unexpected(
-                mpvgl::Error<EngineError>{newSwapchain.error(), errorMsg});
+            return tl::unexpected{
+                mpvgl::Error<EngineError>{newSwapchain.error(), errorMsg}};
         }
         return newSwapchain.value();
     }

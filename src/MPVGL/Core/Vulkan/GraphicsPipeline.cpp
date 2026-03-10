@@ -53,10 +53,10 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     std::string const& vertexShaderPath,
     std::string const& fragmentShaderPath) {
     auto vertCode = readFile(vertexShaderPath);
-    if (!vertCode) return tl::unexpected<Error<EngineError>>{vertCode.error()};
+    if (!vertCode) return tl::unexpected{vertCode.error()};
 
     auto fragCode = readFile(fragmentShaderPath);
-    if (!fragCode) return tl::unexpected<Error<EngineError>>{fragCode.error()};
+    if (!fragCode) return tl::unexpected{fragCode.error()};
 
     auto vertModule = createShaderModule(device, vertCode.value());
     auto fragModule = createShaderModule(device, fragCode.value());
@@ -66,8 +66,8 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
             device.logDevDisp.destroyShaderModule(vertModule, nullptr);
         if (fragModule != VK_NULL_HANDLE)
             device.logDevDisp.destroyShaderModule(fragModule, nullptr);
-        return tl::unexpected(
-            Error{EngineError::ShaderError, "Failed to create Shader Modules"});
+        return tl::unexpected{
+            Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
     }
 
     auto pipelineLayoutInfo =
@@ -78,8 +78,8 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
                                                &pipelineLayout) != VK_SUCCESS) {
         device.logDevDisp.destroyShaderModule(fragModule, nullptr);
         device.logDevDisp.destroyShaderModule(vertModule, nullptr);
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Pipeline Layout"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Pipeline Layout"}};
     }
 
     PipelineBuilder builder{};
@@ -106,7 +106,7 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
 
     if (!pipelineRes) {
         device.logDevDisp.destroyPipelineLayout(pipelineLayout, nullptr);
-        return tl::unexpected(pipelineRes.error());
+        return tl::unexpected{pipelineRes.error()};
     }
 
     return GraphicsPipeline(pipelineRes.value(), pipelineLayout,

@@ -17,7 +17,7 @@ struct InstanceBuilder {
         if (instance_ret) {
             return instance_ret.value();
         }
-        return tl::unexpected(instance_ret.error());
+        return tl::unexpected{instance_ret.error()};
     }
 };
 

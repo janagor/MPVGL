@@ -61,8 +61,8 @@ tl::expected<Buffer, Error<EngineError>> Buffer::create(
 
     if (vmaCreateBuffer(device.allocator, &bufferInfo, &allocInfo, &buffer,
                         &allocation, nullptr) != VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError, "Failed to create Buffer via VMA"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Buffer via VMA"}};
     }
     return Buffer{buffer, allocation, size, device.allocator};
 }
@@ -75,16 +75,14 @@ VkDeviceSize Buffer::size() const noexcept { return m_size; }
 
 tl::expected<void*, Error<EngineError>> Buffer::map() noexcept {
     if (m_allocation == VK_NULL_HANDLE || m_allocator == VK_NULL_HANDLE) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError,
-            "Cannot map an uninitialized buffer"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Cannot map an uninitialized buffer"}};
     }
 
     void* mappedData = nullptr;
     if (vmaMapMemory(m_allocator, m_allocation, &mappedData) != VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError,
-            "Failed to map Buffer memory via VMA"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to map Buffer memory via VMA"}};
     }
 
     return mappedData;

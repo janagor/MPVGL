@@ -70,9 +70,9 @@ class ShaderWatcher {
 
         std::ifstream file(shaderPath, std::ios::binary | std::ios::ate);
         if (!file) {
-            return tl::unexpected(
+            return tl::unexpected{
                 Error{EngineError::FileNotFound,
-                      "Failed to open a file: " + shaderPath.string()});
+                      "Failed to open a file: " + shaderPath.string()}};
         }
 
         std::streamsize size = file.tellg();
@@ -80,9 +80,9 @@ class ShaderWatcher {
 
         std::string result(size, '\0');
         if (!file.read(&result[0], size)) {
-            return tl::unexpected(
+            return tl::unexpected{
                 Error{EngineError::ShaderError,
-                      "Cannot read file: " + shaderPath.string()});
+                      "Cannot read file: " + shaderPath.string()}};
         }
 
         ShaderCompiler compiler{};
@@ -92,24 +92,24 @@ class ShaderWatcher {
 
         auto dataRes = compiler.compile(result, language);
         if (!dataRes.has_value()) {
-            return tl::unexpected(dataRes.error());
+            return tl::unexpected{dataRes.error()};
         }
 
         auto &data = dataRes.value();
         std::ofstream ofile(outputPath(shaderPath), std::ios::binary);
         if (!ofile) {
-            return tl::unexpected(Error{
+            return tl::unexpected{Error{
                 EngineError::FileNotFound,
-                "Cannot open file for writing: " + outputPath(shaderPath)});
+                "Cannot open file for writing: " + outputPath(shaderPath)}};
         }
 
         ofile.write(reinterpret_cast<char const *>(data.data()),
                     data.size() * sizeof(uint32_t));
 
         if (!ofile) {
-            return tl::unexpected(Error{
+            return tl::unexpected{Error{
                 EngineError::ShaderError,
-                "Failed to write data to file: " + outputPath(shaderPath)});
+                "Failed to write data to file: " + outputPath(shaderPath)}};
         }
 
         return {};

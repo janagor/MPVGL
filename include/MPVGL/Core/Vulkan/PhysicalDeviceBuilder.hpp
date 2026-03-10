@@ -16,7 +16,7 @@ struct PhysicalDeviceBuilder {
         auto phys_device_ret =
             phys_device_selector.set_surface(surface).select();
         if (!phys_device_ret) {
-            return tl::unexpected(phys_device_ret.error());
+            return tl::unexpected{phys_device_ret.error()};
         }
         vkb::PhysicalDevice physical_device = phys_device_ret.value();
         VkPhysicalDeviceFeatures deviceFeatures{};

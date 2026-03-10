@@ -13,7 +13,7 @@ struct LogicalDeviceBuilder {
         vkb::PhysicalDevice& physicalDevice) {
         vkb::DeviceBuilder logicalDeviceBuilder{physicalDevice};
         auto logicalDevice = logicalDeviceBuilder.build();
-        if (!logicalDevice) return tl::unexpected(logicalDevice.error());
+        if (!logicalDevice) return tl::unexpected{logicalDevice.error()};
         return logicalDevice.value();
     }
 };

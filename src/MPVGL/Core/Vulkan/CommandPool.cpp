@@ -39,8 +39,8 @@ tl::expected<CommandPool, Error<EngineError>> CommandPool::create(
     VkCommandPool pool;
     if (device.logDevDisp.createCommandPool(&poolInfo, nullptr, &pool) !=
         VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Command Pool"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Command Pool"}};
     }
 
     return CommandPool(pool, device.logDevDisp);

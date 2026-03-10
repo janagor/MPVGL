@@ -34,9 +34,8 @@ DescriptorLayoutBuilder::build(DeviceContext const& device) {
     VkDescriptorSetLayout layout;
     if (device.logDevDisp.createDescriptorSetLayout(&info, nullptr, &layout) !=
         VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError,
-            "Failed to create Descriptor Set Layout"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Descriptor Set Layout"}};
     }
     return layout;
 }
@@ -54,8 +53,8 @@ tl::expected<void, Error<EngineError>> DescriptorAllocator::init(
     auto poolInfo = initializers::descriptorPoolCreateInfo(poolSizes, maxSets);
     if (device.logDevDisp.createDescriptorPool(&poolInfo, nullptr, &m_pool) !=
         VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Descriptor Pool"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Descriptor Pool"}};
     }
     return {};
 }
@@ -74,9 +73,8 @@ tl::expected<VkDescriptorSet, Error<EngineError>> DescriptorAllocator::allocate(
     VkDescriptorSet set;
     if (device.logDevDisp.allocateDescriptorSets(&allocInfo, &set) !=
         VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>{
-            EngineError::VulkanRuntimeError,
-            "Failed to allocate Descriptor Set"};
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to allocate Descriptor Set"}};
     }
     return set;
 }

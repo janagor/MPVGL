@@ -143,8 +143,8 @@ tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
                 sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
                 destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             } else {
-                result = tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                              "Unsupported layout transition"});
+                result = tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                              "Unsupported layout transition"}};
                 return;
             }
 
@@ -189,9 +189,9 @@ tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
 
     if (!(formatProperties.optimalTilingFeatures &
           VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        return tl::unexpected(
+        return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
-                  "Texture image format does not support linear blitting"});
+                  "Texture image format does not support linear blitting"}};
     }
 
     executeSingleTimeCommands(
@@ -275,15 +275,14 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
     auto pixelsRes = loadRawPixels(filepath);
-    if (!pixelsRes)
-        return tl::unexpected<Error<EngineError>>(pixelsRes.error());
+    if (!pixelsRes) return tl::unexpected{pixelsRes.error()};
     auto& pixels = pixelsRes.value();
 
     auto imageRes = createAllocatedImage(device, pixels.width, pixels.height,
                                          pixels.mipLevels);
     if (!imageRes) {
         pixels.free();
-        return tl::unexpected(imageRes.error());
+        return tl::unexpected{imageRes.error()};
     }
     auto [image, allocation] = imageRes.value();
 
@@ -293,20 +292,20 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
 
     if (!uploadRes) {
         vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected(uploadRes.error());
+        return tl::unexpected{uploadRes.error()};
     }
 
     auto viewRes = createImageView(device, image, pixels.mipLevels);
     if (!viewRes) {
         vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected(viewRes.error());
+        return tl::unexpected{viewRes.error()};
     }
 
     auto samplerRes = createSampler(device);
     if (!samplerRes) {
         device.logDevDisp.destroyImageView(viewRes.value(), nullptr);
         vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected(samplerRes.error());
+        return tl::unexpected{samplerRes.error()};
     }
 
     return Texture(image, viewRes.value(), samplerRes.value(), allocation,
@@ -328,9 +327,9 @@ tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
                             &channels, STBI_rgb_alpha);
 
     if (!pixels.data) {
-        return tl::unexpected(
+        return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
-                  "Failed to load Texture from: " + filepath});
+                  "Failed to load Texture from: " + filepath}};
     }
     pixels.mipLevels = static_cast<uint32_t>(std::floor(
                            std::log2(std::max(pixels.width, pixels.height)))) +
@@ -362,8 +361,8 @@ Texture::createAllocatedImage(DeviceContext const& device, uint32_t width,
     VmaAllocation allocation;
     if (vmaCreateImage(device.allocator, &imageInfo, &allocInfo, &image,
                        &allocation, nullptr) != VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Image via VMA"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Image via VMA"}};
     }
     return std::make_pair(image, allocation);
 }
@@ -376,8 +375,7 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
                        VMA_MEMORY_USAGE_AUTO,
                        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-    if (!stagingRes)
-        return tl::unexpected<Error<EngineError>>(stagingRes.error());
+    if (!stagingRes) return tl::unexpected{stagingRes.error()};
     auto stagingBuffer = std::move(stagingRes.value());
 
     if (auto mapRes = stagingBuffer.map()) {
@@ -385,7 +383,7 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
                     static_cast<size_t>(pixels.size()));
         stagingBuffer.unmap();
     } else {
-        return tl::unexpected(mapRes.error());
+        return tl::unexpected{mapRes.error()};
     }
 
     if (auto res = transitionImageLayout(
@@ -421,9 +419,8 @@ tl::expected<VkImageView, Error<EngineError>> Texture::createImageView(
     VkImageView imageView;
     if (device.logDevDisp.createImageView(&viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
-        return tl::unexpected<Error<EngineError>>(
-            EngineError::VulkanRuntimeError,
-            "Failed to create Texture Image View");
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Texture Image View"}};
     }
     return imageView;
 }
@@ -454,8 +451,8 @@ tl::expected<VkSampler, Error<EngineError>> Texture::createSampler(
     VkSampler sampler;
     if (device.logDevDisp.createSampler(&samplerInfo, nullptr, &sampler) !=
         VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Texture Sampler"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Texture Sampler"}};
     }
     return sampler;
 }
@@ -482,8 +479,8 @@ tl::expected<Texture, Error<EngineError>> Texture::createDepthTexture(
     VmaAllocation allocation;
     if (vmaCreateImage(device.allocator, &imageInfo, &allocInfo, &image,
                        &allocation, nullptr) != VK_SUCCESS) {
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Depth Image via VMA"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Depth Image via VMA"}};
     }
 
     auto subresourceRange = VkImageSubresourceRange{
@@ -500,8 +497,8 @@ tl::expected<Texture, Error<EngineError>> Texture::createDepthTexture(
     if (device.logDevDisp.createImageView(&viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
         vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected(Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Depth Image View"});
+        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
+                                    "Failed to create Depth Image View"}};
     }
 
     return Texture(image, imageView, VK_NULL_HANDLE, allocation, 1,

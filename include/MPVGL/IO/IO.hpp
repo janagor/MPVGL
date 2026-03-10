@@ -1,15 +1,23 @@
 #pragma once
 
+#include <fstream>
+#include <iostream>
 #include <vector>
 
 #include <tl/expected.hpp>
 
-tl::expected<std::vector<char>, Error> readFile(std::string const &filename) {
+#include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Error/IOError.hpp"
+
+namespace mpvgl {
+
+tl::expected<std::vector<char>, Error<IOError>> readFile(
+    std::string const &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
-        return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
-                                     "Failed to open a File"};
+        return tl::unexpected{
+            Error{IOError::FileNotFound, "Failed to open a File"}};
     }
 
     size_t file_size = (size_t)file.tellg();
@@ -22,3 +30,4 @@ tl::expected<std::vector<char>, Error> readFile(std::string const &filename) {
 
     return buffer;
 }
+}  // namespace mpvgl

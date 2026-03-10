@@ -62,11 +62,11 @@ tl::expected<Swapchain, Error<EngineError>> Swapchain::create(
     DeviceContext const& deviceContext) {
     auto vkbSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window);
-    if (!vkbSwapchain) return tl::unexpected(vkbSwapchain.error());
+    if (!vkbSwapchain) return tl::unexpected{vkbSwapchain.error()};
 
     Swapchain swapchain(vkbSwapchain.value(), deviceContext.logDevDisp);
     if (auto res = swapchain.initImageViews(); !res.has_value()) {
-        return tl::unexpected(res.error());
+        return tl::unexpected{res.error()};
     }
     return swapchain;
 }
@@ -76,7 +76,7 @@ tl::expected<void, Error<EngineError>> Swapchain::recreate(
     auto newSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window, m_swapchain);
     if (!newSwapchain) {
-        return tl::unexpected(newSwapchain.error());
+        return tl::unexpected{newSwapchain.error()};
     }
 
     cleanup();
@@ -106,9 +106,9 @@ tl::expected<void, Error<EngineError>> Swapchain::initImageViews() {
 
         if (m_disp.createImageView(&viewInfo, nullptr, &m_imageViews[i]) !=
             VK_SUCCESS) {
-            return tl::unexpected(
+            return tl::unexpected{
                 Error{EngineError::VulkanRuntimeError,
-                      "Failed to create Swapchain Image View"});
+                      "Failed to create Swapchain Image View"}};
         }
     }
     return {};
