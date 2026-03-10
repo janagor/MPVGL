@@ -323,20 +323,17 @@ tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
         .and_then([&]() -> tl::expected<void, Error<EngineError>> {
             auto imageCount = swapchainContext.swapchain.imageCount();
             vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
-            for (auto &sem : vulkan.data.finishedSemaphores) {
-                deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
-            }
-            vulkan.data.finishedSemaphores.clear();
-            vulkan.data.finishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
 
-            auto semaphoreInfo = initializers::semaphoreCreateInfo();
+            vulkan.data.finishedSemaphores.clear();
+            vulkan.data.finishedSemaphores.reserve(imageCount);
+
             for (size_t i = 0; i < imageCount; ++i) {
-                if (deviceContext.logDevDisp.createSemaphore(
-                        &semaphoreInfo, nullptr,
-                        &vulkan.data.finishedSemaphores[i]) != VK_SUCCESS) {
-                    return tl::unexpected{
-                        Error{EngineError::VulkanRuntimeError,
-                              "Failed to recreate semaphores"}};
+                if (auto semRes = Semaphore::create(deviceContext);
+                    semRes.has_value()) {
+                    vulkan.data.finishedSemaphores.push_back(
+                        std::move(semRes.value()));
+                } else {
+                    return tl::unexpected{semRes.error()};
                 }
             }
             return {};

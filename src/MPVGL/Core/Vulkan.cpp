@@ -415,42 +415,29 @@ tl::expected<void, Error<EngineError>> createCommandBuffers(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error<EngineError>> createSyncObjects(Vulkan &vulkan) {
-    auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
-    auto &pipelineContext = vulkan.pipelineContext;
-    auto &swapchainContext = vulkan.swapchainContext;
+    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
 
-    auto imageCount = swapchainContext.swapchain.imageCount();
-    vulkan.data.imageInFlight.clear();
-    vulkan.data.imageInFlight.resize(imageCount, VK_NULL_HANDLE);
+    vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
     vulkan.data.finishedSemaphores.clear();
-    vulkan.data.finishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
-
-    auto semaphoreInfo = initializers::semaphoreCreateInfo();
-    auto fenceInfo =
-        initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
     for (size_t i = 0; i < imageCount; ++i) {
-        if (deviceContext.logDevDisp.createSemaphore(
-                &semaphoreInfo, nullptr, &vulkan.data.finishedSemaphores[i]) !=
-            VK_SUCCESS) {
-            return tl::unexpected{
-                Error{EngineError::VulkanRuntimeError,
-                      "Failed to create Synchronization Objects"}};
+        if (auto sem = Semaphore::create(deviceContext); sem.has_value()) {
+            vulkan.data.finishedSemaphores.push_back(std::move(sem.value()));
+        } else {
+            return tl::unexpected{sem.error()};
         }
     }
 
     for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
-        if (deviceContext.logDevDisp.createSemaphore(
-                &semaphoreInfo, nullptr,
-                &vulkan.data.frames[i].availableSemaphore) != VK_SUCCESS ||
-            deviceContext.logDevDisp.createFence(
-                &fenceInfo, nullptr, &vulkan.data.frames[i].inFlightFence) !=
-                VK_SUCCESS) {
-            return tl::unexpected{
-                Error{EngineError::VulkanRuntimeError,
-                      "Failed to create Synchronization Objects"}};
-        }
+        auto semRes = Semaphore::create(deviceContext);
+        if (!semRes) return tl::unexpected{semRes.error()};
+        vulkan.data.frames[i].availableSemaphore = std::move(semRes.value());
+
+        auto fenceRes =
+            Fence::create(deviceContext, VK_FENCE_CREATE_SIGNALED_BIT);
+        if (!fenceRes) return tl::unexpected{fenceRes.error()};
+        vulkan.data.frames[i].inFlightFence = std::move(fenceRes.value());
     }
     return {};
 }
@@ -461,13 +448,16 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
 
     auto &currentFrame = vulkan.data.frames[vulkan.data.currentFrame];
 
-    deviceContext.logDevDisp.waitForFences(1, &currentFrame.inFlightFence,
-                                           VK_TRUE, UINT64_MAX);
+    VkFence inFlightFence = currentFrame.inFlightFence.handle();
+    VkSemaphore availableSemaphore = currentFrame.availableSemaphore.handle();
+
+    deviceContext.logDevDisp.waitForFences(1, &inFlightFence, VK_TRUE,
+                                           UINT64_MAX);
 
     uint32_t image_index = 0;
     VkResult result = deviceContext.logDevDisp.acquireNextImageKHR(
-        swapchainContext.swapchain.handle(), UINT64_MAX,
-        currentFrame.availableSemaphore, VK_NULL_HANDLE, &image_index);
+        swapchainContext.swapchain.handle(), UINT64_MAX, availableSemaphore,
+        VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
         return recreateSwapchain(vulkan);
@@ -480,7 +470,7 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
         deviceContext.logDevDisp.waitForFences(
             1, &vulkan.data.imageInFlight.at(image_index), VK_TRUE, UINT64_MAX);
     }
-    vulkan.data.imageInFlight.at(image_index) = currentFrame.inFlightFence;
+    vulkan.data.imageInFlight.at(image_index) = inFlightFence;
 
     updateUniformBuffer(vulkan, vulkan.data.currentFrame);
 
@@ -490,20 +480,21 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
         return res;
     }
 
-    VkSemaphore finishedSemaphore = vulkan.data.finishedSemaphores[image_index];
+    VkSemaphore finishedSemaphore =
+        vulkan.data.finishedSemaphores[image_index].handle();
 
     VkPipelineStageFlags wait_stages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     auto submitInfo = initializers::submitInfo(
-        {&currentFrame.availableSemaphore, 1}, {wait_stages, 1},
+        {&availableSemaphore, 1}, {wait_stages, 1},
         {&currentFrame.commandBuffer, 1}, {&finishedSemaphore, 1});
 
-    deviceContext.logDevDisp.resetFences(1, &currentFrame.inFlightFence);
+    deviceContext.logDevDisp.resetFences(1, &inFlightFence);
 
-    if (deviceContext.logDevDisp.queueSubmit(
-            deviceContext.graphicsQueue, 1, &submitInfo,
-            currentFrame.inFlightFence) != VK_SUCCESS) {
+    if (deviceContext.logDevDisp.queueSubmit(deviceContext.graphicsQueue, 1,
+                                             &submitInfo,
+                                             inFlightFence) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to submit Draw Command Buffer"}};
     }
@@ -535,41 +526,28 @@ tl::expected<void, Error<EngineError>> reloadShadersAndPipeline(
 }
 
 void cleanup(Vulkan &vulkan) {
-    auto &sceneContext = vulkan.sceneContext;
-    auto &deviceContext = vulkan.deviceContext;
-    auto &pipelineContext = vulkan.pipelineContext;
-    auto &swapchainContext = vulkan.swapchainContext;
-
     cleanupSwapChain(vulkan);
-    for (auto &frame : vulkan.data.frames) {
-        deviceContext.logDevDisp.destroySemaphore(frame.availableSemaphore,
-                                                  nullptr);
-        deviceContext.logDevDisp.destroyFence(frame.inFlightFence, nullptr);
-    }
-    vulkan.data.frames.clear();
-    for (auto &sem : vulkan.data.finishedSemaphores) {
-        deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
-    }
-    vulkan.data.finishedSemaphores.clear();
 
+    vulkan.data.frames.clear();
+    vulkan.data.finishedSemaphores.clear();
     vulkan.data.commandPool = {};
 
-    pipelineContext.graphicsPipeline = {};
-    sceneContext.texture = Texture{};
+    vulkan.pipelineContext.graphicsPipeline = {};
+    vulkan.sceneContext.texture = Texture{};
+    vulkan.sceneContext.model = Model{};
 
     vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 
-    deviceContext.logDevDisp.destroyDescriptorSetLayout(
-        pipelineContext.descriptorSetLayout, nullptr);
-    deviceContext.logDevDisp.destroyRenderPass(swapchainContext.renderPass,
-                                               nullptr);
-    sceneContext.model = Model{};
+    vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
+        vulkan.pipelineContext.descriptorSetLayout, nullptr);
+    vulkan.deviceContext.logDevDisp.destroyRenderPass(
+        vulkan.swapchainContext.renderPass, nullptr);
 
-    vmaDestroyAllocator(deviceContext.allocator);
-    vkb::destroy_device(deviceContext.logicalDevice);
-    vkb::destroy_surface(deviceContext.instance, vulkan.surface);
-    vkb::destroy_instance(deviceContext.instance);
-    destroy_window_glfw(deviceContext.window);
+    vmaDestroyAllocator(vulkan.deviceContext.allocator);
+    vkb::destroy_device(vulkan.deviceContext.logicalDevice);
+    vkb::destroy_surface(vulkan.deviceContext.instance, vulkan.surface);
+    vkb::destroy_instance(vulkan.deviceContext.instance);
+    destroy_window_glfw(vulkan.deviceContext.window);
 }
 
 }  // namespace mpvgl::vlk

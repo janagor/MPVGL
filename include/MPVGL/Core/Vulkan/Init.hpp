@@ -17,6 +17,7 @@
 #include "MPVGL/Core/Vulkan/GraphicsPipeline.hpp"
 #include "MPVGL/Core/Vulkan/Model.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/SyncObjects.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 
 namespace mpvgl::vlk {
@@ -56,8 +57,8 @@ class FrameData {
     Buffer uniformBuffer{};
     void *uniformBufferMapped{nullptr};
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
-    VkSemaphore availableSemaphore{VK_NULL_HANDLE};
-    VkFence inFlightFence{VK_NULL_HANDLE};
+    Semaphore availableSemaphore{};
+    Fence inFlightFence{};
 };
 
 class RenderData {
@@ -68,7 +69,7 @@ class RenderData {
     DescriptorAllocator descriptorAllocator{};
 
     std::vector<FrameData> frames{};
-    std::vector<VkSemaphore> finishedSemaphores{};
+    std::vector<Semaphore> finishedSemaphores{};
 
     std::vector<VkFence> imageInFlight{};
     size_t currentFrame{};
