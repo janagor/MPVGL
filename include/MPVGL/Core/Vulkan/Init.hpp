@@ -20,7 +20,8 @@
 
 namespace mpvgl::vlk {
 
-struct SwapchainContext {
+class SwapchainContext {
+   public:
     SwapchainContext() = default;
 
     Swapchain swapchain{};
@@ -29,23 +30,21 @@ struct SwapchainContext {
     std::vector<VkFramebuffer> framebuffers{};
 };
 
-struct SceneContext {
+class SceneContext {
+   public:
     SceneContext() = default;
 
     Model model{};
-
     Texture texture{};
-
     Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
 };
 
-struct PipelineContext {
+class PipelineContext {
+   public:
     PipelineContext() = default;
 
     GraphicsPipeline graphicsPipeline{};
     VkDescriptorSetLayout descriptorSetLayout{};
-    // VkPipelineLayout pipelineLayout{};
-    // VkPipeline graphicsPipeline{};
 };
 
 class FrameData {
@@ -60,7 +59,22 @@ class FrameData {
     VkFence inFlightFence{VK_NULL_HANDLE};
 };
 
-struct Vulkan {
+class RenderData {
+   public:
+    RenderData() = default;
+
+    VkCommandPool command_pool{};
+    DescriptorAllocator descriptorAllocator{};
+
+    std::vector<FrameData> frames{};
+    std::vector<VkSemaphore> finishedSemaphores{};
+
+    std::vector<VkFence> image_in_flight{};
+    size_t current_frame{};
+};
+
+class Vulkan {
+   public:
     Vulkan() = default;
 
     DeviceContext deviceContext{};
@@ -69,20 +83,6 @@ struct Vulkan {
     PipelineContext pipelineContext{};
 
     VkSurfaceKHR surface{};
-
-    struct RenderData {
-        RenderData() = default;
-
-        VkCommandPool command_pool{};
-        DescriptorAllocator descriptorAllocator{};
-
-        std::vector<FrameData> frames{};
-        std::vector<VkSemaphore> finishedSemaphores{};
-
-        std::vector<VkFence> image_in_flight{};
-        size_t current_frame{};
-    };
-
     RenderData data{};
 };
 
