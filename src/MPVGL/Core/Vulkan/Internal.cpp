@@ -142,41 +142,43 @@ tl::expected<void, Error> createBuffer(Vulkan &vulkan, VkDeviceSize size,
 }
 
 VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
+    auto &deviceContext = vulkan.deviceContext;
+
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer commandBuffer;
-    vulkan.deviceContext.logDevDisp.allocateCommandBuffers(&allocInfo,
-                                                           &commandBuffer);
+    deviceContext.logDevDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
 
     auto beginInfo = initializers::commandBufferBeginInfo(
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    vulkan.deviceContext.logDevDisp.beginCommandBuffer(commandBuffer,
-                                                       &beginInfo);
+    deviceContext.logDevDisp.beginCommandBuffer(commandBuffer, &beginInfo);
 
     return commandBuffer;
 }
 
 void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer) {
-    vulkan.deviceContext.logDevDisp.endCommandBuffer(commandBuffer);
+    auto &deviceContext = vulkan.deviceContext;
+
+    deviceContext.logDevDisp.endCommandBuffer(commandBuffer);
 
     auto submitInfo = initializers::submitInfo({}, {}, {&commandBuffer, 1}, {});
-    vulkan.deviceContext.logDevDisp.queueSubmit(
-        vulkan.deviceContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vulkan.deviceContext.logDevDisp.queueWaitIdle(
-        vulkan.deviceContext.graphicsQueue);
-    vulkan.deviceContext.logDevDisp.freeCommandBuffers(vulkan.data.command_pool,
-                                                       1, &commandBuffer);
+    deviceContext.logDevDisp.queueSubmit(deviceContext.graphicsQueue, 1,
+                                         &submitInfo, VK_NULL_HANDLE);
+    deviceContext.logDevDisp.queueWaitIdle(deviceContext.graphicsQueue);
+    deviceContext.logDevDisp.freeCommandBuffers(vulkan.data.command_pool, 1,
+                                                &commandBuffer);
 }
 
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
                  VkDeviceSize size) {
+    auto &deviceContext = vulkan.deviceContext;
+
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(vulkan);
 
-    VkBufferCopy copyRegion{};
-    copyRegion.size = size;
-    vulkan.deviceContext.logDevDisp.cmdCopyBuffer(commandBuffer, srcBuffer,
-                                                  dstBuffer, 1, &copyRegion);
+    VkBufferCopy copyRegion{.size = size};
+    deviceContext.logDevDisp.cmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer,
+                                           1, &copyRegion);
 
     endSingleTimeCommands(vulkan, commandBuffer);
 }
@@ -186,6 +188,8 @@ tl::expected<void, Error> createImage(
     VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
     VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
     VkImage &image, VmaAllocation &imageAllocation) {
+    auto &deviceContext = vulkan.deviceContext;
+
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = width;
@@ -204,8 +208,8 @@ tl::expected<void, Error> createImage(
     allocInfo.usage = memoryUsage;
     allocInfo.flags = allocFlags;
 
-    if (vmaCreateImage(vulkan.deviceContext.allocator, &imageInfo, &allocInfo,
-                       &image, &imageAllocation, nullptr) != VK_SUCCESS) {
+    if (vmaCreateImage(deviceContext.allocator, &imageInfo, &allocInfo, &image,
+                       &imageAllocation, nullptr) != VK_SUCCESS) {
         return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
                                      "Failed to create Image via VMA"};
     }
@@ -216,6 +220,8 @@ tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
                                                  VkFormat format,
                                                  VkImageAspectFlags aspectFlags,
                                                  uint32_t mipLevels) {
+    auto &deviceContext = vulkan.deviceContext;
+
     auto subresourceRange = VkImageSubresourceRange{
         .aspectMask = aspectFlags,
         .baseMipLevel = 0,
@@ -227,8 +233,8 @@ tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
         image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
 
     VkImageView imageView;
-    if (vulkan.deviceContext.logDevDisp.createImageView(
-            &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    if (deviceContext.logDevDisp.createImageView(&viewInfo, nullptr,
+                                                 &imageView) != VK_SUCCESS) {
         return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
                                      "Failed to create Image View"};
     }
@@ -237,19 +243,18 @@ tl::expected<VkImageView, Error> createImageView(Vulkan &vulkan, VkImage image,
 }
 
 tl::expected<void, Error> createImageViews(Vulkan &vulkan) {
-    vulkan.swapchainContext.swapchain.imageViews().resize(
-        vulkan.swapchainContext.swapchain.images().size());
-    for (uint32_t i = 0; i < vulkan.swapchainContext.swapchain.images().size();
-         ++i) {
+    auto &swapchainContext = vulkan.swapchainContext;
+
+    swapchainContext.swapchain.imageViews().resize(
+        swapchainContext.swapchain.images().size());
+    for (uint32_t i = 0; i < swapchainContext.swapchain.images().size(); ++i) {
         auto imageView = createImageView(
-            vulkan, vulkan.swapchainContext.swapchain.images().at(i),
-            vulkan.swapchainContext.swapchain.format(),
-            VK_IMAGE_ASPECT_COLOR_BIT, 1);
+            vulkan, swapchainContext.swapchain.images().at(i),
+            swapchainContext.swapchain.format(), VK_IMAGE_ASPECT_COLOR_BIT, 1);
         if (!imageView.has_value()) {
             return tl::unexpected<Error>(imageView.error());
         }
-        vulkan.swapchainContext.swapchain.imageViews().at(i) =
-            imageView.value();
+        swapchainContext.swapchain.imageViews().at(i) = imageView.value();
     }
     return {};
 }
@@ -257,10 +262,12 @@ tl::expected<void, Error> createImageViews(Vulkan &vulkan) {
 tl::expected<VkFormat, Error> findSupportedFormat(
     Vulkan &vulkan, const std::vector<VkFormat> &candidates,
     VkImageTiling tiling, VkFormatFeatureFlags features) {
+    auto &deviceContext = vulkan.deviceContext;
+
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vulkan.deviceContext.instDisp.getPhysicalDeviceFormatProperties(
-            vulkan.deviceContext.logicalDevice.physical_device, format, &props);
+        deviceContext.instDisp.getPhysicalDeviceFormatProperties(
+            deviceContext.logicalDevice.physical_device, format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR &&
             (props.linearTilingFeatures & features) == features) {
             return format;
@@ -288,40 +295,44 @@ bool has_stencil_component(VkFormat format) {
 }
 
 void cleanupSwapChain(Vulkan &vulkan) {
-    vulkan.swapchainContext.depthTexture = Texture{};
-    for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
-        vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
-                                                           nullptr);
+    auto &deviceContext = vulkan.deviceContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
+    swapchainContext.depthTexture = Texture{};
+    for (auto framebuffer : swapchainContext.framebuffers) {
+        deviceContext.logDevDisp.destroyFramebuffer(framebuffer, nullptr);
     }
-    vulkan.swapchainContext.framebuffers.clear();
-    vulkan.swapchainContext.swapchain = Swapchain();
+    swapchainContext.framebuffers.clear();
+    swapchainContext.swapchain = Swapchain();
 }
 
 tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
-    vulkan.deviceContext.logDevDisp.deviceWaitIdle();
+    auto &deviceContext = vulkan.deviceContext;
+    auto &swapchainContext = vulkan.swapchainContext;
 
-    vulkan.swapchainContext.depthTexture = Texture{};
-    for (auto framebuffer : vulkan.swapchainContext.framebuffers) {
-        vulkan.deviceContext.logDevDisp.destroyFramebuffer(framebuffer,
-                                                           nullptr);
+    deviceContext.logDevDisp.deviceWaitIdle();
+
+    swapchainContext.depthTexture = Texture{};
+    for (auto framebuffer : swapchainContext.framebuffers) {
+        deviceContext.logDevDisp.destroyFramebuffer(framebuffer, nullptr);
     }
-    vulkan.swapchainContext.framebuffers.clear();
+    swapchainContext.framebuffers.clear();
 
-    return vulkan.swapchainContext.swapchain.recreate(vulkan.deviceContext)
-        .and_then([&vulkan]() { return createDepthResources(vulkan); })
-        .and_then([&vulkan]() { return createFramebuffers(vulkan); })
-        .and_then([&vulkan]() -> tl::expected<void, Error> {
-            auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
+    return swapchainContext.swapchain.recreate(vulkan.deviceContext)
+        .and_then([&]() { return createDepthResources(vulkan); })
+        .and_then([&]() { return createFramebuffers(vulkan); })
+        .and_then([&]() -> tl::expected<void, Error> {
+            auto imageCount = swapchainContext.swapchain.imageCount();
             vulkan.data.image_in_flight.assign(imageCount, VK_NULL_HANDLE);
             for (auto &sem : vulkan.data.finishedSemaphores) {
-                vulkan.deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
+                deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
             }
             vulkan.data.finishedSemaphores.clear();
             vulkan.data.finishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
 
             auto semaphoreInfo = initializers::semaphoreCreateInfo();
             for (size_t i = 0; i < imageCount; ++i) {
-                if (vulkan.deviceContext.logDevDisp.createSemaphore(
+                if (deviceContext.logDevDisp.createSemaphore(
                         &semaphoreInfo, nullptr,
                         &vulkan.data.finishedSemaphores[i]) != VK_SUCCESS) {
                     return tl::unexpected(
@@ -336,9 +347,14 @@ tl::expected<void, Error> recreateSwapchain(Vulkan &vulkan) {
 tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
                                               VkCommandBuffer command_buffer,
                                               uint32_t image_index) {
+    auto &sceneContext = vulkan.sceneContext;
+    auto &deviceContext = vulkan.deviceContext;
+    auto &pipelineContext = vulkan.pipelineContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
     auto beginInfo = initializers::commandBufferBeginInfo();
-    if (vulkan.deviceContext.logDevDisp.beginCommandBuffer(
-            command_buffer, &beginInfo) != VK_SUCCESS) {
+    if (deviceContext.logDevDisp.beginCommandBuffer(command_buffer,
+                                                    &beginInfo) != VK_SUCCESS) {
         return tl::unexpected<Error>{
             EngineError::VulkanRuntimeError,
             "Failed to begin recording Command Buffer"};
@@ -349,55 +365,52 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
     clearValues[1].depthStencil = {1.0f, 0};
 
     auto renderPassInfo = initializers::renderPassBeginInfo(
-        vulkan.swapchainContext.renderPass,
-        vulkan.swapchainContext.framebuffers.at(image_index),
-        VkRect2D{VkOffset2D{0, 0}, vulkan.swapchainContext.swapchain.extent()},
+        swapchainContext.renderPass,
+        swapchainContext.framebuffers.at(image_index),
+        VkRect2D{VkOffset2D{0, 0}, swapchainContext.swapchain.extent()},
         clearValues);
 
-    vulkan.deviceContext.logDevDisp.cmdBeginRenderPass(
-        command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vulkan.deviceContext.logDevDisp.cmdBindPipeline(
+    deviceContext.logDevDisp.cmdBeginRenderPass(command_buffer, &renderPassInfo,
+                                                VK_SUBPASS_CONTENTS_INLINE);
+    deviceContext.logDevDisp.cmdBindPipeline(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.pipelineContext.graphicsPipeline.handle());
+        pipelineContext.graphicsPipeline.handle());
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)vulkan.swapchainContext.swapchain.extent().width;
-    viewport.height = (float)vulkan.swapchainContext.swapchain.extent().height;
+    viewport.width = (float)swapchainContext.swapchain.extent().width;
+    viewport.height = (float)swapchainContext.swapchain.extent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vulkan.deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1,
-                                                   &viewport);
+    deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
-    scissor.extent = vulkan.swapchainContext.swapchain.extent();
-    vulkan.deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1,
-                                                  &scissor);
+    scissor.extent = swapchainContext.swapchain.extent();
+    deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {
-        vulkan.sceneContext.model.vertexBuffer().handle()};  // ZMIANA
+    VkBuffer vertexBuffers[] = {sceneContext.model.vertexBuffer().handle()};
     VkDeviceSize offsets[] = {0};
-    vulkan.deviceContext.logDevDisp.cmdBindVertexBuffers(
-        command_buffer, 0, 1, vertexBuffers, offsets);
+    deviceContext.logDevDisp.cmdBindVertexBuffers(command_buffer, 0, 1,
+                                                  vertexBuffers, offsets);
 
-    vulkan.deviceContext.logDevDisp.cmdBindIndexBuffer(
-        command_buffer, vulkan.sceneContext.model.indexBuffer().handle(), 0,
+    deviceContext.logDevDisp.cmdBindIndexBuffer(
+        command_buffer, sceneContext.model.indexBuffer().handle(), 0,
         VK_INDEX_TYPE_UINT32);
 
-    vulkan.deviceContext.logDevDisp.cmdBindDescriptorSets(
+    deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vulkan.pipelineContext.graphicsPipeline.layout(), 0, 1,
+        pipelineContext.graphicsPipeline.layout(), 0, 1,
         &vulkan.data.frames.at(vulkan.data.current_frame).descriptorSet, 0,
         nullptr);
 
-    vulkan.deviceContext.logDevDisp.cmdDrawIndexed(
-        command_buffer, vulkan.sceneContext.model.indexCount(), 1, 0, 0, 0);
+    deviceContext.logDevDisp.cmdDrawIndexed(
+        command_buffer, sceneContext.model.indexCount(), 1, 0, 0, 0);
 
-    vulkan.deviceContext.logDevDisp.cmdEndRenderPass(command_buffer);
+    deviceContext.logDevDisp.cmdEndRenderPass(command_buffer);
 
-    if (vulkan.deviceContext.logDevDisp.endCommandBuffer(command_buffer) !=
+    if (deviceContext.logDevDisp.endCommandBuffer(command_buffer) !=
         VK_SUCCESS) {
         return tl::unexpected<Error>{EngineError::VulkanRuntimeError,
                                      "Failed to record Command Buffer"};
@@ -406,6 +419,9 @@ tl::expected<void, Error> recordCommandBuffer(Vulkan &vulkan,
 }
 
 void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
+    auto &sceneContext = vulkan.sceneContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
     static auto start_time = std::chrono::high_resolution_clock::now();
 
     auto current_time = std::chrono::high_resolution_clock::now();
@@ -416,12 +432,11 @@ void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
                             glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = vulkan.sceneContext.camera.getViewMatrix();
+    ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
-        glm::radians(vulkan.sceneContext.camera.Zoom),
-        vulkan.swapchainContext.swapchain.extent().width /
-            static_cast<float>(
-                vulkan.swapchainContext.swapchain.extent().height),
+        glm::radians(sceneContext.camera.Zoom),
+        swapchainContext.swapchain.extent().width /
+            static_cast<float>(swapchainContext.swapchain.extent().height),
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 

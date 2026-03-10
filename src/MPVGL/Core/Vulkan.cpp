@@ -56,47 +56,46 @@ namespace mpvgl::vlk {
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 
 tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
+    auto &deviceContext = vulkan.deviceContext;
+    auto &surface = vulkan.surface;
+
     return createWindow("Vulkan Triangle", true)
         .transform_error([](auto e) { return Error{e}; })
-        .and_then([&vulkan](auto window) {
-            vulkan.deviceContext.window = window;
+        .and_then([&](auto window) {
+            deviceContext.window = window;
 
             return InstanceBuilder::getInstance().transform_error(
                 [](auto e) { return Error{e, "Failed to create Instance"}; });
         })
-        .and_then([&vulkan](auto instance) {
-            vulkan.deviceContext.instance = instance;
-            vulkan.deviceContext.instDisp =
-                vulkan.deviceContext.instance.make_table();
-            vulkan.surface =
-                create_surface_glfw(vulkan.deviceContext.instance,
-                                    vulkan.deviceContext.window, nullptr);
+        .and_then([&](auto instance) {
+            deviceContext.instance = instance;
+            deviceContext.instDisp = deviceContext.instance.make_table();
+            surface = create_surface_glfw(deviceContext.instance,
+                                          deviceContext.window, nullptr);
 
             return PhysicalDeviceBuilder::getPhysicalDevice(
-                       vulkan.deviceContext.instance, vulkan.surface)
+                       deviceContext.instance, surface)
                 .transform_error([](auto e) {
                     return Error{e, "Failed to create Physical Device"};
                 });
         })
-        .and_then([&vulkan](auto physicalDevice) {
+        .and_then([](auto physicalDevice) {
             return LogicalDeviceBuilder::getLogicalDevice(physicalDevice)
                 .transform_error([](auto e) {
                     return Error{e, "Failed to create Logical Device"};
                 });
         })
-        .and_then([&vulkan](auto logicalDevice) -> tl::expected<void, Error> {
-            vulkan.deviceContext.logicalDevice = logicalDevice;
-            vulkan.deviceContext.logDevDisp =
-                vulkan.deviceContext.logicalDevice.make_table();
+        .and_then([&](auto logicalDevice) -> tl::expected<void, Error> {
+            deviceContext.logicalDevice = logicalDevice;
+            deviceContext.logDevDisp = deviceContext.logicalDevice.make_table();
 
             VmaAllocatorCreateInfo allocatorInfo = {};
             allocatorInfo.physicalDevice =
-                vulkan.deviceContext.logicalDevice.physical_device;
-            allocatorInfo.device = vulkan.deviceContext.logicalDevice.device;
-            allocatorInfo.instance = vulkan.deviceContext.instance.instance;
+                deviceContext.logicalDevice.physical_device;
+            allocatorInfo.device = deviceContext.logicalDevice.device;
+            allocatorInfo.instance = deviceContext.instance.instance;
 
-            if (vmaCreateAllocator(&allocatorInfo,
-                                   &vulkan.deviceContext.allocator) !=
+            if (vmaCreateAllocator(&allocatorInfo, &deviceContext.allocator) !=
                 VK_SUCCESS) {
                 return tl::unexpected(Error{EngineError::VulkanInitFailed,
                                             "Failed to create VMA Allocator"});
@@ -114,17 +113,19 @@ tl::expected<void, Error> createSwapchain(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> getQueues(Vulkan &vulkan) {
-    auto &device = vulkan.deviceContext.logicalDevice;
-    return vkb_to_expected(device.get_queue(vkb::QueueType::graphics),
+    auto &logicalDevice = vulkan.deviceContext.logicalDevice;
+    auto &deviceContext = vulkan.deviceContext;
+
+    return vkb_to_expected(logicalDevice.get_queue(vkb::QueueType::graphics),
                            "Failed to get Graphics Queue")
-        .and_then([&vulkan, &device](VkQueue gQueue) {
-            vulkan.deviceContext.graphicsQueue = gQueue;
-            return vkb_to_expected(device.get_queue(vkb::QueueType::present),
-                                   "Failed to get Present Queue");
+        .and_then([&deviceContext, &logicalDevice](VkQueue gQueue) {
+            deviceContext.graphicsQueue = gQueue;
+            return vkb_to_expected(
+                logicalDevice.get_queue(vkb::QueueType::present),
+                "Failed to get Present Queue");
         })
-        .transform([&vulkan](VkQueue pQueue) {
-            vulkan.deviceContext.presentQueue = pQueue;
-        });
+        .transform(
+            [&](VkQueue pQueue) { deviceContext.presentQueue = pQueue; });
 }
 
 tl::expected<void, Error> bootstrap(Vulkan &vulkan) {
@@ -243,21 +244,24 @@ tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
 
 tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
     auto const &imageViews = vulkan.swapchainContext.swapchain.imageViews();
-    vulkan.swapchainContext.framebuffers.resize(
-        vulkan.swapchainContext.swapchain.imageViews().size());
-    for (size_t i = 0;
-         i < vulkan.swapchainContext.swapchain.imageViews().size(); ++i) {
+    auto &swapchainContext = vulkan.swapchainContext;
+    auto &deviceContext = vulkan.deviceContext;
+
+    swapchainContext.framebuffers.resize(
+        swapchainContext.swapchain.imageViews().size());
+    for (size_t i = 0; i < swapchainContext.swapchain.imageViews().size();
+         ++i) {
         std::array<VkImageView, 2> attachments = {
-            vulkan.swapchainContext.swapchain.imageViews().at(i),
-            vulkan.swapchainContext.depthTexture.imageView()};
+            swapchainContext.swapchain.imageViews().at(i),
+            swapchainContext.depthTexture.imageView()};
 
         auto framebufferInfo = initializers::framebufferCreateInfo(
-            vulkan.swapchainContext.renderPass, attachments,
-            vulkan.swapchainContext.swapchain.extent(), 1);
+            swapchainContext.renderPass, attachments,
+            swapchainContext.swapchain.extent(), 1);
 
-        if (vulkan.deviceContext.logDevDisp.createFramebuffer(
+        if (deviceContext.logDevDisp.createFramebuffer(
                 &framebufferInfo, nullptr,
-                &vulkan.swapchainContext.framebuffers.at(i)) != VK_SUCCESS) {
+                &swapchainContext.framebuffers.at(i)) != VK_SUCCESS) {
             return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                         "Failed to create Framebuffers"}};
         }
@@ -266,13 +270,14 @@ tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
+    auto &deviceContext = vulkan.deviceContext;
+
     auto poolInfo = initializers::commandPoolCreateInfo(
-        vulkan.deviceContext.logicalDevice
-            .get_queue_index(vkb::QueueType::graphics)
+        deviceContext.logicalDevice.get_queue_index(vkb::QueueType::graphics)
             .value(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-    if (vulkan.deviceContext.logDevDisp.createCommandPool(
+    if (deviceContext.logDevDisp.createCommandPool(
             &poolInfo, nullptr, &vulkan.data.command_pool) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to create Command Pool"}};
@@ -281,31 +286,37 @@ tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
-    return findDepthFormat(vulkan).and_then([&vulkan](VkFormat format) {
+    auto &swapchainContext = vulkan.swapchainContext;
+    auto &deviceContext = vulkan.deviceContext;
+
+    return findDepthFormat(vulkan).and_then([&](VkFormat format) {
         return Texture::createDepthTexture(
-                   vulkan.deviceContext,
-                   vulkan.swapchainContext.swapchain.extent().width,
-                   vulkan.swapchainContext.swapchain.extent().height, format)
-            .transform([&vulkan](Texture depthTex) {
-                vulkan.swapchainContext.depthTexture = std::move(depthTex);
+                   deviceContext, swapchainContext.swapchain.extent().width,
+                   swapchainContext.swapchain.extent().height, format)
+            .transform([&](Texture depthTex) {
+                swapchainContext.depthTexture = std::move(depthTex);
             });
     });
 }
 
 tl::expected<void, Error> loadTexture(Vulkan &vulkan) {
-    return Texture::loadFromFile(vulkan.deviceContext, vulkan.data.command_pool,
-                                 vulkan.deviceContext.graphicsQueue,
-                                 TEXTURE_PATH)
+    auto &sceneContext = vulkan.sceneContext;
+    auto &deviceContext = vulkan.deviceContext;
+
+    return Texture::loadFromFile(deviceContext, vulkan.data.command_pool,
+                                 deviceContext.graphicsQueue, TEXTURE_PATH)
         .transform([&](Texture texture) {
-            vulkan.sceneContext.texture = std::move(texture);
+            sceneContext.texture = std::move(texture);
         });
 }
 
 tl::expected<void, Error> loadModel(Vulkan &vulkan) {
-    return Model::loadFromFile(vulkan.deviceContext, vulkan.data.command_pool,
-                               vulkan.deviceContext.graphicsQueue, MODEL_PATH)
-        .transform(
-            [&](Model model) { vulkan.sceneContext.model = std::move(model); });
+    auto &sceneContext = vulkan.sceneContext;
+    auto &deviceContext = vulkan.deviceContext;
+
+    return Model::loadFromFile(deviceContext, vulkan.data.command_pool,
+                               deviceContext.graphicsQueue, MODEL_PATH)
+        .transform([&](Model model) { sceneContext.model = std::move(model); });
 }
 
 tl::expected<void, Error> createUniformBuffers(Vulkan &vulkan) {
@@ -347,9 +358,13 @@ tl::expected<void, Error> createDescriptorPool(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
+    auto &sceneContext = vulkan.sceneContext;
+    auto &deviceContext = vulkan.deviceContext;
+    auto &pipelineContext = vulkan.pipelineContext;
+
     for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
         auto setRes = vulkan.data.descriptorAllocator.allocate(
-            vulkan.deviceContext, vulkan.pipelineContext.descriptorSetLayout);
+            deviceContext, pipelineContext.descriptorSetLayout);
         if (!setRes) return tl::unexpected(setRes.error());
 
         vulkan.data.frames.at(i).descriptorSet = setRes.value();
@@ -359,12 +374,11 @@ tl::expected<void, Error> createDescriptorSets(Vulkan &vulkan) {
             .writeBuffer(0, vulkan.data.frames.at(i).uniformBuffer.handle(),
                          sizeof(UniformBufferObject), 0,
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-            .writeImage(1, vulkan.sceneContext.texture.imageView(),
-                        vulkan.sceneContext.texture.sampler(),
+            .writeImage(1, sceneContext.texture.imageView(),
+                        sceneContext.texture.sampler(),
                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-            .updateSet(vulkan.deviceContext,
-                       vulkan.data.frames.at(i).descriptorSet);
+            .updateSet(deviceContext, vulkan.data.frames.at(i).descriptorSet);
     }
     return {};
 }
@@ -390,7 +404,12 @@ tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
-    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
+    auto &sceneContext = vulkan.sceneContext;
+    auto &deviceContext = vulkan.deviceContext;
+    auto &pipelineContext = vulkan.pipelineContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
+    auto imageCount = swapchainContext.swapchain.imageCount();
     vulkan.data.image_in_flight.clear();
     vulkan.data.image_in_flight.resize(imageCount, VK_NULL_HANDLE);
     vulkan.data.finishedSemaphores.clear();
@@ -401,7 +420,7 @@ tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
         initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
     for (size_t i = 0; i < imageCount; ++i) {
-        if (vulkan.deviceContext.logDevDisp.createSemaphore(
+        if (deviceContext.logDevDisp.createSemaphore(
                 &semaphoreInfo, nullptr, &vulkan.data.finishedSemaphores[i]) !=
             VK_SUCCESS) {
             return tl::unexpected{
@@ -411,10 +430,10 @@ tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
     }
 
     for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
-        if (vulkan.deviceContext.logDevDisp.createSemaphore(
+        if (deviceContext.logDevDisp.createSemaphore(
                 &semaphoreInfo, nullptr,
                 &vulkan.data.frames[i].availableSemaphore) != VK_SUCCESS ||
-            vulkan.deviceContext.logDevDisp.createFence(
+            deviceContext.logDevDisp.createFence(
                 &fenceInfo, nullptr, &vulkan.data.frames[i].inFlightFence) !=
                 VK_SUCCESS) {
             return tl::unexpected{
@@ -426,14 +445,17 @@ tl::expected<void, Error> createSyncObjects(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
+    auto &deviceContext = vulkan.deviceContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
     auto &currentFrame = vulkan.data.frames[vulkan.data.current_frame];
 
-    vulkan.deviceContext.logDevDisp.waitForFences(
-        1, &currentFrame.inFlightFence, VK_TRUE, UINT64_MAX);
+    deviceContext.logDevDisp.waitForFences(1, &currentFrame.inFlightFence,
+                                           VK_TRUE, UINT64_MAX);
 
     uint32_t image_index = 0;
-    VkResult result = vulkan.deviceContext.logDevDisp.acquireNextImageKHR(
-        vulkan.swapchainContext.swapchain.handle(), UINT64_MAX,
+    VkResult result = deviceContext.logDevDisp.acquireNextImageKHR(
+        swapchainContext.swapchain.handle(), UINT64_MAX,
         currentFrame.availableSemaphore, VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -444,7 +466,7 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
     }
 
     if (vulkan.data.image_in_flight.at(image_index) != VK_NULL_HANDLE) {
-        vulkan.deviceContext.logDevDisp.waitForFences(
+        deviceContext.logDevDisp.waitForFences(
             1, &vulkan.data.image_in_flight.at(image_index), VK_TRUE,
             UINT64_MAX);
     }
@@ -467,22 +489,22 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
         {&currentFrame.availableSemaphore, 1}, {wait_stages, 1},
         {&currentFrame.commandBuffer, 1}, {&finishedSemaphore, 1});
 
-    vulkan.deviceContext.logDevDisp.resetFences(1, &currentFrame.inFlightFence);
+    deviceContext.logDevDisp.resetFences(1, &currentFrame.inFlightFence);
 
-    if (vulkan.deviceContext.logDevDisp.queueSubmit(
-            vulkan.deviceContext.graphicsQueue, 1, &submitInfo,
+    if (deviceContext.logDevDisp.queueSubmit(
+            deviceContext.graphicsQueue, 1, &submitInfo,
             currentFrame.inFlightFence) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to submit Draw Command Buffer"}};
     }
 
     auto swapchainKRH =
-        static_cast<VkSwapchainKHR>(vulkan.swapchainContext.swapchain.handle());
+        static_cast<VkSwapchainKHR>(swapchainContext.swapchain.handle());
     auto presentInfoKHR = initializers::presentInfoKHR(
         {&finishedSemaphore, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
-    result = vulkan.deviceContext.logDevDisp.queuePresentKHR(
-        vulkan.deviceContext.presentQueue, &presentInfoKHR);
+    result = deviceContext.logDevDisp.queuePresentKHR(
+        deviceContext.presentQueue, &presentInfoKHR);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         return recreateSwapchain(vulkan);
     } else if (result != VK_SUCCESS) {
@@ -496,44 +518,49 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> reloadShadersAndPipeline(Vulkan &vulkan) {
-    vulkan.deviceContext.logDevDisp.queueWaitIdle(
-        vulkan.deviceContext.graphicsQueue);
+    auto &deviceContext = vulkan.deviceContext;
+
+    deviceContext.logDevDisp.queueWaitIdle(deviceContext.graphicsQueue);
     return createGraphicsPipeline(vulkan);
 }
 
 void cleanup(Vulkan &vulkan) {
+    auto &sceneContext = vulkan.sceneContext;
+    auto &deviceContext = vulkan.deviceContext;
+    auto &pipelineContext = vulkan.pipelineContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
     cleanupSwapChain(vulkan);
     for (auto &frame : vulkan.data.frames) {
-        vulkan.deviceContext.logDevDisp.destroySemaphore(
-            frame.availableSemaphore, nullptr);
-        vulkan.deviceContext.logDevDisp.destroyFence(frame.inFlightFence,
-                                                     nullptr);
+        deviceContext.logDevDisp.destroySemaphore(frame.availableSemaphore,
+                                                  nullptr);
+        deviceContext.logDevDisp.destroyFence(frame.inFlightFence, nullptr);
     }
     vulkan.data.frames.clear();
     for (auto &sem : vulkan.data.finishedSemaphores) {
-        vulkan.deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
+        deviceContext.logDevDisp.destroySemaphore(sem, nullptr);
     }
     vulkan.data.finishedSemaphores.clear();
 
-    vulkan.deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
-                                                       nullptr);
+    deviceContext.logDevDisp.destroyCommandPool(vulkan.data.command_pool,
+                                                nullptr);
 
-    vulkan.pipelineContext.graphicsPipeline = {};
-    vulkan.sceneContext.texture = Texture{};
+    pipelineContext.graphicsPipeline = {};
+    sceneContext.texture = Texture{};
 
     vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 
-    vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
-        vulkan.pipelineContext.descriptorSetLayout, nullptr);
-    vulkan.deviceContext.logDevDisp.destroyRenderPass(
-        vulkan.swapchainContext.renderPass, nullptr);
-    vulkan.sceneContext.model = Model{};
+    deviceContext.logDevDisp.destroyDescriptorSetLayout(
+        pipelineContext.descriptorSetLayout, nullptr);
+    deviceContext.logDevDisp.destroyRenderPass(swapchainContext.renderPass,
+                                               nullptr);
+    sceneContext.model = Model{};
 
-    vmaDestroyAllocator(vulkan.deviceContext.allocator);
-    vkb::destroy_device(vulkan.deviceContext.logicalDevice);
-    vkb::destroy_surface(vulkan.deviceContext.instance, vulkan.surface);
-    vkb::destroy_instance(vulkan.deviceContext.instance);
-    destroy_window_glfw(vulkan.deviceContext.window);
+    vmaDestroyAllocator(deviceContext.allocator);
+    vkb::destroy_device(deviceContext.logicalDevice);
+    vkb::destroy_surface(deviceContext.instance, vulkan.surface);
+    vkb::destroy_instance(deviceContext.instance);
+    destroy_window_glfw(deviceContext.window);
 }
 
 }  // namespace mpvgl::vlk
