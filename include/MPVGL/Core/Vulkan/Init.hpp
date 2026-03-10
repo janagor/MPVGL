@@ -11,6 +11,7 @@
 
 #include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
+#include "MPVGL/Core/Vulkan/CommandPool.hpp"
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/GraphicsPipeline.hpp"
@@ -63,7 +64,7 @@ class RenderData {
    public:
     RenderData() = default;
 
-    VkCommandPool commandPool{};
+    CommandPool commandPool{};
     DescriptorAllocator descriptorAllocator{};
 
     std::vector<FrameData> frames{};

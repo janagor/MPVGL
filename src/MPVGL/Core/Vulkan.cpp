@@ -276,18 +276,15 @@ tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
 
 tl::expected<void, Error> createCommandPool(Vulkan &vulkan) {
     auto &deviceContext = vulkan.deviceContext;
-
-    auto poolInfo = initializers::commandPoolCreateInfo(
-        deviceContext.logicalDevice.get_queue_index(vkb::QueueType::graphics)
-            .value(),
-        VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-    if (deviceContext.logDevDisp.createCommandPool(
-            &poolInfo, nullptr, &vulkan.data.commandPool) != VK_SUCCESS) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to create Command Pool"}};
-    }
-    return {};
+    return vkb_to_expected(deviceContext.logicalDevice.get_queue_index(
+                               vkb::QueueType::graphics),
+                           "Failed to get Queue Index")
+        .and_then([&](uint32_t queueIndex) {
+            return CommandPool::create(deviceContext, queueIndex)
+                .transform([&vulkan](CommandPool pool) {
+                    vulkan.data.commandPool = std::move(pool);
+                });
+        });
 }
 
 tl::expected<void, Error> createDepthResources(Vulkan &vulkan) {
@@ -308,7 +305,8 @@ tl::expected<void, Error> loadTexture(Vulkan &vulkan) {
     auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
 
-    return Texture::loadFromFile(deviceContext, vulkan.data.commandPool,
+    return Texture::loadFromFile(deviceContext,
+                                 vulkan.data.commandPool.handle(),
                                  deviceContext.graphicsQueue, TEXTURE_PATH)
         .transform([&](Texture texture) {
             sceneContext.texture = std::move(texture);
@@ -319,7 +317,7 @@ tl::expected<void, Error> loadModel(Vulkan &vulkan) {
     auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
 
-    return Model::loadFromFile(deviceContext, vulkan.data.commandPool,
+    return Model::loadFromFile(deviceContext, vulkan.data.commandPool.handle(),
                                deviceContext.graphicsQueue, MODEL_PATH)
         .transform([&](Model model) { sceneContext.model = std::move(model); });
 }
@@ -393,7 +391,7 @@ tl::expected<void, Error> createCommandBuffers(Vulkan &vulkan) {
     std::vector<VkCommandBuffer> allocatedBuffers(framesCount);
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
-        vulkan.data.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        vulkan.data.commandPool.handle(), VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         static_cast<std::uint32_t>(framesCount));
 
     if (vulkan.deviceContext.logDevDisp.allocateCommandBuffers(
@@ -545,8 +543,7 @@ void cleanup(Vulkan &vulkan) {
     }
     vulkan.data.finishedSemaphores.clear();
 
-    deviceContext.logDevDisp.destroyCommandPool(vulkan.data.commandPool,
-                                                nullptr);
+    vulkan.data.commandPool = {};
 
     pipelineContext.graphicsPipeline = {};
     sceneContext.texture = Texture{};

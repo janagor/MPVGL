@@ -145,7 +145,7 @@ VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
     auto &deviceContext = vulkan.deviceContext;
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
-        vulkan.data.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+        vulkan.data.commandPool.handle(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer commandBuffer;
     deviceContext.logDevDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
@@ -166,8 +166,8 @@ void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer) {
     deviceContext.logDevDisp.queueSubmit(deviceContext.graphicsQueue, 1,
                                          &submitInfo, VK_NULL_HANDLE);
     deviceContext.logDevDisp.queueWaitIdle(deviceContext.graphicsQueue);
-    deviceContext.logDevDisp.freeCommandBuffers(vulkan.data.commandPool, 1,
-                                                &commandBuffer);
+    deviceContext.logDevDisp.freeCommandBuffers(
+        vulkan.data.commandPool.handle(), 1, &commandBuffer);
 }
 
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
