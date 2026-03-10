@@ -47,7 +47,7 @@ class PipelineContext {
     PipelineContext() = default;
 
     GraphicsPipeline graphicsPipeline{};
-    VkDescriptorSetLayout descriptorSetLayout{};
+    DescriptorSetLayout descriptorSetLayout{};
 };
 
 class FrameData {

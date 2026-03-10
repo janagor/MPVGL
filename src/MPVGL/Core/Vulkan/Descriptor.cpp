@@ -14,6 +14,35 @@
 
 namespace mpvgl::vlk {
 
+DescriptorSetLayout::DescriptorSetLayout(VkDescriptorSetLayout layout,
+                                         vkb::DispatchTable disp) noexcept
+    : m_layout(layout), m_disp(std::move(disp)) {}
+
+DescriptorSetLayout::DescriptorSetLayout(DescriptorSetLayout&& other) noexcept
+    : m_layout(other.m_layout), m_disp(std::move(other.m_disp)) {
+    other.m_layout = VK_NULL_HANDLE;
+}
+
+DescriptorSetLayout& DescriptorSetLayout::operator=(
+    DescriptorSetLayout&& other) noexcept {
+    if (this != &other) {
+        cleanup();
+        m_layout = other.m_layout;
+        m_disp = std::move(other.m_disp);
+        other.m_layout = VK_NULL_HANDLE;
+    }
+    return *this;
+}
+
+DescriptorSetLayout::~DescriptorSetLayout() noexcept { cleanup(); }
+
+void DescriptorSetLayout::cleanup() noexcept {
+    if (m_layout != VK_NULL_HANDLE) {
+        m_disp.destroyDescriptorSetLayout(m_layout, nullptr);
+        m_layout = VK_NULL_HANDLE;
+    }
+}
+
 DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(
     uint32_t binding, VkDescriptorType type, VkShaderStageFlags stageFlags) {
     VkDescriptorSetLayoutBinding newBinding{};
@@ -28,7 +57,7 @@ DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(
 
 void DescriptorLayoutBuilder::clear() { m_bindings.clear(); }
 
-tl::expected<VkDescriptorSetLayout, Error<EngineError>>
+tl::expected<DescriptorSetLayout, Error<EngineError>>
 DescriptorLayoutBuilder::build(DeviceContext const& device) {
     auto info = initializers::descriptorSetLayoutCreateInfo(m_bindings);
     VkDescriptorSetLayout layout;
@@ -37,7 +66,8 @@ DescriptorLayoutBuilder::build(DeviceContext const& device) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to create Descriptor Set Layout"}};
     }
-    return layout;
+
+    return DescriptorSetLayout{layout, device.logDevDisp};
 }
 
 tl::expected<void, Error<EngineError>> DescriptorAllocator::init(

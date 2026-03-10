@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <tl/expected.hpp>
+#include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
@@ -16,13 +17,38 @@
 
 namespace mpvgl::vlk {
 
+class DescriptorSetLayout {
+   public:
+    DescriptorSetLayout() = default;
+    ~DescriptorSetLayout() noexcept;
+
+    DescriptorSetLayout(DescriptorSetLayout const&) = delete;
+    DescriptorSetLayout& operator=(DescriptorSetLayout const&) = delete;
+
+    DescriptorSetLayout(DescriptorSetLayout&& other) noexcept;
+    DescriptorSetLayout& operator=(DescriptorSetLayout&& other) noexcept;
+
+    [[nodiscard]] VkDescriptorSetLayout handle() const noexcept {
+        return m_layout;
+    }
+
+    DescriptorSetLayout(VkDescriptorSetLayout layout,
+                        vkb::DispatchTable disp) noexcept;
+
+   private:
+    void cleanup() noexcept;
+
+    VkDescriptorSetLayout m_layout{VK_NULL_HANDLE};
+    vkb::DispatchTable m_disp{};
+};
+
 class DescriptorLayoutBuilder {
    public:
     DescriptorLayoutBuilder& addBinding(std::uint32_t binding,
                                         VkDescriptorType type,
                                         VkShaderStageFlags stageFlags);
     void clear();
-    tl::expected<VkDescriptorSetLayout, Error<EngineError>> build(
+    tl::expected<DescriptorSetLayout, Error<EngineError>> build(
         DeviceContext const& device);
 
    private:

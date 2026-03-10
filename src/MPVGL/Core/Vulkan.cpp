@@ -228,14 +228,15 @@ tl::expected<void, Error<EngineError>> createRenderPass(Vulkan &vulkan) {
 tl::expected<void, Error<EngineError>> createDescriptorSetLayout(
     Vulkan &vulkan) {
     DescriptorLayoutBuilder builder{};
-    return builder
-        .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    VK_SHADER_STAGE_VERTEX_BIT)
-        .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    VK_SHADER_STAGE_FRAGMENT_BIT)
-        .build(vulkan.deviceContext)
-        .transform([&](VkDescriptorSetLayout layout) {
-            vulkan.pipelineContext.descriptorSetLayout = layout;
+
+    builder.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                       VK_SHADER_STAGE_VERTEX_BIT);
+    builder.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                       VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    return builder.build(vulkan.deviceContext)
+        .transform([&](DescriptorSetLayout layout) {
+            vulkan.pipelineContext.descriptorSetLayout = std::move(layout);
         });
 }
 
@@ -246,7 +247,7 @@ tl::expected<void, Error<EngineError>> createGraphicsPipeline(Vulkan &vulkan) {
 
     return GraphicsPipeline::create(
                deviceContext, swapchainContext.renderPass.handle(),
-               pipelineContext.descriptorSetLayout,
+               pipelineContext.descriptorSetLayout.handle(),
                std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv",
                std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv")
         .transform([&](GraphicsPipeline pipeline) {
@@ -375,7 +376,7 @@ tl::expected<void, Error<EngineError>> createDescriptorSets(Vulkan &vulkan) {
 
     for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
         auto setRes = vulkan.data.descriptorAllocator.allocate(
-            deviceContext, pipelineContext.descriptorSetLayout);
+            deviceContext, pipelineContext.descriptorSetLayout.handle());
         if (!setRes) return tl::unexpected{setRes.error()};
 
         vulkan.data.frames.at(i).descriptorSet = setRes.value();
@@ -538,8 +539,7 @@ void cleanup(Vulkan &vulkan) {
 
     vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 
-    vulkan.deviceContext.logDevDisp.destroyDescriptorSetLayout(
-        vulkan.pipelineContext.descriptorSetLayout, nullptr);
+    vulkan.pipelineContext.descriptorSetLayout = {};
     vulkan.swapchainContext.renderPass = {};
 
     vmaDestroyAllocator(vulkan.deviceContext.allocator);
