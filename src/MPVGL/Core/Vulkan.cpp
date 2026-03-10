@@ -56,8 +56,8 @@ namespace mpvgl::vlk {
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 
 tl::expected<void, Error> deviceInitialization(Vulkan &vulkan) {
-    auto &deviceContext = vulkan.deviceContext;
     auto &surface = vulkan.surface;
+    auto &deviceContext = vulkan.deviceContext;
 
     return createWindow("Vulkan Triangle", true)
         .transform_error([](auto e) { return Error{e}; })
@@ -232,20 +232,25 @@ tl::expected<void, Error> createDescriptorSetLayout(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error> createGraphicsPipeline(Vulkan &vulkan) {
+    auto &deviceContext = vulkan.deviceContext;
+    auto &pipelineContext = vulkan.pipelineContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
     return GraphicsPipeline::create(
-               vulkan.deviceContext, vulkan.swapchainContext.renderPass,
-               vulkan.pipelineContext.descriptorSetLayout,
+               deviceContext, swapchainContext.renderPass,
+               pipelineContext.descriptorSetLayout,
                std::string(SOURCE_DIRECTORY) + "/shaders/triangle.vert.spv",
                std::string(SOURCE_DIRECTORY) + "/shaders/triangle.frag.spv")
-        .transform([&vulkan](GraphicsPipeline pipeline) {
-            vulkan.pipelineContext.graphicsPipeline = std::move(pipeline);
+        .transform([&](GraphicsPipeline pipeline) {
+            pipelineContext.graphicsPipeline = std::move(pipeline);
         });
 }
 
 tl::expected<void, Error> createFramebuffers(Vulkan &vulkan) {
-    auto const &imageViews = vulkan.swapchainContext.swapchain.imageViews();
-    auto &swapchainContext = vulkan.swapchainContext;
     auto &deviceContext = vulkan.deviceContext;
+    auto &swapchainContext = vulkan.swapchainContext;
+
+    auto const &imageViews = vulkan.swapchainContext.swapchain.imageViews();
 
     swapchainContext.framebuffers.resize(
         swapchainContext.swapchain.imageViews().size());
@@ -497,8 +502,7 @@ tl::expected<void, Error> drawFrame(Vulkan &vulkan) {
                                     "Failed to submit Draw Command Buffer"}};
     }
 
-    auto swapchainKRH =
-        static_cast<VkSwapchainKHR>(swapchainContext.swapchain.handle());
+    auto swapchainKRH = swapchainContext.swapchain.handle();
     auto presentInfoKHR = initializers::presentInfoKHR(
         {&finishedSemaphore, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
