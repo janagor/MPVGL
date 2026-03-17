@@ -400,8 +400,24 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
         &vulkan.data.frames.at(vulkan.data.currentFrame).descriptorSet, 0,
         nullptr);
 
-    deviceContext.logDevDisp.cmdDrawIndexed(
-        command_buffer, sceneContext.model.indexCount(), 1, 0, 0, 0);
+    for (auto const &object : sceneContext.renderables) {
+        VkBuffer vertexBuffers[] = {object.model->vertexBuffer().handle()};
+        VkDeviceSize offsets[] = {0};
+        deviceContext.logDevDisp.cmdBindVertexBuffers(command_buffer, 0, 1,
+                                                      vertexBuffers, offsets);
+
+        deviceContext.logDevDisp.cmdBindIndexBuffer(
+            command_buffer, object.model->indexBuffer().handle(), 0,
+            VK_INDEX_TYPE_UINT32);
+
+        glm::mat4 modelMatrix = object.transformMatrix;
+        deviceContext.logDevDisp.cmdPushConstants(
+            command_buffer, pipelineContext.graphicsPipeline.layout(),
+            VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &modelMatrix);
+
+        deviceContext.logDevDisp.cmdDrawIndexed(
+            command_buffer, object.model->indexCount(), 1, 0, 0, 0);
+    }
 
     deviceContext.logDevDisp.cmdEndRenderPass(command_buffer);
 
@@ -425,8 +441,6 @@ void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
                      .count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-                            glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
         glm::radians(sceneContext.camera.Zoom),

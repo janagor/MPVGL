@@ -23,6 +23,12 @@
 
 namespace mpvgl::vlk {
 
+struct RenderObject {
+    Model* model;
+    Texture* texture;
+    glm::mat4 transformMatrix;
+};
+
 class SwapchainContext {
    public:
     SwapchainContext() = default;
@@ -40,6 +46,8 @@ class SceneContext {
     Model model{};
     Texture texture{};
     Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
+
+    std::vector<RenderObject> renderables;
 };
 
 class PipelineContext {
@@ -56,7 +64,7 @@ class FrameData {
 
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     Buffer uniformBuffer{};
-    void *uniformBufferMapped{nullptr};
+    void* uniformBufferMapped{nullptr};
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
     Semaphore availableSemaphore{};
     Fence inFlightFence{};

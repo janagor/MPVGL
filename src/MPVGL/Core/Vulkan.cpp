@@ -328,7 +328,27 @@ tl::expected<void, Error<EngineError>> loadModel(Vulkan &vulkan) {
 
     return Model::loadFromFile(deviceContext, vulkan.data.commandPool.handle(),
                                deviceContext.graphicsQueue, MODEL_PATH)
-        .transform([&](Model model) { sceneContext.model = std::move(model); });
+        .transform([&](Model model) {
+            sceneContext.model = std::move(model);
+
+            RenderObject obj1{};
+            obj1.model = &sceneContext.model;
+            obj1.texture = &sceneContext.texture;
+            obj1.transformMatrix =
+                glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+            RenderObject obj2{};
+            obj2.model = &sceneContext.model;
+            obj2.texture = &sceneContext.texture;
+
+            glm::mat4 transform2 =
+                glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+            transform2 = glm::scale(transform2, glm::vec3(0.5f));
+            obj2.transformMatrix = transform2;
+
+            sceneContext.renderables.push_back(obj1);
+            sceneContext.renderables.push_back(obj2);
+        });
 }
 
 tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan) {

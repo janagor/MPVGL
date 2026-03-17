@@ -61,6 +61,16 @@ int RenderWindow::draw() noexcept {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        int i = 0;
+        for (auto &object : vulkan.sceneContext.renderables) {
+            float speed = (i % 2 == 0) ? 45.0f : -90.0f;
+
+            object.transformMatrix = glm::rotate(
+                object.transformMatrix, deltaTime * glm::radians(speed),
+                glm::vec3(0.0f, 0.0f, 1.0f));
+            i++;
+        }
+
         if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_ESCAPE) ==
             GLFW_PRESS)
             glfwSetWindowShouldClose(vulkan.deviceContext.window, true);

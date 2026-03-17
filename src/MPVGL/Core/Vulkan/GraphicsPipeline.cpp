@@ -70,8 +70,13 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
             Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
     }
 
-    auto pipelineLayoutInfo =
-        initializers::pipelineLayoutCreateInfo({&descriptorSetLayout, 1}, {});
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(glm::mat4);
+
+    auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
+        {&descriptorSetLayout, 1}, {&pushConstantRange, 1});
     VkPipelineLayout pipelineLayout;
 
     if (device.logDevDisp.createPipelineLayout(&pipelineLayoutInfo, nullptr,
