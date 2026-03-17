@@ -7,7 +7,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "MPVGL/Core/Camera.hpp"
+#include "MPVGL/Core/InputManager.hpp"
 #include "MPVGL/Core/RenderWindow.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
@@ -64,59 +64,17 @@ int RenderWindow::draw() noexcept {
         int i = 0;
         for (auto &object : vulkan.sceneContext.renderables) {
             float speed = (i % 2 == 0) ? 45.0f : -90.0f;
-
             object.transformMatrix = glm::rotate(
                 object.transformMatrix, deltaTime * glm::radians(speed),
                 glm::vec3(0.0f, 0.0f, 1.0f));
             i++;
         }
 
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_ESCAPE) ==
-            GLFW_PRESS)
-            glfwSetWindowShouldClose(vulkan.deviceContext.window, true);
-
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_W) == GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::Forward,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_S) == GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::Backward,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_A) == GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::Left,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_D) == GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::Right,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_SPACE) ==
-            GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::Up,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_LEFT_SHIFT) ==
-            GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::Down,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_Q) == GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(CameraMovement::RollLeft,
-                                                       deltaTime);
-        if (glfwGetKey(vulkan.deviceContext.window, GLFW_KEY_E) == GLFW_PRESS)
-            vulkan.sceneContext.camera.processKeyboard(
-                CameraMovement::RollRight, deltaTime);
-
-        double xpos, ypos;
-        glfwGetCursorPos(vulkan.deviceContext.window, &xpos, &ypos);
-
-        if (firstMouse) {
-            lastX = xpos;
-            lastY = ypos;
-            firstMouse = false;
-        }
-
-        float xoffset = xpos - lastX;
-        float yoffset = lastY - ypos;
-        lastX = xpos;
-        lastY = ypos;
-
-        vulkan.sceneContext.camera.processMouseMovement(xoffset, yoffset);
+        InputManager::processKeyboard(vulkan.deviceContext.window,
+                                      vulkan.sceneContext.camera, deltaTime);
+        InputManager::processMouse(vulkan.deviceContext.window,
+                                   vulkan.sceneContext.camera, lastX, lastY,
+                                   firstMouse);
 
         if (auto result = vlk::drawFrame(vulkan); !result.has_value()) {
             std::cout << "failed to draw a Frame:" << result.error().message
