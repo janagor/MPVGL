@@ -67,4 +67,22 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
                  static_cast<uint32_t>(indices.size()));
 }
 
+tl::expected<Model, Error<EngineError>> Model::create(
+    DeviceContext const& device, VkCommandPool commandPool,
+    VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
+    std::vector<uint32_t> const& indices) {
+    auto vBufferRes = Buffer::createFromData(
+        device, commandPool, graphicsQueue, vertices,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    if (!vBufferRes) return tl::unexpected{vBufferRes.error()};
+
+    auto iBufferRes = Buffer::createFromData(
+        device, commandPool, graphicsQueue, indices,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    if (!iBufferRes) return tl::unexpected{iBufferRes.error()};
+
+    return Model(std::move(vBufferRes.value()), std::move(iBufferRes.value()),
+                 static_cast<uint32_t>(indices.size()));
+}
+
 }  // namespace mpvgl::vlk

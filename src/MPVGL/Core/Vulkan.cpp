@@ -38,6 +38,8 @@
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Geometry/Shape.hpp"
+#include "MPVGL/Geometry/ShapeTraits.hpp"
 
 #include "config.hpp"
 
@@ -326,8 +328,10 @@ tl::expected<void, Error<EngineError>> loadModel(Vulkan &vulkan) {
     auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
 
-    return Model::loadFromFile(deviceContext, vulkan.data.commandPool.handle(),
-                               deviceContext.graphicsQueue, MODEL_PATH)
+    auto cubeMesh = Shape<Cube>::generate();
+    return Model::create(deviceContext, vulkan.data.commandPool.handle(),
+                         deviceContext.graphicsQueue, cubeMesh.vertices,
+                         cubeMesh.indices)
         .transform([&](Model model) {
             sceneContext.model = std::move(model);
 

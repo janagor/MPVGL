@@ -10,6 +10,7 @@
 
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
+#include "MPVGL/Core/Vulkan/Vertex.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
 
@@ -26,6 +27,11 @@ class Model {
     [[nodiscard]] static tl::expected<Model, Error<EngineError>> loadFromFile(
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, std::string const& filepath);
+
+    [[nodiscard]] static tl::expected<Model, Error<EngineError>> create(
+        DeviceContext const& device, VkCommandPool commandPool,
+        VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
+        std::vector<uint32_t> const& indices);
 
     [[nodiscard]] Buffer const& vertexBuffer() const noexcept {
         return m_vertexBuffer;
