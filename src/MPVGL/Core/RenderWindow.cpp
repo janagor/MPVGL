@@ -9,6 +9,7 @@
 
 #include "MPVGL/Core/InputManager.hpp"
 #include "MPVGL/Core/RenderWindow.hpp"
+#include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -18,7 +19,7 @@
 namespace mpvgl {
 
 RenderWindow::RenderWindow(int width, int height, std::string const &title,
-                           GLFWmonitor *monitor,
+                           Scene const &scene, GLFWmonitor *monitor,
                            GLFWwindow *share) noexcept(false)
     : shader_watcher(
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY,
@@ -29,7 +30,7 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         vlk::bootstrap(vulkan)
             .and_then([&] { return vlk::setupRenderingPipeline(vulkan); })
             .and_then([&] { return vlk::setupRenderTargets(vulkan); })
-            .and_then([&] { return vlk::loadAndPrepareAssets(vulkan); })
+            .and_then([&] { return vlk::loadAndPrepareAssets(vulkan, scene); })
             .and_then([&] { return vlk::setupDescriptorsAndSync(vulkan); });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "

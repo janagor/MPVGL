@@ -4,6 +4,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 
@@ -12,7 +13,7 @@ namespace mpvgl {
 class RenderWindow {
    public:
     explicit RenderWindow(int width, int height, std::string const &title,
-                          GLFWmonitor *monitor = nullptr,
+                          Scene const &scene, GLFWmonitor *monitor = nullptr,
                           GLFWwindow *share = nullptr) noexcept(false);
 
     RenderWindow(RenderWindow const &other) noexcept = delete;

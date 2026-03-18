@@ -385,15 +385,6 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     scissor.extent = swapchainContext.swapchain.extent();
     deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {sceneContext.model.vertexBuffer().handle()};
-    VkDeviceSize offsets[] = {0};
-    deviceContext.logDevDisp.cmdBindVertexBuffers(command_buffer, 0, 1,
-                                                  vertexBuffers, offsets);
-
-    deviceContext.logDevDisp.cmdBindIndexBuffer(
-        command_buffer, sceneContext.model.indexBuffer().handle(), 0,
-        VK_INDEX_TYPE_UINT32);
-
     deviceContext.logDevDisp.cmdBindDescriptorSets(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineContext.graphicsPipeline.layout(), 0, 1,

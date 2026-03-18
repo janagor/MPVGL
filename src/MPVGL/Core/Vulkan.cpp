@@ -154,10 +154,11 @@ tl::expected<void, Error<EngineError>> setupRenderTargets(Vulkan &vulkan) {
         [&] { return createFramebuffers(vulkan); });
 }
 
-tl::expected<void, Error<EngineError>> loadAndPrepareAssets(Vulkan &vulkan) {
+tl::expected<void, Error<EngineError>> loadAndPrepareAssets(
+    Vulkan &vulkan, Scene const &scene) {
     return vlk::createCommandPool(vulkan)
         .and_then([&] { return vlk::loadTexture(vulkan); })
-        .and_then([&] { return vlk::loadModel(vulkan); })
+        .and_then([&] { return vlk::loadScene(vulkan, scene); })
         .and_then([&] { return vlk::createUniformBuffers(vulkan); });
 }
 
@@ -324,35 +325,25 @@ tl::expected<void, Error<EngineError>> loadTexture(Vulkan &vulkan) {
         });
 }
 
-tl::expected<void, Error<EngineError>> loadModel(Vulkan &vulkan) {
+tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
+                                                 Scene const &scene) {
     auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
 
-    auto cubeMesh = Shape<Cube>::generate();
-    return Model::create(deviceContext, vulkan.data.commandPool.handle(),
-                         deviceContext.graphicsQueue, cubeMesh.vertices,
-                         cubeMesh.indices)
-        .transform([&](Model model) {
-            sceneContext.model = std::move(model);
+    for (auto const &node : scene.nodes) {
+        auto modelRes = Model::create(
+            deviceContext, vulkan.data.commandPool.handle(),
+            deviceContext.graphicsQueue, node.mesh.vertices, node.mesh.indices);
+        if (!modelRes) return tl::unexpected{modelRes.error()};
+        sceneContext.models.emplace_back(std::move(modelRes.value()));
+        RenderObject obj{};
+        obj.model = &sceneContext.models.back();
+        obj.texture = &sceneContext.texture;
+        obj.transformMatrix = node.transform;
 
-            RenderObject obj1{};
-            obj1.model = &sceneContext.model;
-            obj1.texture = &sceneContext.texture;
-            obj1.transformMatrix =
-                glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-            RenderObject obj2{};
-            obj2.model = &sceneContext.model;
-            obj2.texture = &sceneContext.texture;
-
-            glm::mat4 transform2 =
-                glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
-            transform2 = glm::scale(transform2, glm::vec3(0.5f));
-            obj2.transformMatrix = transform2;
-
-            sceneContext.renderables.push_back(obj1);
-            sceneContext.renderables.push_back(obj2);
-        });
+        sceneContext.renderables.push_back(obj);
+    }
+    return {};
 }
 
 tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan) {
@@ -559,7 +550,7 @@ void cleanup(Vulkan &vulkan) {
 
     vulkan.pipelineContext.graphicsPipeline = {};
     vulkan.sceneContext.texture = Texture{};
-    vulkan.sceneContext.model = Model{};
+    vulkan.sceneContext.models.clear();
 
     vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 
