@@ -38,8 +38,6 @@
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
-#include "MPVGL/Geometry/Shape.hpp"
-#include "MPVGL/Geometry/ShapeTraits.hpp"
 
 #include "config.hpp"
 
@@ -156,15 +154,13 @@ tl::expected<void, Error<EngineError>> setupRenderTargets(Vulkan &vulkan) {
 
 tl::expected<void, Error<EngineError>> loadAndPrepareAssets(
     Vulkan &vulkan, Scene const &scene) {
-    return vlk::createCommandPool(vulkan)
-        .and_then([&] { return vlk::loadTexture(vulkan); })
-        .and_then([&] { return vlk::loadScene(vulkan, scene); })
-        .and_then([&] { return vlk::createUniformBuffers(vulkan); });
+    return vlk::createUniformBuffers(vulkan).and_then(
+        [&] { return vlk::loadScene(vulkan, scene); });
 }
 
 tl::expected<void, Error<EngineError>> setupDescriptorsAndSync(Vulkan &vulkan) {
     return vlk::createDescriptorPool(vulkan)
-        .and_then([&] { return vlk::createDescriptorSets(vulkan); })
+        .and_then([&] { return vlk::createCommandPool(vulkan); })
         .and_then([&] { return vlk::createCommandBuffers(vulkan); })
         .and_then([&] { return vlk::createSyncObjects(vulkan); });
 }
@@ -313,21 +309,10 @@ tl::expected<void, Error<EngineError>> createDepthResources(Vulkan &vulkan) {
     });
 }
 
-tl::expected<void, Error<EngineError>> loadTexture(Vulkan &vulkan) {
-    auto &sceneContext = vulkan.sceneContext;
-    auto &deviceContext = vulkan.deviceContext;
-
-    return Texture::loadFromFile(deviceContext,
-                                 vulkan.data.commandPool.handle(),
-                                 deviceContext.graphicsQueue, TEXTURE_PATH)
-        .transform([&](Texture texture) {
-            sceneContext.texture = std::move(texture);
-        });
-}
-
 tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
                                                  Scene const &scene) {
     auto &sceneContext = vulkan.sceneContext;
+    auto &pipelineContext = vulkan.pipelineContext;
     auto &deviceContext = vulkan.deviceContext;
 
     for (auto const &node : scene.nodes) {
@@ -335,23 +320,60 @@ tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
             deviceContext, vulkan.data.commandPool.handle(),
             deviceContext.graphicsQueue, node.mesh.vertices, node.mesh.indices);
         if (!modelRes) return tl::unexpected{modelRes.error()};
-        sceneContext.models.emplace_back(std::move(modelRes.value()));
+        sceneContext.models.push_back(std::move(modelRes.value()));
+
+        if (sceneContext.materials.find(node.texturePath) ==
+            sceneContext.materials.end()) {
+            MaterialData newMaterial{};
+
+            auto texRes = Texture::loadFromFile(
+                deviceContext, vulkan.data.commandPool.handle(),
+                deviceContext.graphicsQueue, node.texturePath);
+            if (!texRes) return tl::unexpected{texRes.error()};
+            newMaterial.texture = std::move(texRes.value());
+
+            size_t framesInFlight = vulkan.data.frames.size();
+            newMaterial.descriptorSets.resize(framesInFlight);
+
+            for (size_t i = 0; i < framesInFlight; i++) {
+                auto setRes = vulkan.data.descriptorAllocator.allocate(
+                    deviceContext,
+                    pipelineContext.descriptorSetLayout.handle());
+
+                if (!setRes) return tl::unexpected{setRes.error()};
+                newMaterial.descriptorSets[i] = setRes.value();
+
+                DescriptorWriter writer{};
+                writer
+                    .writeBuffer(
+                        0, vulkan.data.frames.at(i).uniformBuffer.handle(),
+                        sizeof(UniformBufferObject), 0,
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                    .writeImage(1, newMaterial.texture.imageView(),
+                                newMaterial.texture.sampler(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                    .updateSet(deviceContext, newMaterial.descriptorSets[i]);
+            }
+
+            sceneContext.materials[node.texturePath] = std::move(newMaterial);
+        }
+
         RenderObject obj{};
         obj.model = &sceneContext.models.back();
-        obj.texture = &sceneContext.texture;
+        obj.material = &sceneContext.materials[node.texturePath];
+
         obj.transformMatrix = node.transform;
 
         sceneContext.renderables.push_back(obj);
     }
+
     return {};
 }
 
 tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan) {
     auto bufferSize = sizeof(UniformBufferObject);
     auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
-
-    vulkan.data.frames.clear();
-    vulkan.data.frames.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = {}; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         auto result =
@@ -379,38 +401,12 @@ tl::expected<void, Error<EngineError>> createDescriptorPool(Vulkan &vulkan) {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1.0f},
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f}};
 
-    return vulkan.data.descriptorAllocator.init(
-        vulkan.deviceContext, static_cast<uint32_t>(vulkan.data.frames.size()),
-        ratios);
-}
-
-tl::expected<void, Error<EngineError>> createDescriptorSets(Vulkan &vulkan) {
-    auto &sceneContext = vulkan.sceneContext;
-    auto &deviceContext = vulkan.deviceContext;
-    auto &pipelineContext = vulkan.pipelineContext;
-
-    for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
-        auto setRes = vulkan.data.descriptorAllocator.allocate(
-            deviceContext, pipelineContext.descriptorSetLayout.handle());
-        if (!setRes) return tl::unexpected{setRes.error()};
-
-        vulkan.data.frames.at(i).descriptorSet = setRes.value();
-
-        DescriptorWriter writer{};
-        writer
-            .writeBuffer(0, vulkan.data.frames.at(i).uniformBuffer.handle(),
-                         sizeof(UniformBufferObject), 0,
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-            .writeImage(1, sceneContext.texture.imageView(),
-                        sceneContext.texture.sampler(),
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-            .updateSet(deviceContext, vulkan.data.frames.at(i).descriptorSet);
-    }
-    return {};
+    return vulkan.data.descriptorAllocator.init(vulkan.deviceContext, 1000,
+                                                ratios);
 }
 
 tl::expected<void, Error<EngineError>> createCommandBuffers(Vulkan &vulkan) {
+    vulkan.data.frames.resize(MAX_FRAMES_IN_FLIGHT);
     auto framesCount = vulkan.data.frames.size();
     std::vector<VkCommandBuffer> allocatedBuffers(framesCount);
 
@@ -549,8 +545,8 @@ void cleanup(Vulkan &vulkan) {
     vulkan.data.commandPool = {};
 
     vulkan.pipelineContext.graphicsPipeline = {};
-    vulkan.sceneContext.texture = Texture{};
     vulkan.sceneContext.models.clear();
+    vulkan.sceneContext.materials.clear();
 
     vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
 

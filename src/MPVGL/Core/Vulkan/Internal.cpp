@@ -367,6 +367,7 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
 
     deviceContext.logDevDisp.cmdBeginRenderPass(command_buffer, &renderPassInfo,
                                                 VK_SUBPASS_CONTENTS_INLINE);
+
     deviceContext.logDevDisp.cmdBindPipeline(
         command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipelineContext.graphicsPipeline.handle());
@@ -385,13 +386,13 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     scissor.extent = swapchainContext.swapchain.extent();
     deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    deviceContext.logDevDisp.cmdBindDescriptorSets(
-        command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineContext.graphicsPipeline.layout(), 0, 1,
-        &vulkan.data.frames.at(vulkan.data.currentFrame).descriptorSet, 0,
-        nullptr);
-
     for (auto const &object : sceneContext.renderables) {
+        deviceContext.logDevDisp.cmdBindDescriptorSets(
+            command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipelineContext.graphicsPipeline.layout(), 0, 1,
+            &object.material->descriptorSets[vulkan.data.currentFrame], 0,
+            nullptr);
+
         VkBuffer vertexBuffers[] = {object.model->vertexBuffer().handle()};
         VkDeviceSize offsets[] = {0};
         deviceContext.logDevDisp.cmdBindVertexBuffers(command_buffer, 0, 1,
@@ -417,6 +418,7 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to record Command Buffer"}};
     }
+
     return {};
 }
 

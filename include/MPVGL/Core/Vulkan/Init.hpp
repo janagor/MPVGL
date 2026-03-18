@@ -24,9 +24,14 @@
 
 namespace mpvgl::vlk {
 
+struct MaterialData {
+    Texture texture;
+    std::vector<VkDescriptorSet> descriptorSets;
+};
+
 struct RenderObject {
     Model* model;
-    Texture* texture;
+    MaterialData* material;
     glm::mat4 transformMatrix;
 };
 
@@ -45,10 +50,10 @@ class SceneContext {
     SceneContext() = default;
 
     std::deque<Model> models{};
-    Texture texture{};
-    Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
-
+    std::unordered_map<std::string, MaterialData> materials;
     std::vector<RenderObject> renderables;
+
+    Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
 };
 
 class PipelineContext {
@@ -66,7 +71,6 @@ class FrameData {
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     Buffer uniformBuffer{};
     void* uniformBufferMapped{nullptr};
-    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
     Semaphore availableSemaphore{};
     Fence inFlightFence{};
 };

@@ -30,8 +30,8 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
         vlk::bootstrap(vulkan)
             .and_then([&] { return vlk::setupRenderingPipeline(vulkan); })
             .and_then([&] { return vlk::setupRenderTargets(vulkan); })
-            .and_then([&] { return vlk::loadAndPrepareAssets(vulkan, scene); })
-            .and_then([&] { return vlk::setupDescriptorsAndSync(vulkan); });
+            .and_then([&] { return vlk::setupDescriptorsAndSync(vulkan); })
+            .and_then([&] { return vlk::loadAndPrepareAssets(vulkan, scene); });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
                   << result.error().message << "\n";

@@ -23,12 +23,10 @@ tl::expected<void, Error<EngineError>> createGraphicsPipeline(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> createCommandPool(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> createDepthResources(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> createFramebuffers(Vulkan &vulkan);
-tl::expected<void, Error<EngineError>> loadTexture(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
                                                  Scene const &scene);
 tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> createDescriptorPool(Vulkan &vulkan);
-tl::expected<void, Error<EngineError>> createDescriptorSets(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> createCommandBuffers(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> createSyncObjects(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan);

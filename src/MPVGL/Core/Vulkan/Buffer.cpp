@@ -23,24 +23,18 @@ Buffer::Buffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize size,
       m_allocator{allocator} {}
 
 Buffer::Buffer(Buffer&& other) noexcept
-    : m_buffer(other.m_buffer),
-      m_allocation(other.m_allocation),
+    : m_buffer(std::exchange(other.m_buffer, VK_NULL_HANDLE)),
+      m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)),
       m_size(other.m_size),
-      m_allocator(other.m_allocator) {
-    other.m_buffer = VK_NULL_HANDLE;
-    other.m_allocation = VK_NULL_HANDLE;
-}
+      m_allocator(other.m_allocator) {}
 
 Buffer& Buffer::operator=(Buffer&& other) noexcept {
     if (this != &other) {
         cleanup();
-        m_buffer = other.m_buffer;
-        m_allocation = other.m_allocation;
+        m_buffer = std::exchange(other.m_buffer, VK_NULL_HANDLE);
+        m_allocation = std::exchange(other.m_allocation, VK_NULL_HANDLE);
         m_size = other.m_size;
         m_allocator = other.m_allocator;
-
-        other.m_buffer = VK_NULL_HANDLE;
-        other.m_allocation = VK_NULL_HANDLE;
     }
     return *this;
 }
