@@ -51,7 +51,6 @@ struct ShaderCompiler {
     ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
 
    public:
-    // ZMIANA: Zwracamy tl::expected zamiast samego wektora!
     tl::expected<std::vector<uint32_t>, Error<EngineError>> compile(
         std::string const &source, EShLanguage lang) {
         glslang::TShader shader(lang);
