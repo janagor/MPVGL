@@ -45,7 +45,7 @@ void InputManager::processMouse(GLFWwindow* window, Camera& camera,
     }
 
     float xoffset = static_cast<float>(xpos - lastX);
-    float yoffset = static_cast<float>(lastY - ypos);
+    float yoffset = static_cast<float>(ypos - lastY);
     lastX = xpos;
     lastY = ypos;
 
