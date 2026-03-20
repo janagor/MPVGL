@@ -1,3 +1,7 @@
+#include <utility>
+
+#include <vulkan/vulkan_core.h>
+
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/SyncObjects.hpp"
 
@@ -7,16 +11,14 @@ Semaphore::Semaphore(VkSemaphore semaphore, vkb::DispatchTable disp) noexcept
     : m_semaphore(semaphore), m_disp(std::move(disp)) {}
 
 Semaphore::Semaphore(Semaphore&& other) noexcept
-    : m_semaphore(other.m_semaphore), m_disp(std::move(other.m_disp)) {
-    other.m_semaphore = VK_NULL_HANDLE;
-}
+    : m_semaphore(std::exchange(other.m_semaphore, VK_NULL_HANDLE)),
+      m_disp(std::move(other.m_disp)) {}
 
 Semaphore& Semaphore::operator=(Semaphore&& other) noexcept {
     if (this != &other) {
         cleanup();
-        m_semaphore = other.m_semaphore;
+        m_semaphore = std::exchange(other.m_semaphore, VK_NULL_HANDLE);
         m_disp = std::move(other.m_disp);
-        other.m_semaphore = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -24,10 +26,9 @@ Semaphore& Semaphore::operator=(Semaphore&& other) noexcept {
 Semaphore::~Semaphore() noexcept { cleanup(); }
 
 void Semaphore::cleanup() noexcept {
-    if (m_semaphore != VK_NULL_HANDLE) {
+    if (m_semaphore != VK_NULL_HANDLE)
         m_disp.destroySemaphore(m_semaphore, nullptr);
-        m_semaphore = VK_NULL_HANDLE;
-    }
+    m_semaphore = VK_NULL_HANDLE;
 }
 
 tl::expected<Semaphore, Error<EngineError>> Semaphore::create(
@@ -46,16 +47,14 @@ Fence::Fence(VkFence fence, vkb::DispatchTable disp) noexcept
     : m_fence(fence), m_disp(std::move(disp)) {}
 
 Fence::Fence(Fence&& other) noexcept
-    : m_fence(other.m_fence), m_disp(std::move(other.m_disp)) {
-    other.m_fence = VK_NULL_HANDLE;
-}
+    : m_fence(std::exchange(other.m_fence, VK_NULL_HANDLE)),
+      m_disp(std::move(other.m_disp)) {}
 
 Fence& Fence::operator=(Fence&& other) noexcept {
     if (this != &other) {
         cleanup();
-        m_fence = other.m_fence;
+        m_fence = std::exchange(other.m_fence, VK_NULL_HANDLE);
         m_disp = std::move(other.m_disp);
-        other.m_fence = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -63,10 +62,8 @@ Fence& Fence::operator=(Fence&& other) noexcept {
 Fence::~Fence() noexcept { cleanup(); }
 
 void Fence::cleanup() noexcept {
-    if (m_fence != VK_NULL_HANDLE) {
-        m_disp.destroyFence(m_fence, nullptr);
-        m_fence = VK_NULL_HANDLE;
-    }
+    if (m_fence != VK_NULL_HANDLE) m_disp.destroyFence(m_fence, nullptr);
+    m_fence = VK_NULL_HANDLE;
 }
 
 tl::expected<Fence, Error<EngineError>> Fence::create(

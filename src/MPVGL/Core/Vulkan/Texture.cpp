@@ -61,34 +61,24 @@ Texture::Texture(VkImage image, VkImageView imageView, VkSampler sampler,
       m_disp(disp) {}
 
 Texture::Texture(Texture&& other) noexcept
-    : m_image(other.m_image),
-      m_imageView(other.m_imageView),
-      m_sampler(other.m_sampler),
-      m_allocation(other.m_allocation),
+    : m_image(std::exchange(other.m_image, VK_NULL_HANDLE)),
+      m_imageView(std::exchange(other.m_imageView, VK_NULL_HANDLE)),
+      m_sampler(std::exchange(other.m_sampler, VK_NULL_HANDLE)),
+      m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)),
       m_mipLevels(other.m_mipLevels),
       m_allocator(other.m_allocator),
-      m_disp(other.m_disp) {
-    other.m_image = VK_NULL_HANDLE;
-    other.m_imageView = VK_NULL_HANDLE;
-    other.m_sampler = VK_NULL_HANDLE;
-    other.m_allocation = VK_NULL_HANDLE;
-}
+      m_disp(other.m_disp) {}
 
 Texture& Texture::operator=(Texture&& other) noexcept {
     if (this != &other) {
         cleanup();
-        m_image = other.m_image;
-        m_imageView = other.m_imageView;
-        m_sampler = other.m_sampler;
-        m_allocation = other.m_allocation;
+        m_image = std::exchange(other.m_image, VK_NULL_HANDLE);
+        m_imageView = std::exchange(other.m_imageView, VK_NULL_HANDLE);
+        m_sampler = std::exchange(other.m_sampler, VK_NULL_HANDLE);
+        m_allocation = std::exchange(other.m_allocation, VK_NULL_HANDLE);
         m_mipLevels = other.m_mipLevels;
         m_allocator = other.m_allocator;
         m_disp = other.m_disp;
-
-        other.m_image = VK_NULL_HANDLE;
-        other.m_imageView = VK_NULL_HANDLE;
-        other.m_sampler = VK_NULL_HANDLE;
-        other.m_allocation = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -96,19 +86,15 @@ Texture& Texture::operator=(Texture&& other) noexcept {
 Texture::~Texture() { cleanup(); }
 
 void Texture::cleanup() noexcept {
-    if (m_sampler != VK_NULL_HANDLE) {
-        m_disp.destroySampler(m_sampler, nullptr);
-        m_sampler = VK_NULL_HANDLE;
-    }
-    if (m_imageView != VK_NULL_HANDLE) {
+    if (m_sampler != VK_NULL_HANDLE) m_disp.destroySampler(m_sampler, nullptr);
+    if (m_imageView != VK_NULL_HANDLE)
         m_disp.destroyImageView(m_imageView, nullptr);
-        m_imageView = VK_NULL_HANDLE;
-    }
-    if (m_image != VK_NULL_HANDLE && m_allocator != VK_NULL_HANDLE) {
+    if (m_image != VK_NULL_HANDLE && m_allocator != VK_NULL_HANDLE)
         vmaDestroyImage(m_allocator, m_image, m_allocation);
-        m_image = VK_NULL_HANDLE;
-        m_allocation = VK_NULL_HANDLE;
-    }
+    m_sampler = VK_NULL_HANDLE;
+    m_imageView = VK_NULL_HANDLE;
+    m_image = VK_NULL_HANDLE;
+    m_allocation = VK_NULL_HANDLE;
 }
 
 tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(

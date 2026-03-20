@@ -1,3 +1,7 @@
+#include <utility>
+
+#include <vulkan/vulkan_core.h>
+
 #include "MPVGL/Core/Vulkan/CommandPool.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 
@@ -7,17 +11,14 @@ CommandPool::CommandPool(VkCommandPool pool, vkb::DispatchTable disp) noexcept
     : m_pool(pool), m_disp(std::move(disp)) {}
 
 CommandPool::CommandPool(CommandPool&& other) noexcept
-    : m_pool(other.m_pool), m_disp(std::move(other.m_disp)) {
-    other.m_pool = VK_NULL_HANDLE;
-}
+    : m_pool(std::exchange(other.m_pool, VK_NULL_HANDLE)),
+      m_disp(std::move(other.m_disp)) {}
 
 CommandPool& CommandPool::operator=(CommandPool&& other) noexcept {
     if (this != &other) {
         cleanup();
-        m_pool = other.m_pool;
+        m_pool = std::exchange(other.m_pool, VK_NULL_HANDLE);
         m_disp = std::move(other.m_disp);
-
-        other.m_pool = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -25,10 +26,8 @@ CommandPool& CommandPool::operator=(CommandPool&& other) noexcept {
 CommandPool::~CommandPool() noexcept { cleanup(); }
 
 void CommandPool::cleanup() noexcept {
-    if (m_pool != VK_NULL_HANDLE) {
-        m_disp.destroyCommandPool(m_pool, nullptr);
-        m_pool = VK_NULL_HANDLE;
-    }
+    if (m_pool != VK_NULL_HANDLE) m_disp.destroyCommandPool(m_pool, nullptr);
+    m_pool = VK_NULL_HANDLE;
 }
 
 tl::expected<CommandPool, Error<EngineError>> CommandPool::create(
