@@ -9,6 +9,7 @@ namespace mpvgl {
 enum class IOError {
     Unknown = 1,
     FileNotFound,
+    EndOfFile,
 };
 
 }
@@ -32,6 +33,8 @@ class IOErrorCategory_impl : public std::error_category {
         switch (static_cast<IOError>(ev)) {
             case IOError::FileNotFound:
                 return "File not found";
+            case IOError::EndOfFile:
+                return "End of file reached";
             default:
                 return "Unknown IO error";
         }
