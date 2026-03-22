@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.0)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_COMPILER clang++)
 project(MPVGL)
@@ -51,7 +51,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
 add_subdirectory(examples)
 
-file(GLOB_RECURSE ALL_SOURCE_FILES "src/*.cpp" "include/*.hpp")
+file(GLOB_RECURSE ALL_SOURCE_FILES "src/*.cpp" "include/*.hpp" "include/*.tpp")
 add_custom_target(format
     COMMAND clang-format -i ${ALL_SOURCE_FILES}
     COMMENT "Code formatting..."
