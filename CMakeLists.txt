@@ -14,6 +14,7 @@ include(setup_glslang)
 include(setup_expected)
 include(setup_tinyobjloader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/mio)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/VulkanMemoryAllocator)
 
@@ -38,6 +39,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     glm::glm
+    mio::mio
     glfw::glfw
     tl::expected
     Vulkan::Vulkan

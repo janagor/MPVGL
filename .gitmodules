@@ -22,3 +22,6 @@
 [submodule "lib/VulkanMemoryAllocator"]
 	path = lib/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/
+[submodule "lib/mio"]
+	path = lib/mio
+	url = https://github.com/vimpunk/mio.git
