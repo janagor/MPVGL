@@ -4,38 +4,25 @@
 #include <cstddef>
 #include <cstdint>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace mpvgl {
-namespace Pixel {
 
-#pragma pack(push, 1)
-// clang-format off
 template <typename Derived>
-struct Base; struct RGB; struct RGBA; struct Gray; struct GrayA;
-// clang-format on
+struct Base;
+struct RGB;
+struct RGBA;
+struct Gray;
+struct GrayA;
+
 using PixelTypes = std::tuple<Gray, RGB, RGBA, GrayA>;
+
 template <typename T>
 concept PixelLike = std::derived_from<T, Base<T>>;
 
 template <typename Self, typename PixelList>
 struct PixelConversions;
-
-template <typename PixelType>
-struct PixelTraits {
-    static constexpr std::size_t channels() noexcept {
-        if constexpr (std::is_same_v<PixelType, RGB>)
-            return 3;
-        else if constexpr (std::is_same_v<PixelType, RGBA>)
-            return 4;
-        else if constexpr (std::is_same_v<PixelType, Gray>)
-            return 1;
-        else if constexpr (std::is_same_v<PixelType, GrayA>)
-            return 2;
-        else
-            static_assert(sizeof(PixelType) == 0, "Nieznany typ piksela");
-    }
-};
 
 template <typename Self, typename... Pixels>
 struct PixelConversions<Self, std::tuple<Pixels...>> {
@@ -43,10 +30,13 @@ struct PixelConversions<Self, std::tuple<Pixels...>> {
         requires(!std::is_same_v<TargetPixel, Self>)
     constexpr operator TargetPixel() const;
 };
+
 using SubPixel = uint8_t;
 
+#pragma pack(push, 1)
+
 template <typename Derived>
-struct Base : PixelTraits<Derived> {
+struct Base {
     constexpr friend bool operator==(Derived const& lhs,
                                      Derived const& rhs) noexcept {
         return lhs.data() == rhs.data();
@@ -56,11 +46,17 @@ struct Base : PixelTraits<Derived> {
         return !(lhs == rhs);
     };
     constexpr auto data() const noexcept;
+
+    static constexpr std::size_t channels() noexcept {
+        return Derived::CHANNELS;
+    }
 };
 
 struct RGB : Base<RGB>, PixelConversions<RGB, PixelTypes> {
    public:
     friend struct PixelConversions<RGB, PixelTypes>;
+    static constexpr std::size_t CHANNELS = 3;
+
     RGB() : m_r(0), m_g(0), m_b(0) {}
     RGB(SubPixel const& r, SubPixel const& g, SubPixel const& b)
         : m_r(r), m_g(g), m_b(b) {}
@@ -78,6 +74,8 @@ struct RGB : Base<RGB>, PixelConversions<RGB, PixelTypes> {
 struct RGBA : Base<RGBA>, PixelConversions<RGBA, PixelTypes> {
    public:
     friend struct PixelConversions<RGBA, PixelTypes>;
+    static constexpr std::size_t CHANNELS = 4;
+
     RGBA() : m_r(0), m_g(0), m_b(0), m_a(0) {}
     RGBA(SubPixel const& r, SubPixel const& g, SubPixel const& b,
          SubPixel const& a)
@@ -99,6 +97,8 @@ struct Gray : Base<Gray>, PixelConversions<Gray, PixelTypes> {
     friend struct PixelConversions<Gray, PixelTypes>;
 
    public:
+    static constexpr std::size_t CHANNELS = 1;
+
     Gray() : m_g(0) {}
     Gray(SubPixel const& g) : m_g(g) {}
 
@@ -116,6 +116,8 @@ struct GrayA : Base<GrayA>, PixelConversions<GrayA, PixelTypes> {
     friend struct PixelConversions<GrayA, PixelTypes>;
 
    public:
+    static constexpr std::size_t CHANNELS = 2;
+
     GrayA() : m_g(0), m_a(0) {}
     GrayA(SubPixel const& g, SubPixel const& a) : m_g(g), m_a(a) {}
 
@@ -129,22 +131,26 @@ struct GrayA : Base<GrayA>, PixelConversions<GrayA, PixelTypes> {
     SubPixel m_g, m_a;
 };
 
+#pragma pack(pop)
+
 template <PixelLike PixelT>
 struct Map {
-    explicit Map(uint32_t width, uint32_t height,
-                 std::vector<PixelT> const& data)
-        : m_width(width), m_height(height), m_data(data) {}
+    explicit Map(uint32_t width, uint32_t height, std::vector<PixelT> data)
+        : m_width(width), m_height(height), m_data(std::move(data)) {}
 
     template <PixelLike OtherT>
     constexpr operator Map<OtherT>() const;
+
     uint8_t* dataPtr() noexcept {
         return reinterpret_cast<uint8_t*>(m_data.data());
     }
     uint8_t const* dataPtr() const noexcept {
         return reinterpret_cast<uint8_t const*>(m_data.data());
     }
+
     std::vector<PixelT>& data() noexcept { return m_data; }
     std::vector<PixelT> const& data() const noexcept { return m_data; }
+
     uint32_t height() const noexcept { return m_height; }
     uint32_t width() const noexcept { return m_width; }
     std::size_t channels() const noexcept { return PixelT::channels(); }
@@ -154,9 +160,6 @@ struct Map {
     std::vector<PixelT> m_data;
 };
 
-#pragma pack(pop)
-
-}  // namespace Pixel
 }  // namespace mpvgl
 
 #include "MPVGL/Graphics/Pixel.tpp"
