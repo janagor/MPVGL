@@ -11,6 +11,7 @@
 #include "MPVGL/Core/Shader/ShaderCompiler.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/IO/ResourceBuffer.hpp"
 
 namespace mpvgl {
 
@@ -68,51 +69,47 @@ class ShaderWatcher {
         std::cout << "[ShaderWatcher] Compiling: " << shaderPath.filename()
                   << std::endl;
 
-        std::ifstream file(shaderPath, std::ios::binary | std::ios::ate);
-        if (!file) {
-            return tl::unexpected{
-                Error{EngineError::FileNotFound,
-                      "Failed to open a file: " + shaderPath.string()}};
-        }
+        return io::ResourceBuffer::load(shaderPath)
+            .map_error([](auto e) {
+                return Error<EngineError>{EngineError::FileNotFound, e.message};
+            })
+            .and_then([&](io::ResourceBuffer const &buffer)
+                          -> tl::expected<void, Error<EngineError>> {
+                auto view = buffer.view();
 
-        std::streamsize size = file.tellg();
-        file.seekg(0, std::ios::beg);
+                std::string source(reinterpret_cast<char const *>(view.data()),
+                                   view.size());
 
-        std::string result(size, '\0');
-        if (!file.read(&result[0], size)) {
-            return tl::unexpected{
-                Error{EngineError::ShaderError,
-                      "Cannot read file: " + shaderPath.string()}};
-        }
+                ShaderCompiler compiler{};
+                auto extension = shaderPath.extension();
+                auto language = (extension == ".vert")
+                                    ? EShLanguage::EShLangVertex
+                                    : EShLanguage::EShLangFragment;
 
-        ShaderCompiler compiler{};
-        auto extention = shaderPath.extension();
-        auto language = extention == ".vert" ? EShLanguage::EShLangVertex
-                                             : EShLanguage::EShLangFragment;
+                return compiler.compile(source, language)
+                    .and_then([&](std::vector<uint32_t> const &data)
+                                  -> tl::expected<void, Error<EngineError>> {
+                        std::ofstream ofile(outputPath(shaderPath),
+                                            std::ios::binary);
+                        if (!ofile) {
+                            return tl::unexpected{
+                                Error{EngineError::FileNotFound,
+                                      "Cannot open file for writing: " +
+                                          outputPath(shaderPath)}};
+                        }
 
-        auto dataRes = compiler.compile(result, language);
-        if (!dataRes.has_value()) {
-            return tl::unexpected{dataRes.error()};
-        }
+                        ofile.write(reinterpret_cast<char const *>(data.data()),
+                                    data.size() * sizeof(uint32_t));
 
-        auto &data = dataRes.value();
-        std::ofstream ofile(outputPath(shaderPath), std::ios::binary);
-        if (!ofile) {
-            return tl::unexpected{Error{
-                EngineError::FileNotFound,
-                "Cannot open file for writing: " + outputPath(shaderPath)}};
-        }
-
-        ofile.write(reinterpret_cast<char const *>(data.data()),
-                    data.size() * sizeof(uint32_t));
-
-        if (!ofile) {
-            return tl::unexpected{Error{
-                EngineError::ShaderError,
-                "Failed to write data to file: " + outputPath(shaderPath)}};
-        }
-
-        return {};
+                        if (!ofile) {
+                            return tl::unexpected{
+                                Error{EngineError::ShaderError,
+                                      "Failed to write data to file: " +
+                                          outputPath(shaderPath)}};
+                        }
+                        return {};
+                    });
+            });
     }
 
     inline void scanAndCompile() {
