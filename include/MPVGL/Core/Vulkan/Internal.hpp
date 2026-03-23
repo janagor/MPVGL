@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -22,10 +24,8 @@ tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
 void destroy_window_glfw(GLFWwindow *window);
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator);
-tl::expected<std::vector<char>, Error<EngineError>> readFile(
-    std::string const &filename);
 VkShaderModule createShaderModule(DeviceContext const &context,
-                                  std::vector<char> const &code);
+                                  std::span<std::byte const> code);
 tl::expected<void, Error<EngineError>> createBuffer(
     Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
     VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,

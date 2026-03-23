@@ -5,6 +5,7 @@
 #include "MPVGL/Core/Vulkan/Internal.hpp"
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
+#include "MPVGL/IO/ResourceBuffer.hpp"
 
 namespace mpvgl::vlk {
 
@@ -52,14 +53,22 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     VkDescriptorSetLayout descriptorSetLayout,
     std::string const& vertexShaderPath,
     std::string const& fragmentShaderPath) {
-    auto vertCode = readFile(vertexShaderPath);
-    if (!vertCode) return tl::unexpected{vertCode.error()};
+    auto vertBufferRes =
+        io::ResourceBuffer::load(vertexShaderPath).map_error([](auto e) {
+            return Error<EngineError>{EngineError::VulkanRuntimeError,
+                                      e.message};
+        });
+    if (!vertBufferRes) return tl::unexpected{vertBufferRes.error()};
 
-    auto fragCode = readFile(fragmentShaderPath);
-    if (!fragCode) return tl::unexpected{fragCode.error()};
+    auto fragBufferRes =
+        io::ResourceBuffer::load(fragmentShaderPath).map_error([](auto e) {
+            return Error<EngineError>{EngineError::VulkanRuntimeError,
+                                      e.message};
+        });
+    if (!fragBufferRes) return tl::unexpected{fragBufferRes.error()};
 
-    auto vertModule = createShaderModule(device, vertCode.value());
-    auto fragModule = createShaderModule(device, fragCode.value());
+    auto vertModule = createShaderModule(device, vertBufferRes->view());
+    auto fragModule = createShaderModule(device, fragBufferRes->view());
 
     if (vertModule == VK_NULL_HANDLE || fragModule == VK_NULL_HANDLE) {
         if (vertModule != VK_NULL_HANDLE)

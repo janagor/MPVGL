@@ -85,33 +85,12 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
     return surface;
 }
 
-tl::expected<std::vector<char>, Error<EngineError>> readFile(
-    std::string const &filename) {
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open()) {
-        return tl::unexpected{
-            Error{EngineError::VulkanRuntimeError, "Failed to open a File"}};
-    }
-
-    size_t file_size = (size_t)file.tellg();
-    std::vector<char> buffer(file_size);
-
-    file.seekg(0);
-    file.read(buffer.data(), static_cast<std::streamsize>(file_size));
-
-    file.close();
-
-    return buffer;
-}
-
-// TODO: createShaderModule(DeviceContext&context, std::span<const
-// std::uint32_t> code);
 VkShaderModule createShaderModule(DeviceContext const &context,
-                                  std::vector<char> const &code) {
+                                  std::span<std::byte const> code) {
     std::span<std::uint32_t const> code_span{
         reinterpret_cast<std::uint32_t const *>(code.data()),
         code.size() / sizeof(std::uint32_t)};
+
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
     VkShaderModule shaderModule;
