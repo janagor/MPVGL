@@ -14,57 +14,75 @@
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/IO/ResourceBuffer.hpp"
 
 namespace mpvgl::vlk {
 
 tl::expected<Model, Error<EngineError>> Model::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
+    return io::ResourceBuffer::load(filepath)
+        .map_error([](auto e) {
+            return Error<EngineError>{EngineError::FileNotFound, e.message};  //
+        })
+        .and_then([&](io::ResourceBuffer const& buffer)
+                      -> tl::expected<Model, Error<EngineError>> {
+            auto view = buffer.view();
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
-                          filepath.c_str())) {
-        return tl::unexpected{Error{EngineError::VulkanRuntimeError,
-                                    "Failed to load Model: " + filepath}};
-    }
+            std::string_view dataView(
+                reinterpret_cast<char const*>(view.data()), view.size());
 
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    std::unordered_map<Vertex, uint32_t> uniqueVertices;
+            tinyobj::ObjReaderConfig reader_config;
+            tinyobj::ObjReader reader;
 
-    for (auto const& shape : shapes) {
-        for (auto const& index : shape.mesh.indices) {
-            auto vertex =
-                Vertex{{attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2]},
-                       {255, 255, 255},
-                       {attrib.texcoords[2 * index.texcoord_index + 0],
-                        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}};
-
-            if (uniqueVertices.count(vertex) == 0) {
-                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                vertices.push_back(vertex);
+            if (!reader.ParseFromString(std::string(dataView), "")) {
+                return tl::unexpected{
+                    Error{EngineError::VulkanRuntimeError, reader.Error()}};  //
             }
-            indices.push_back(uniqueVertices.at(vertex));
-        };
-    };
 
-    auto vBufferRes = Buffer::createFromData(
-        device, commandPool, graphicsQueue, vertices,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (!vBufferRes) return tl::unexpected{vBufferRes.error()};
+            auto const& attrib = reader.GetAttrib();
+            auto const& shapes = reader.GetShapes();
 
-    auto iBufferRes = Buffer::createFromData(
-        device, commandPool, graphicsQueue, indices,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    if (!iBufferRes) return tl::unexpected{iBufferRes.error()};
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
+            std::unordered_map<Vertex, uint32_t> uniqueVertices;
 
-    return Model(std::move(vBufferRes.value()), std::move(iBufferRes.value()),
-                 static_cast<uint32_t>(indices.size()));
+            for (auto const& shape : shapes) {
+                for (auto const& index : shape.mesh.indices) {
+                    auto vertex = Vertex{
+                        {attrib.vertices[3 * index.vertex_index + 0],
+                         attrib.vertices[3 * index.vertex_index + 1],
+                         attrib.vertices[3 * index.vertex_index + 2]},
+                        {255, 255, 255},
+                        {attrib.texcoords[2 * index.texcoord_index + 0],
+                         1.0f -
+                             attrib.texcoords[2 * index.texcoord_index + 1]}};
+
+                    if (uniqueVertices.count(vertex) == 0) {
+                        uniqueVertices[vertex] =
+                            static_cast<uint32_t>(vertices.size());
+                        vertices.push_back(vertex);
+                    }
+                    indices.push_back(uniqueVertices.at(vertex));
+                }
+            }
+
+            auto vBufferRes = Buffer::createFromData(
+                device, commandPool, graphicsQueue, vertices,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+            if (!vBufferRes) return tl::unexpected{vBufferRes.error()};
+
+            auto iBufferRes = Buffer::createFromData(
+                device, commandPool, graphicsQueue, indices,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+            if (!iBufferRes) return tl::unexpected{iBufferRes.error()};
+
+            return Model(std::move(vBufferRes.value()),
+                         std::move(iBufferRes.value()),
+                         static_cast<uint32_t>(indices.size()));
+        });
 }
 
 tl::expected<Model, Error<EngineError>> Model::create(
