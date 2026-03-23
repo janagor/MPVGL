@@ -19,6 +19,7 @@
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/IO/ResourceBuffer.hpp"
 
 namespace mpvgl::vlk {
 
@@ -260,42 +261,69 @@ tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
 tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
-    auto pixelsRes = loadRawPixels(filepath);
-    if (!pixelsRes) return tl::unexpected{pixelsRes.error()};
-    auto& pixels = pixelsRes.value();
+    return io::ResourceBuffer::load(filepath)
+        .map_error([](auto e) {
+            return Error<EngineError>{EngineError::FileNotFound, e.message};
+        })
+        .and_then([&](io::ResourceBuffer const& buffer)
+                      -> tl::expected<Texture, Error<EngineError>> {
+            auto view = buffer.view();
+            int width, height, channels;
 
-    auto imageRes = createAllocatedImage(device, pixels.width, pixels.height,
-                                         pixels.mipLevels);
-    if (!imageRes) {
-        pixels.free();
-        return tl::unexpected{imageRes.error()};
-    }
-    auto [image, allocation] = imageRes.value();
+            unsigned char* data = stbi_load_from_memory(
+                reinterpret_cast<stbi_uc const*>(view.data()),
+                static_cast<int>(view.size()), &width, &height, &channels,
+                STBI_rgb_alpha);
 
-    auto uploadRes = uploadAndGenerateMipmaps(device, commandPool,
-                                              graphicsQueue, image, pixels);
-    pixels.free();
+            if (!data) {
+                return tl::unexpected{
+                    Error{EngineError::VulkanRuntimeError,
+                          "Failed to decode texture: " + filepath}};
+            }
 
-    if (!uploadRes) {
-        vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected{uploadRes.error()};
-    }
+            uint32_t mipLevels = static_cast<uint32_t>(std::floor(
+                                     std::log2(std::max(width, height)))) +
+                                 1;
+            RawPixels pixels{.data = data,
+                             .width = width,
+                             .height = height,
+                             .mipLevels = mipLevels};
 
-    auto viewRes = createImageView(device, image, pixels.mipLevels);
-    if (!viewRes) {
-        vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected{viewRes.error()};
-    }
+            auto imageRes =
+                createAllocatedImage(device, width, height, mipLevels);
+            if (!imageRes) {
+                pixels.free();
+                return tl::unexpected{imageRes.error()};
+            }
+            auto [image, allocation] = imageRes.value();
 
-    auto samplerRes = createSampler(device);
-    if (!samplerRes) {
-        device.logDevDisp.destroyImageView(viewRes.value(), nullptr);
-        vmaDestroyImage(device.allocator, image, allocation);
-        return tl::unexpected{samplerRes.error()};
-    }
+            auto uploadRes = uploadAndGenerateMipmaps(
+                device, commandPool, graphicsQueue, image, pixels);
 
-    return Texture(image, viewRes.value(), samplerRes.value(), allocation,
-                   pixels.mipLevels, device.allocator, device.logDevDisp);
+            pixels.free();
+
+            if (!uploadRes) {
+                vmaDestroyImage(device.allocator, image, allocation);
+                return tl::unexpected{uploadRes.error()};
+            }
+
+            auto viewRes = createImageView(device, image, mipLevels);
+            if (!viewRes) {
+                vmaDestroyImage(device.allocator, image, allocation);
+                return tl::unexpected{viewRes.error()};
+            }
+
+            auto samplerRes = createSampler(device);
+            if (!samplerRes) {
+                device.logDevDisp.destroyImageView(viewRes.value(), nullptr);
+                vmaDestroyImage(device.allocator, image, allocation);
+                return tl::unexpected{samplerRes.error()};
+            }
+
+            return Texture(image, viewRes.value(), samplerRes.value(),
+                           allocation, mipLevels, device.allocator,
+                           device.logDevDisp);
+        });
 }
 
 void Texture::RawPixels::free() noexcept {
