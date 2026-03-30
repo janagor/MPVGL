@@ -4,10 +4,7 @@
     {
       "name": "dev",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
+      "binaryDir": "${sourceDir}/build"
     }
   ],
   "buildPresets": [
