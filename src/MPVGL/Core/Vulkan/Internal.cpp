@@ -36,7 +36,7 @@ namespace mpvgl::vlk {
 tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
     char const *window_name, bool resize) {
     glfwSetErrorCallback([](int error, char const *description) {
-        fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
+        std::cerr << "GLFW Error (" << error << "): " << description << '\n';
     });
 
     if (!glfwInit()) {

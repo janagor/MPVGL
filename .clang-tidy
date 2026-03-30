@@ -1,7 +1,7 @@
 Checks: >
   -*,
   # bugprone-*,
-  # cert-*,
+  cert-*,
   # clang-analyzer-*,
   concurrency-*,
   # cppcoreguidelines-*,
@@ -10,7 +10,7 @@ Checks: >
   # performance-*,
   # readability-*,
 
-WarningsAsErrors: ''
+WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase,             value: CamelCase  }

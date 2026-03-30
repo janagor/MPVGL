@@ -33,9 +33,12 @@ struct GlslShaderIncluder : public glslang::TShader::Includer {
     virtual void releaseInclude(IncludeResult *) override {};
 
    private:
-    static inline std::string const sEmpty = "";
-    static inline IncludeResult smFailResult =
-        IncludeResult(sEmpty, "Header does not exist!", 0, nullptr);
+    static IncludeResult *getFailResult() {
+        static std::string const sEmpty = "";
+        static IncludeResult sFailResult(sEmpty, "Header does not exist!", 0,
+                                         nullptr);
+        return &sFailResult;
+    }
 
     std::map<std::string, IncludeResult *> mIncludes;
     std::map<std::string, std::vector<char>> mSources;
