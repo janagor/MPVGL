@@ -59,8 +59,6 @@
                 pkgs.wayland
               ]
             }:$LD_LIBRARY_PATH"
-
-            echo "Developing Environment is ready!"
           '';
         };
       }
