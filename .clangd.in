@@ -1,16 +1,21 @@
 CompileFlags:
   CompilationDatabase: "${CMAKE_CURRENT_BINARY_DIR}"
   Add:
-    - "-std=c++26"
-    - "-DGLFW_INCLUDE_NONE"
-    - "-DGLFW_INCLUDE_VULKAN"
+    - -std=gnu++26
+    - -DGLFW_INCLUDE_NONE
+    - -DGLFW_INCLUDE_VULKAN
 
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/include"
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/include
 
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/lib"
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/lib/glm"
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang"
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include"
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyobjloader"
-    - "-I${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap/src"
-
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/lib
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/glm
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyobjloader
+    - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap/src
+  Remove:
+    - -fmodules-ts
+    - -fmodule-mapper=*
+    - -fdeps-format=*
+    - -fdeps-file=*
+    - -fdeps-target=*
