@@ -5,6 +5,6 @@
 namespace mpvgl {
 
 template <typename T>
-concept Arithmetic = std::integral<T> || std::floating_point<T>;
+concept Arithmetic = std::integral<T> || std::f32ing_point<T>;
 
 }

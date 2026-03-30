@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <deque>
 #include <span>
 #include <vector>
@@ -14,6 +13,7 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -44,8 +44,7 @@ class DescriptorSetLayout {
 
 class DescriptorLayoutBuilder {
    public:
-    DescriptorLayoutBuilder& addBinding(std::uint32_t binding,
-                                        VkDescriptorType type,
+    DescriptorLayoutBuilder& addBinding(u32 binding, VkDescriptorType type,
                                         VkShaderStageFlags stageFlags);
     void clear();
     tl::expected<DescriptorSetLayout, Error<EngineError>> build(
@@ -59,11 +58,11 @@ class DescriptorAllocator {
    public:
     struct PoolSizeRatio {
         VkDescriptorType type;
-        float ratio;
+        f32 ratio;
     };
 
     tl::expected<void, Error<EngineError>> init(
-        DeviceContext const& device, uint32_t maxSets,
+        DeviceContext const& device, u32 maxSets,
         std::span<PoolSizeRatio> poolRatios);
     void cleanup(DeviceContext const& device);
 
@@ -76,10 +75,9 @@ class DescriptorAllocator {
 
 class DescriptorWriter {
    public:
-    DescriptorWriter& writeBuffer(uint32_t binding, VkBuffer buffer,
-                                  size_t size, size_t offset,
-                                  VkDescriptorType type);
-    DescriptorWriter& writeImage(uint32_t binding, VkImageView imageView,
+    DescriptorWriter& writeBuffer(u32 binding, VkBuffer buffer, size_t size,
+                                  size_t offset, VkDescriptorType type);
+    DescriptorWriter& writeImage(u32 binding, VkImageView imageView,
                                  VkSampler sampler, VkImageLayout layout,
                                  VkDescriptorType type);
 

@@ -12,6 +12,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "MPVGL/Graphics/Color.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 

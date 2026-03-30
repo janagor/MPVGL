@@ -9,10 +9,10 @@ namespace mpvgl {
 class InputManager {
    public:
     static void processKeyboard(GLFWwindow* window, Camera& camera,
-                                float deltaTime);
+                                f32 deltaTime);
 
-    static void processMouse(GLFWwindow* window, Camera& camera, double& lastX,
-                             double& lastY, bool& firstMouse);
+    static void processMouse(GLFWwindow* window, Camera& camera, f64& lastX,
+                             f64& lastY, bool& firstMouse);
 };
 
 }  // namespace mpvgl

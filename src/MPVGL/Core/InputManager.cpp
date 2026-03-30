@@ -20,7 +20,7 @@ constexpr std::array<std::pair<int, CameraMovement>, 8> keyMappings = {
 }
 
 void InputManager::processKeyboard(GLFWwindow* window, Camera& camera,
-                                   float deltaTime) {
+                                   f32 deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
@@ -32,10 +32,9 @@ void InputManager::processKeyboard(GLFWwindow* window, Camera& camera,
     }
 }
 
-void InputManager::processMouse(GLFWwindow* window, Camera& camera,
-                                double& lastX, double& lastY,
-                                bool& firstMouse) {
-    double xpos, ypos;
+void InputManager::processMouse(GLFWwindow* window, Camera& camera, f64& lastX,
+                                f64& lastY, bool& firstMouse) {
+    f64 xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
     if (firstMouse) {
@@ -44,8 +43,8 @@ void InputManager::processMouse(GLFWwindow* window, Camera& camera,
         firstMouse = false;
     }
 
-    float xoffset = static_cast<float>(xpos - lastX);
-    float yoffset = static_cast<float>(ypos - lastY);
+    f32 xoffset = static_cast<f32>(xpos - lastX);
+    f32 yoffset = static_cast<f32>(ypos - lastY);
     lastX = xpos;
     lastY = ypos;
 

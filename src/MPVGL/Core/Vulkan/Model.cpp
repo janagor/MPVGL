@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -44,8 +43,8 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
             auto const& shapes = reader.GetShapes();
 
             std::vector<Vertex> vertices;
-            std::vector<uint32_t> indices;
-            std::unordered_map<Vertex, uint32_t> uniqueVertices;
+            std::vector<u32> indices;
+            std::unordered_map<Vertex, u32> uniqueVertices;
 
             for (auto const& shape : shapes) {
                 for (auto const& index : shape.mesh.indices) {
@@ -60,7 +59,7 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
 
                     if (uniqueVertices.count(vertex) == 0) {
                         uniqueVertices[vertex] =
-                            static_cast<uint32_t>(vertices.size());
+                            static_cast<u32>(vertices.size());
                         vertices.push_back(vertex);
                     }
                     indices.push_back(uniqueVertices.at(vertex));
@@ -81,14 +80,14 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
 
             return Model(std::move(vBufferRes.value()),
                          std::move(iBufferRes.value()),
-                         static_cast<uint32_t>(indices.size()));
+                         static_cast<u32>(indices.size()));
         });
 }
 
 tl::expected<Model, Error<EngineError>> Model::create(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
-    std::vector<uint32_t> const& indices) {
+    std::vector<u32> const& indices) {
     auto vBufferRes = Buffer::createFromData(
         device, commandPool, graphicsQueue, vertices,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -100,7 +99,7 @@ tl::expected<Model, Error<EngineError>> Model::create(
     if (!iBufferRes) return tl::unexpected{iBufferRes.error()};
 
     return Model(std::move(vBufferRes.value()), std::move(iBufferRes.value()),
-                 static_cast<uint32_t>(indices.size()));
+                 static_cast<u32>(indices.size()));
 }
 
 }  // namespace mpvgl::vlk

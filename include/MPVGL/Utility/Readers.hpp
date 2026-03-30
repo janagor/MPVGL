@@ -26,9 +26,10 @@
 
 #include <bit>
 #include <concepts>
-#include <cstdint>
 #include <iterator>
 #include <string>
+
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
@@ -41,9 +42,9 @@ template <typename T>
     } else if constexpr (std::integral<T>) {
         return std::byteswap(value);
     } else if constexpr (std::floating_point<T> && sizeof(T) == 4) {
-        return std::bit_cast<T>(std::byteswap(std::bit_cast<uint32_t>(value)));
+        return std::bit_cast<T>(std::byteswap(std::bit_cast<u32>(value)));
     } else if constexpr (std::floating_point<T> && sizeof(T) == 8) {
-        return std::bit_cast<T>(std::byteswap(std::bit_cast<uint64_t>(value)));
+        return std::bit_cast<T>(std::byteswap(std::bit_cast<u64>(value)));
     }
     return value;
 }
@@ -90,9 +91,8 @@ template <typename T, std::endian Endian = std::endian::little,
  * representation.
  */
 template <std::endian Endian = std::endian::little,
-          std::integral BaseType = int32_t,
-          std::floating_point FloatType = float, std::size_t Shift = 16,
-          std::input_iterator Iter>
+          std::integral BaseType = i32, std::floating_point FloatType = f32,
+          std::size_t Shift = 16, std::input_iterator Iter>
 [[nodiscard]] constexpr FloatType readFixed(Iter& iterator) {
     BaseType rawValue = readType<BaseType, Endian>(iterator);
     return static_cast<FloatType>(rawValue) /
@@ -103,9 +103,8 @@ template <std::endian Endian = std::endian::little,
  * Peeks a fixed-point number.
  */
 template <std::endian Endian = std::endian::little,
-          std::integral BaseType = int32_t,
-          std::floating_point FloatType = float, std::size_t Shift = 16,
-          std::input_iterator Iter>
+          std::integral BaseType = i32, std::floating_point FloatType = f32,
+          std::size_t Shift = 16, std::input_iterator Iter>
 [[nodiscard]] constexpr FloatType peekFixed(Iter iterator) {
     return readFixed<Endian, BaseType, FloatType, Shift>(iterator);
 }

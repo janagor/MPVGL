@@ -5,7 +5,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 
 #include <array>
-#include <cstdint>
 #include <cstring>
 #include <string>
 #include <utility>
@@ -38,6 +37,7 @@
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 #include "config.hpp"
 
@@ -287,7 +287,7 @@ tl::expected<void, Error<EngineError>> createCommandPool(Vulkan &vulkan) {
     return vkb_to_expected(deviceContext.logicalDevice.get_queue_index(
                                vkb::QueueType::graphics),
                            "Failed to get Queue Index")
-        .and_then([&](uint32_t queueIndex) {
+        .and_then([&](u32 queueIndex) {
             return CommandPool::create(deviceContext, queueIndex)
                 .transform([&vulkan](CommandPool pool) {
                     vulkan.data.commandPool = std::move(pool);
@@ -412,7 +412,7 @@ tl::expected<void, Error<EngineError>> createCommandBuffers(Vulkan &vulkan) {
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.commandPool.handle(), VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        static_cast<std::uint32_t>(framesCount));
+        static_cast<u32>(framesCount));
 
     if (vulkan.deviceContext.logDevDisp.allocateCommandBuffers(
             &allocInfo, allocatedBuffers.data()) != VK_SUCCESS) {
@@ -466,7 +466,7 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
     deviceContext.logDevDisp.waitForFences(1, &inFlightFence, VK_TRUE,
                                            UINT64_MAX);
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
     VkResult result = deviceContext.logDevDisp.acquireNextImageKHR(
         swapchainContext.swapchain.handle(), UINT64_MAX, availableSemaphore,
         VK_NULL_HANDLE, &image_index);

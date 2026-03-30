@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cctype>
-#include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <string>
@@ -13,12 +12,13 @@
 #include "MPVGL/Error/IOError.hpp"
 #include "MPVGL/Graphics/Pixel.hpp"
 #include "MPVGL/IO/ResourceBuffer.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
 struct PPMLoader {
-    [[nodiscard]] static tl::expected<Pixel::Map<Pixel::RGB>, Error<IOError>>
-    load(std::filesystem::path const& path) {
+    [[nodiscard]] static tl::expected<Map<RGB>, Error<IOError>> load(
+        std::filesystem::path const& path) {
         auto bufferRes = io::ResourceBuffer::load(path);
         if (!bufferRes.has_value()) {
             return tl::unexpected{bufferRes.error()};
@@ -55,9 +55,9 @@ struct PPMLoader {
             return result;
         };
 
-        auto parse_uint = [](std::string const& s, uint32_t& out) -> bool {
+        auto parse_uint = [](std::string const& s, u32& out) -> bool {
             if (s.empty()) return false;
-            uint32_t val = 0;
+            u32 val = 0;
             for (char c : s) {
                 if (!std::isdigit(c)) return false;
                 val = val * 10 + (c - '0');
@@ -74,7 +74,7 @@ struct PPMLoader {
                           path.string()}};
         }
 
-        uint32_t width = 0, height = 0, maxVal = 0;
+        u32 width = 0, height = 0, maxVal = 0;
         if (!parse_uint(read_string(), width) ||
             !parse_uint(read_string(), height) ||
             !parse_uint(read_string(), maxVal)) {
@@ -88,8 +88,7 @@ struct PPMLoader {
             offset++;
         }
 
-        size_t expectedSize =
-            static_cast<size_t>(width) * height * sizeof(Pixel::RGB);
+        size_t expectedSize = static_cast<size_t>(width) * height * sizeof(RGB);
 
         if (view.size() - offset < expectedSize) {
             return tl::unexpected{
@@ -98,10 +97,10 @@ struct PPMLoader {
                           path.string()}};
         }
 
-        std::vector<Pixel::RGB> pixels(width * height);
+        std::vector<RGB> pixels(width * height);
         std::memcpy(pixels.data(), view.data() + offset, expectedSize);
 
-        return Pixel::Map<Pixel::RGB>(width, height, std::move(pixels));
+        return Map<RGB>(width, height, std::move(pixels));
     }
 };
 

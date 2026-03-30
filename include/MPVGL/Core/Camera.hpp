@@ -14,6 +14,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/trigonometric.hpp>
 
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl {
 
 enum class CameraMovement {
@@ -27,9 +29,9 @@ enum class CameraMovement {
     RollRight
 };
 
-constexpr float SPEED = 2.5f;
-constexpr float SENSITIVITY = 0.1f;
-constexpr float ZOOM = 45.0f;
+constexpr f32 SPEED = 2.5f;
+constexpr f32 SENSITIVITY = 0.1f;
+constexpr f32 ZOOM = 45.0f;
 
 class Camera {
    public:
@@ -41,9 +43,9 @@ class Camera {
     glm::vec3 Up;
     glm::vec3 Right;
 
-    float MovementSpeed;
-    float MouseSensitivity;
-    float Zoom;
+    f32 MovementSpeed;
+    f32 MouseSensitivity;
+    f32 Zoom;
 
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f))
         : MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM) {
@@ -60,8 +62,8 @@ class Camera {
         return rotate * translate;
     }
 
-    void processKeyboard(CameraMovement direction, float deltaTime) {
-        float velocity = MovementSpeed * deltaTime;
+    void processKeyboard(CameraMovement direction, f32 deltaTime) {
+        f32 velocity = MovementSpeed * deltaTime;
 
         if (direction == CameraMovement::Forward) Position += Front * velocity;
         if (direction == CameraMovement::Backward) Position -= Front * velocity;
@@ -86,9 +88,9 @@ class Camera {
         }
     }
 
-    void processMouseMovement(float xoffset, float yoffset) {
-        float yawAmount = xoffset * MouseSensitivity;
-        float pitchAmount = yoffset * MouseSensitivity;
+    void processMouseMovement(f32 xoffset, f32 yoffset) {
+        f32 yawAmount = xoffset * MouseSensitivity;
+        f32 pitchAmount = yoffset * MouseSensitivity;
 
         glm::quat qYaw = glm::angleAxis(glm::radians(-yawAmount), Up);
 
@@ -100,8 +102,8 @@ class Camera {
         updateCameraVectors();
     }
 
-    void processMouseScroll(float yoffset) {
-        Zoom -= (float)yoffset;
+    void processMouseScroll(f32 yoffset) {
+        Zoom -= (f32)yoffset;
         if (Zoom < 1.0f) Zoom = 1.0f;
         if (Zoom > 45.0f) Zoom = 45.0f;
     }

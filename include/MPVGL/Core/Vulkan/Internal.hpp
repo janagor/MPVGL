@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
-#include <string>
 #include <vector>
 
 #include <tl/expected.hpp>
@@ -35,13 +33,13 @@ void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer);
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
                  VkDeviceSize size);
 tl::expected<void, Error<EngineError>> createImage(
-    Vulkan &vulkan, uint32_t width, uint32_t height, uint32_t mipLevels,
-    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
-    VkImage &image, VmaAllocation &imageAllocation);
+    Vulkan &vulkan, u32 width, u32 height, u32 mipLevels, VkFormat format,
+    VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage,
+    VmaAllocationCreateFlags allocFlags, VkImage &image,
+    VmaAllocation &imageAllocation);
 tl::expected<VkImageView, Error<EngineError>> createImageView(
     Vulkan &vulkan, VkImage image, VkFormat format,
-    VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+    VkImageAspectFlags aspectFlags, u32 mipLevels);
 tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan);
 tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
     Vulkan &vulkan, std::vector<VkFormat> const &candidates,
@@ -51,7 +49,7 @@ bool has_stencil_component(VkFormat format);
 void cleanupSwapChain(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> recordCommandBuffer(
-    Vulkan &vulkan, VkCommandBuffer command_buffer, uint32_t image_index);
-void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image);
+    Vulkan &vulkan, VkCommandBuffer command_buffer, u32 image_index);
+void updateUniformBuffer(Vulkan &vulkan, u32 current_image);
 
 }  // namespace mpvgl::vlk

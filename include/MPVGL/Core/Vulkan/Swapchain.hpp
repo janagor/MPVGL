@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -15,6 +14,7 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -25,12 +25,11 @@ struct SwapchainBuilder {
         vkb::SwapchainBuilder swapchainBuilder{device};
         int width, height;
         glfwGetWindowSize(window, &width, &height);
-        auto newSwapchain =
-            swapchainBuilder
-                .set_desired_extent(static_cast<uint32_t>(width),
-                                    static_cast<uint32_t>(height))
-                .set_old_swapchain(oldSwapchain)
-                .build();
+        auto newSwapchain = swapchainBuilder
+                                .set_desired_extent(static_cast<u32>(width),
+                                                    static_cast<u32>(height))
+                                .set_old_swapchain(oldSwapchain)
+                                .build();
         if (!newSwapchain) {
             std::string errorMsg =
                 "Swapchain build error: " + newSwapchain.error().message();
@@ -64,7 +63,7 @@ class Swapchain {
     [[nodiscard]] VkExtent2D const& extent() const noexcept {
         return m_swapchain.extent;
     }
-    [[nodiscard]] uint32_t imageCount() const noexcept {
+    [[nodiscard]] u32 imageCount() const noexcept {
         return m_swapchain.image_count;
     }
     [[nodiscard]] std::vector<VkImage> const& images() const noexcept {

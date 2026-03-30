@@ -25,7 +25,6 @@
 #pragma once
 
 #include <bit>
-#include <cinttypes>
 #include <concepts>
 #include <cstddef>
 #include <cstring>
@@ -36,6 +35,7 @@
 
 #include "MPVGL/Error/Error.hpp"
 #include "MPVGL/Error/IOError.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::io {
 
@@ -47,7 +47,7 @@ class BinaryReader {
     explicit BinaryReader(std::span<char const> data) noexcept
         : m_data(std::as_bytes(data)), m_offset(0) {}
 
-    explicit BinaryReader(std::span<uint8_t const> data) noexcept
+    explicit BinaryReader(std::span<u8 const> data) noexcept
         : m_data(std::as_bytes(data)), m_offset(0) {}
 
     [[nodiscard]] bool isEOF() const noexcept {
@@ -122,11 +122,9 @@ class BinaryReader {
         if constexpr (sizeof(T) == 1) return value;
         if constexpr (std::integral<T>) return std::byteswap(value);
         if constexpr (std::floating_point<T> && sizeof(T) == 4)
-            return std::bit_cast<T>(
-                std::byteswap(std::bit_cast<uint32_t>(value)));
+            return std::bit_cast<T>(std::byteswap(std::bit_cast<u32>(value)));
         if constexpr (std::floating_point<T> && sizeof(T) == 8)
-            return std::bit_cast<T>(
-                std::byteswap(std::bit_cast<uint64_t>(value)));
+            return std::bit_cast<T>(std::byteswap(std::bit_cast<u64>(value)));
     }
 };
 

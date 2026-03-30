@@ -1,20 +1,20 @@
 #pragma once
 
-#include <cstdint>
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
 struct Color {
-    constexpr Color(uint8_t red, uint8_t green, uint8_t blue) noexcept
-        : m_red(static_cast<float>(red) / 255.0),
-          m_green(static_cast<float>(green) / 255.0),
-          m_blue(static_cast<float>(blue) / 255.0) {}
+    constexpr Color(u8 red, u8 green, u8 blue) noexcept
+        : m_red(static_cast<f32>(red) / 255.0),
+          m_green(static_cast<f32>(green) / 255.0),
+          m_blue(static_cast<f32>(blue) / 255.0) {}
 
     struct literal;
 
-    float m_red;
-    float m_green;
-    float m_blue;
+    f32 m_red;
+    f32 m_green;
+    f32 m_blue;
 };
 
 struct Color::literal {

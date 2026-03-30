@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -13,13 +12,14 @@
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
 class Model {
    public:
     Model() = default;
-    Model(Buffer vertexBuffer, Buffer indexBuffer, uint32_t indexCount)
+    Model(Buffer vertexBuffer, Buffer indexBuffer, u32 indexCount)
         : m_vertexBuffer(std::move(vertexBuffer)),
           m_indexBuffer(std::move(indexBuffer)),
           m_indexCount(indexCount) {}
@@ -31,7 +31,7 @@ class Model {
     [[nodiscard]] static tl::expected<Model, Error<EngineError>> create(
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
-        std::vector<uint32_t> const& indices);
+        std::vector<u32> const& indices);
 
     [[nodiscard]] Buffer const& vertexBuffer() const noexcept {
         return m_vertexBuffer;
@@ -39,12 +39,12 @@ class Model {
     [[nodiscard]] Buffer const& indexBuffer() const noexcept {
         return m_indexBuffer;
     }
-    [[nodiscard]] uint32_t indexCount() const noexcept { return m_indexCount; }
+    [[nodiscard]] u32 indexCount() const noexcept { return m_indexCount; }
 
    private:
     Buffer m_vertexBuffer{};
     Buffer m_indexBuffer{};
-    uint32_t m_indexCount{0};
+    u32 m_indexCount{0};
 };
 
 }  // namespace mpvgl::vlk

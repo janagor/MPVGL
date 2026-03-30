@@ -31,7 +31,7 @@ void CommandPool::cleanup() noexcept {
 }
 
 tl::expected<CommandPool, Error<EngineError>> CommandPool::create(
-    DeviceContext const& device, uint32_t queueFamilyIndex) {
+    DeviceContext const& device, u32 queueFamilyIndex) {
     auto poolInfo = initializers::commandPoolCreateInfo(
         queueFamilyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 

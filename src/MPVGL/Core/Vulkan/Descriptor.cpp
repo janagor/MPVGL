@@ -1,5 +1,4 @@
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <vector>
 
@@ -11,6 +10,7 @@
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -44,7 +44,7 @@ void DescriptorSetLayout::cleanup() noexcept {
 }
 
 DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(
-    uint32_t binding, VkDescriptorType type, VkShaderStageFlags stageFlags) {
+    u32 binding, VkDescriptorType type, VkShaderStageFlags stageFlags) {
     VkDescriptorSetLayoutBinding newBinding{};
     newBinding.binding = binding;
     newBinding.descriptorCount = 1;
@@ -71,13 +71,13 @@ DescriptorLayoutBuilder::build(DeviceContext const& device) {
 }
 
 tl::expected<void, Error<EngineError>> DescriptorAllocator::init(
-    DeviceContext const& device, uint32_t maxSets,
+    DeviceContext const& device, u32 maxSets,
     std::span<PoolSizeRatio> poolRatios) {
     std::vector<VkDescriptorPoolSize> poolSizes;
     for (auto ratio : poolRatios) {
         poolSizes.push_back(VkDescriptorPoolSize{
             .type = ratio.type,
-            .descriptorCount = static_cast<uint32_t>(ratio.ratio * maxSets)});
+            .descriptorCount = static_cast<u32>(ratio.ratio * maxSets)});
     }
 
     auto poolInfo = initializers::descriptorPoolCreateInfo(poolSizes, maxSets);
@@ -109,9 +109,8 @@ tl::expected<VkDescriptorSet, Error<EngineError>> DescriptorAllocator::allocate(
     return set;
 }
 
-DescriptorWriter& DescriptorWriter::writeBuffer(uint32_t binding,
-                                                VkBuffer buffer, size_t size,
-                                                size_t offset,
+DescriptorWriter& DescriptorWriter::writeBuffer(u32 binding, VkBuffer buffer,
+                                                size_t size, size_t offset,
                                                 VkDescriptorType type) {
     auto& info = m_bufferInfos.emplace_back(VkDescriptorBufferInfo{
         .buffer = buffer, .offset = offset, .range = size});
@@ -123,7 +122,7 @@ DescriptorWriter& DescriptorWriter::writeBuffer(uint32_t binding,
     return *this;
 }
 
-DescriptorWriter& DescriptorWriter::writeImage(uint32_t binding,
+DescriptorWriter& DescriptorWriter::writeImage(u32 binding,
                                                VkImageView imageView,
                                                VkSampler sampler,
                                                VkImageLayout layout,
@@ -143,8 +142,8 @@ void DescriptorWriter::updateSet(DeviceContext const& device,
     for (auto& write : m_writes) {
         write.dstSet = set;
     }
-    device.logDevDisp.updateDescriptorSets(
-        static_cast<uint32_t>(m_writes.size()), m_writes.data(), 0, nullptr);
+    device.logDevDisp.updateDescriptorSets(static_cast<u32>(m_writes.size()),
+                                           m_writes.data(), 0, nullptr);
 }
 
 void DescriptorWriter::clear() {

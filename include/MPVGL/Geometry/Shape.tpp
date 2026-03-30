@@ -1,5 +1,9 @@
 #pragma once
 
+#include "MPVGL/Geometry/ShapeTraits.hpp"
+#include "MPVGL/Graphics/Color.hpp"
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl {
 
 template <>
@@ -54,8 +58,8 @@ inline Mesh<Vertex> Shape<Cube>::generate(Color const& color) {
     mesh.vertices.push_back({{0.5f, 0.5f, -0.5f}, color, {1.0f, 1.0f}});
     mesh.vertices.push_back({{-0.5f, 0.5f, -0.5f}, color, {0.0f, 1.0f}});
 
-    for (std::uint32_t i = 0; i < 6; i++) {
-        std::uint32_t offset = i * 4;
+    for (u32 i = 0; i < 6; i++) {
+        u32 offset = i * 4;
         mesh.indices.push_back(offset + 0);
         mesh.indices.push_back(offset + 1);
         mesh.indices.push_back(offset + 2);

@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <utility>
 
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl {
 
 namespace {
-constexpr uint8_t rgbToGray(uint8_t r, uint8_t g, uint8_t b) noexcept {
-    return static_cast<uint8_t>(0.2126f * r + 0.7152f * g + 0.0722f * b);
+constexpr u8 rgbToGray(u8 r, u8 g, u8 b) noexcept {
+    return static_cast<u8>(0.2126f * r + 0.7152f * g + 0.0722f * b);
 }
 }  // namespace
 

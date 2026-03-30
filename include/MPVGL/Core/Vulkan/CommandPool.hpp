@@ -7,6 +7,7 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -20,7 +21,7 @@ class CommandPool {
     ~CommandPool() noexcept;
 
     [[nodiscard]] static tl::expected<CommandPool, Error<EngineError>> create(
-        DeviceContext const& device, uint32_t queueFamilyIndex);
+        DeviceContext const& device, u32 queueFamilyIndex);
 
     [[nodiscard]] VkCommandPool handle() const noexcept { return m_pool; }
 

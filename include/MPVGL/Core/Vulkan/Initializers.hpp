@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 
 #include <vulkan/vulkan_core.h>
+
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk::initializers {
 
@@ -17,17 +18,17 @@ inline VkRenderPassCreateInfo renderPassCreateInfo(
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .pNext = nullptr,
         .flags = flags,
-        .attachmentCount = static_cast<std::uint32_t>(attachments.size()),
+        .attachmentCount = static_cast<u32>(attachments.size()),
         .pAttachments = attachments.data(),
-        .subpassCount = static_cast<std::uint32_t>(subpasses.size()),
+        .subpassCount = static_cast<u32>(subpasses.size()),
         .pSubpasses = subpasses.data(),
-        .dependencyCount = static_cast<std::uint32_t>(dependencies.size()),
+        .dependencyCount = static_cast<u32>(dependencies.size()),
         .pDependencies = dependencies.data(),
     };
 }
 
 inline VkShaderModuleCreateInfo shaderModuleCreateInfo(
-    std::span<std::uint32_t const> code) {
+    std::span<u32 const> code) {
     return VkShaderModuleCreateInfo{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .pNext = nullptr,
@@ -44,7 +45,7 @@ inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
         .flags = flags,
-        .bindingCount = static_cast<std::uint32_t>(bindings.size()),
+        .bindingCount = static_cast<u32>(bindings.size()),
         .pBindings = bindings.data(),
     };
 }
@@ -72,10 +73,10 @@ inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(
         .pNext = nullptr,
         .flags = 0,
         .vertexBindingDescriptionCount =
-            static_cast<std::uint32_t>(bindingDescriptions.size()),
+            static_cast<u32>(bindingDescriptions.size()),
         .pVertexBindingDescriptions = bindingDescriptions.data(),
         .vertexAttributeDescriptionCount =
-            static_cast<std::uint32_t>(attributeDescriptions.size()),
+            static_cast<u32>(attributeDescriptions.size()),
         .pVertexAttributeDescriptions = attributeDescriptions.data(),
     };
 }
@@ -93,7 +94,7 @@ pipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology,
 }
 
 inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
-    std::uint32_t viewportCount, std::uint32_t scissorCount) {
+    u32 viewportCount, u32 scissorCount) {
     return VkPipelineViewportStateCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -111,9 +112,9 @@ inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .viewportCount = static_cast<std::uint32_t>(viewports.size()),
+        .viewportCount = static_cast<u32>(viewports.size()),
         .pViewports = viewports.data(),
-        .scissorCount = static_cast<std::uint32_t>(scissors.size()),
+        .scissorCount = static_cast<u32>(scissors.size()),
         .pScissors = scissors.data(),
     };
 }
@@ -185,7 +186,7 @@ inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
         .flags = flags,
         .logicOpEnable = logicOpEnable,
         .logicOp = logicOp,
-        .attachmentCount = static_cast<std::uint32_t>(states.size()),
+        .attachmentCount = static_cast<u32>(states.size()),
         .pAttachments = states.data(),
     };
 }
@@ -196,7 +197,7 @@ inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .dynamicStateCount = static_cast<std::uint32_t>(states.size()),
+        .dynamicStateCount = static_cast<u32>(states.size()),
         .pDynamicStates = states.data(),
     };
 }
@@ -208,10 +209,9 @@ inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(
     return VkPipelineLayoutCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .flags = flags,
-        .setLayoutCount = static_cast<std::uint32_t>(setLayouts.size()),
+        .setLayoutCount = static_cast<u32>(setLayouts.size()),
         .pSetLayouts = setLayouts.data(),
-        .pushConstantRangeCount =
-            static_cast<std::uint32_t>(pushConstantRanges.size()),
+        .pushConstantRangeCount = static_cast<u32>(pushConstantRanges.size()),
         .pPushConstantRanges = pushConstantRanges.data(),
     };
 }
@@ -225,14 +225,14 @@ inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo() {
 
 inline VkFramebufferCreateInfo framebufferCreateInfo(
     VkRenderPass renderPass, std::span<VkImageView const> attachments,
-    VkExtent2D const& extent2D, uint32_t layers,
+    VkExtent2D const& extent2D, u32 layers,
     VkFramebufferCreateFlags flags = 0) {
     return VkFramebufferCreateInfo{
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = flags,
         .renderPass = renderPass,
-        .attachmentCount = static_cast<std::uint32_t>(attachments.size()),
+        .attachmentCount = static_cast<u32>(attachments.size()),
         .pAttachments = attachments.data(),
         .width = extent2D.width,
         .height = extent2D.height,
@@ -241,7 +241,7 @@ inline VkFramebufferCreateInfo framebufferCreateInfo(
 }
 
 inline VkCommandPoolCreateInfo commandPoolCreateInfo(
-    std::uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0) {
+    u32 queueFamilyIndex, VkCommandPoolCreateFlags flags = 0) {
     return VkCommandPoolCreateInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
@@ -251,7 +251,7 @@ inline VkCommandPoolCreateInfo commandPoolCreateInfo(
 }
 
 inline VkMemoryAllocateInfo memoryAllocateInfo(VkDeviceSize allocationSize,
-                                               std::uint32_t memoryTypeIndex) {
+                                               u32 memoryTypeIndex) {
     return VkMemoryAllocateInfo{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
@@ -261,8 +261,8 @@ inline VkMemoryAllocateInfo memoryAllocateInfo(VkDeviceSize allocationSize,
 }
 
 inline VkWriteDescriptorSet writeDescriptorSet(
-    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
-    uint32_t descriptorCount, VkDescriptorType descriptorType,
+    VkDescriptorSet dstSet, u32 dstBinding, u32 dstArrayElement,
+    u32 descriptorCount, VkDescriptorType descriptorType,
     VkDescriptorImageInfo const* pImageInfo,
     VkDescriptorBufferInfo const* pBufferInfo,
     VkBufferView const* pTexelBufferView) {
@@ -282,33 +282,33 @@ inline VkWriteDescriptorSet writeDescriptorSet(
 }
 
 inline VkWriteDescriptorSet writeDescriptorSet(
-    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    VkDescriptorSet dstSet, u32 dstBinding, u32 dstArrayElement,
     VkDescriptorType descriptorType,
     std::span<VkDescriptorImageInfo const> descriptorImageInfos) {
-    return writeDescriptorSet(
-        dstSet, dstBinding, dstArrayElement,
-        static_cast<std::uint32_t>(descriptorImageInfos.size()), descriptorType,
-        descriptorImageInfos.data(), nullptr, nullptr);
+    return writeDescriptorSet(dstSet, dstBinding, dstArrayElement,
+                              static_cast<u32>(descriptorImageInfos.size()),
+                              descriptorType, descriptorImageInfos.data(),
+                              nullptr, nullptr);
 }
 
 inline VkWriteDescriptorSet writeDescriptorSet(
-    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    VkDescriptorSet dstSet, u32 dstBinding, u32 dstArrayElement,
     VkDescriptorType descriptorType,
     std::span<VkDescriptorBufferInfo const> descriptorBufferInfos) {
-    return writeDescriptorSet(
-        dstSet, dstBinding, dstArrayElement,
-        static_cast<std::uint32_t>(descriptorBufferInfos.size()),
-        descriptorType, nullptr, descriptorBufferInfos.data(), nullptr);
+    return writeDescriptorSet(dstSet, dstBinding, dstArrayElement,
+                              static_cast<u32>(descriptorBufferInfos.size()),
+                              descriptorType, nullptr,
+                              descriptorBufferInfos.data(), nullptr);
 }
 
 inline VkWriteDescriptorSet writeDescriptorSet(
-    VkDescriptorSet dstSet, uint32_t dstBinding, uint32_t dstArrayElement,
+    VkDescriptorSet dstSet, u32 dstBinding, u32 dstArrayElement,
     VkDescriptorType descriptorType,
     std::span<VkBufferView const> texelBufferViews) {
-    return writeDescriptorSet(
-        dstSet, dstBinding, dstArrayElement,
-        static_cast<std::uint32_t>(texelBufferViews.size()), descriptorType,
-        nullptr, nullptr, texelBufferViews.data());
+    return writeDescriptorSet(dstSet, dstBinding, dstArrayElement,
+                              static_cast<u32>(texelBufferViews.size()),
+                              descriptorType, nullptr, nullptr,
+                              texelBufferViews.data());
 }
 
 inline VkRenderPassBeginInfo renderPassBeginInfo(
@@ -320,7 +320,7 @@ inline VkRenderPassBeginInfo renderPassBeginInfo(
         .renderPass = renderPass,
         .framebuffer = framebuffer,
         .renderArea = renderArea,
-        .clearValueCount = static_cast<std::uint32_t>(clearValues.size()),
+        .clearValueCount = static_cast<u32>(clearValues.size()),
         .pClearValues = clearValues.data(),
     };
 }
@@ -391,10 +391,10 @@ inline VkSamplerCreateInfo samplerCreateInfo() {
 }
 
 inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(
-    std::span<VkDescriptorPoolSize const> sizes, std::uint32_t maxSets) {
+    std::span<VkDescriptorPoolSize const> sizes, u32 maxSets) {
     VkDescriptorPoolCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    info.poolSizeCount = static_cast<std::uint32_t>(sizes.size());
+    info.poolSizeCount = static_cast<u32>(sizes.size());
     info.pPoolSizes = sizes.data();
     info.maxSets = maxSets;
     return info;
@@ -407,15 +407,14 @@ inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo(
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext = nullptr,
         .descriptorPool = descriptorPool,
-        .descriptorSetCount =
-            static_cast<std::uint32_t>(descriptorSetLayouts.size()),
+        .descriptorSetCount = static_cast<u32>(descriptorSetLayouts.size()),
         .pSetLayouts = descriptorSetLayouts.data(),
     };
 }
 
 inline VkCommandBufferAllocateInfo commandBufferAllocateInfo(
     VkCommandPool commandPool, VkCommandBufferLevel level,
-    std::uint32_t commandBufferCount) {
+    u32 commandBufferCount) {
     return VkCommandBufferAllocateInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .pNext = nullptr,
@@ -458,27 +457,25 @@ inline VkSubmitInfo submitInfo(
     return VkSubmitInfo{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
-        .waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size()),
+        .waitSemaphoreCount = static_cast<u32>(waitSemaphores.size()),
         .pWaitSemaphores = waitSemaphores.data(),
         .pWaitDstStageMask = waitDstStageMask.data(),
-        .commandBufferCount = static_cast<std::uint32_t>(commandBuffers.size()),
+        .commandBufferCount = static_cast<u32>(commandBuffers.size()),
         .pCommandBuffers = commandBuffers.data(),
-        .signalSemaphoreCount =
-            static_cast<std::uint32_t>(signalSemaphores.size()),
+        .signalSemaphoreCount = static_cast<u32>(signalSemaphores.size()),
         .pSignalSemaphores = signalSemaphores.data(),
     };
 }
 
 inline VkPresentInfoKHR presentInfoKHR(
     std::span<VkSemaphore const> waitSemaphores,
-    std::span<VkSwapchainKHR const> swapchains,
-    std::span<std::uint32_t const> indices) {
+    std::span<VkSwapchainKHR const> swapchains, std::span<u32 const> indices) {
     return VkPresentInfoKHR{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = nullptr,
-        .waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size()),
+        .waitSemaphoreCount = static_cast<u32>(waitSemaphores.size()),
         .pWaitSemaphores = waitSemaphores.data(),
-        .swapchainCount = static_cast<std::uint32_t>(swapchains.size()),
+        .swapchainCount = static_cast<u32>(swapchains.size()),
         .pSwapchains = swapchains.data(),
         .pImageIndices = indices.data(),
         .pResults = nullptr,

@@ -97,14 +97,14 @@ class AsTypeView
                 if constexpr (is_big_tag != is_native_big) {
                     if constexpr (std::integral<T>) {
                         return std::byteswap(value);
-                    } else if constexpr (std::floating_point<T> &&
+                    } else if constexpr (std::f32ing_point<T> &&
                                          sizeof(T) == 4) {
                         return std::bit_cast<T>(
-                            std::byteswap(std::bit_cast<uint32_t>(value)));
-                    } else if constexpr (std::floating_point<T> &&
+                            std::byteswap(std::bit_cast<u32>(value)));
+                    } else if constexpr (std::f32ing_point<T> &&
                                          sizeof(T) == 8) {
                         return std::bit_cast<T>(
-                            std::byteswap(std::bit_cast<uint64_t>(value)));
+                            std::byteswap(std::bit_cast<ui64>(value)));
                     }
                 }
                 return value;

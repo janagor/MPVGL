@@ -87,7 +87,7 @@ class ShaderWatcher {
                                     : EShLanguage::EShLangFragment;
 
                 return compiler.compile(source, language)
-                    .and_then([&](std::vector<uint32_t> const &data)
+                    .and_then([&](std::vector<u32> const &data)
                                   -> tl::expected<void, Error<EngineError>> {
                         std::ofstream ofile(outputPath(shaderPath),
                                             std::ios::binary);
@@ -99,7 +99,7 @@ class ShaderWatcher {
                         }
 
                         ofile.write(reinterpret_cast<char const *>(data.data()),
-                                    data.size() * sizeof(uint32_t));
+                                    data.size() * sizeof(u32));
 
                         if (!ofile) {
                             return tl::unexpected{

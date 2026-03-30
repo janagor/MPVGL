@@ -25,12 +25,13 @@
 #pragma once
 
 #include <array>
-#include <cinttypes>
+
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
 // clang-format off
-static constexpr std::array<uint8_t, 64> ZIGZAG = {
+static constexpr std::array<u8, 64> ZIGZAG = {
          0,  1,  8, 16,  9,  2,  3, 10,
         17, 24, 32, 25, 18, 11,  4,  5,
         12, 19, 26, 33, 40, 48, 41, 34,

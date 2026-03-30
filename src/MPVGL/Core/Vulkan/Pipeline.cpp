@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -12,6 +11,7 @@
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -110,7 +110,7 @@ tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
         initializers::pipelineDynamicStateCreateInfo(m_dynamicStates);
 
     auto pipelineInfo = initializers::graphicsPipelineCreateInfo();
-    pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
+    pipelineInfo.stageCount = static_cast<u32>(m_shaderStages.size());
     pipelineInfo.pStages = m_shaderStages.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &m_inputAssembly;

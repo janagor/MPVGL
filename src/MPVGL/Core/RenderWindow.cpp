@@ -45,10 +45,10 @@ int RenderWindow::draw() noexcept {
     std::jthread watcherThread(
         [&](std::stop_token st) { shader_watcher.run(st); });
 
-    float deltaTime = 0.0f;
-    float lastFrame = 0.0f;
+    f32 deltaTime = 0.0f;
+    f32 lastFrame = 0.0f;
 
-    double lastX = 400.0, lastY = 300.0;
+    f64 lastX = 400.0, lastY = 300.0;
     bool firstMouse = true;
 
     glfwSetInputMode(vulkan.deviceContext.window, GLFW_CURSOR,
@@ -58,13 +58,13 @@ int RenderWindow::draw() noexcept {
     while (!glfwWindowShouldClose(vulkan.deviceContext.window)) {
         glfwPollEvents();
 
-        float currentFrame = glfwGetTime();
+        f32 currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         int i = 0;
         for (auto &object : vulkan.sceneContext.renderables) {
-            float speed = (i % 2 == 0) ? 45.0f : -90.0f;
+            f32 speed = (i % 2 == 0) ? 45.0f : -90.0f;
             object.transformMatrix = glm::rotate(
                 object.transformMatrix, deltaTime * glm::radians(speed),
                 glm::vec3(0.0f, 0.0f, 1.0f));

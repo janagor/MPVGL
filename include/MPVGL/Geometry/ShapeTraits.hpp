@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
@@ -12,15 +12,15 @@ struct ShapeTraits;
 
 template <>
 struct ShapeTraits<Quad> {
-    static constexpr std::uint32_t vertexCount = 4;
-    static constexpr std::uint32_t indexCount = 6;
+    static constexpr u32 vertexCount = 4;
+    static constexpr u32 indexCount = 6;
     static constexpr bool is3D = false;
 };
 
 template <>
 struct ShapeTraits<Cube> {
-    static constexpr std::uint32_t vertexCount = 24;
-    static constexpr std::uint32_t indexCount = 36;
+    static constexpr u32 vertexCount = 24;
+    static constexpr u32 indexCount = 36;
     static constexpr bool is3D = true;
 };
 

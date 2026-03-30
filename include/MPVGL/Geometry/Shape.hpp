@@ -2,7 +2,6 @@
 
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
 #include "MPVGL/Geometry/Mesh.hpp"
-#include "MPVGL/Geometry/ShapeTraits.hpp"
 #include "MPVGL/Graphics/Color.hpp"
 
 namespace mpvgl {

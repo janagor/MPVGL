@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 #include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <vk-bootstrap/src/VkBootstrap.h>
 #include <vk-bootstrap/src/VkBootstrapDispatch.h>
@@ -9,6 +7,8 @@
 #include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
+
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -24,8 +24,8 @@ struct DeviceContext {
 
     VkQueue graphicsQueue{VK_NULL_HANDLE};
     VkQueue presentQueue{VK_NULL_HANDLE};
-    std::uint32_t graphicsQueueIndex{0};
-    std::uint32_t presentQueueIndex{0};
+    u32 graphicsQueueIndex{0};
+    u32 presentQueueIndex{0};
 };
 
 }  // namespace mpvgl::vlk

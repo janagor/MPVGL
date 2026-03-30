@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -14,6 +13,7 @@
 
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
@@ -51,7 +51,7 @@ struct ShaderCompiler {
     ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
 
    public:
-    tl::expected<std::vector<uint32_t>, Error<EngineError>> compile(
+    tl::expected<std::vector<u32>, Error<EngineError>> compile(
         std::string const &source, EShLanguage lang) {
         glslang::TShader shader(lang);
         char const *sources[1] = {source.data()};
@@ -106,7 +106,7 @@ struct ShaderCompiler {
 
         glslang::TIntermediate &intermediateRef =
             *(program.getIntermediate(lang));
-        std::vector<uint32_t> spirv;
+        std::vector<u32> spirv;
         glslang::SpvOptions options{};
         options.validate = true;
         glslang::GlslangToSpv(intermediateRef, spirv, &options);

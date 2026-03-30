@@ -2,10 +2,11 @@
 
 #include <concepts>
 #include <cstddef>
-#include <cstdint>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
@@ -31,7 +32,7 @@ struct PixelConversions<Self, std::tuple<Pixels...>> {
     constexpr operator TargetPixel() const;
 };
 
-using SubPixel = uint8_t;
+using SubPixel = u8;
 
 #pragma pack(push, 1)
 
@@ -135,28 +136,26 @@ struct GrayA : Base<GrayA>, PixelConversions<GrayA, PixelTypes> {
 
 template <PixelLike PixelT>
 struct Map {
-    explicit Map(uint32_t width, uint32_t height, std::vector<PixelT> data)
+    explicit Map(u32 width, u32 height, std::vector<PixelT> data)
         : m_width(width), m_height(height), m_data(std::move(data)) {}
 
     template <PixelLike OtherT>
     constexpr operator Map<OtherT>() const;
 
-    uint8_t* dataPtr() noexcept {
-        return reinterpret_cast<uint8_t*>(m_data.data());
-    }
-    uint8_t const* dataPtr() const noexcept {
-        return reinterpret_cast<uint8_t const*>(m_data.data());
+    u8* dataPtr() noexcept { return reinterpret_cast<u8*>(m_data.data()); }
+    u8 const* dataPtr() const noexcept {
+        return reinterpret_cast<u8 const*>(m_data.data());
     }
 
     std::vector<PixelT>& data() noexcept { return m_data; }
     std::vector<PixelT> const& data() const noexcept { return m_data; }
 
-    uint32_t height() const noexcept { return m_height; }
-    uint32_t width() const noexcept { return m_width; }
+    u32 height() const noexcept { return m_height; }
+    u32 width() const noexcept { return m_width; }
     std::size_t channels() const noexcept { return PixelT::channels(); }
 
    private:
-    uint32_t m_width, m_height;
+    u32 m_width, m_height;
     std::vector<PixelT> m_data;
 };
 

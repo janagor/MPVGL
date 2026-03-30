@@ -36,6 +36,7 @@
 
 #include "MPVGL/Error/Error.hpp"
 #include "MPVGL/Error/IOError.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::io {
 

@@ -1,11 +1,12 @@
 #pragma once
 
-#include <cstdint>
 #include <vector>
+
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
-template <typename VertexT, typename IndexT = std::uint32_t>
+template <typename VertexT, typename IndexT = u32>
 struct Mesh {
     std::vector<VertexT> vertices;
     std::vector<IndexT> indices;

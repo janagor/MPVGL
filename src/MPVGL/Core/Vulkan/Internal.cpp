@@ -1,10 +1,8 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <span>
 #include <string>
@@ -87,9 +85,8 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
 
 VkShaderModule createShaderModule(DeviceContext const &context,
                                   std::span<std::byte const> code) {
-    std::span<std::uint32_t const> code_span{
-        reinterpret_cast<std::uint32_t const *>(code.data()),
-        code.size() / sizeof(std::uint32_t)};
+    std::span<u32 const> code_span{reinterpret_cast<u32 const *>(code.data()),
+                                   code.size() / sizeof(u32)};
 
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
@@ -163,10 +160,10 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
 }
 
 tl::expected<void, Error<EngineError>> createImage(
-    Vulkan &vulkan, uint32_t width, uint32_t height, uint32_t mipLevels,
-    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
-    VkImage &image, VmaAllocation &imageAllocation) {
+    Vulkan &vulkan, u32 width, u32 height, u32 mipLevels, VkFormat format,
+    VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage,
+    VmaAllocationCreateFlags allocFlags, VkImage &image,
+    VmaAllocation &imageAllocation) {
     auto &deviceContext = vulkan.deviceContext;
 
     auto imageInfo = initializers::imageCreateInfo();
@@ -197,7 +194,7 @@ tl::expected<void, Error<EngineError>> createImage(
 
 tl::expected<VkImageView, Error<EngineError>> createImageView(
     Vulkan &vulkan, VkImage image, VkFormat format,
-    VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+    VkImageAspectFlags aspectFlags, u32 mipLevels) {
     auto &deviceContext = vulkan.deviceContext;
 
     auto subresourceRange = VkImageSubresourceRange{
@@ -225,7 +222,7 @@ tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan) {
 
     swapchainContext.swapchain.imageViews().resize(
         swapchainContext.swapchain.images().size());
-    for (uint32_t i = 0; i < swapchainContext.swapchain.images().size(); ++i) {
+    for (u32 i = 0; i < swapchainContext.swapchain.images().size(); ++i) {
         auto imageView = createImageView(
             vulkan, swapchainContext.swapchain.images().at(i),
             swapchainContext.swapchain.format(), VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -320,7 +317,7 @@ tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
 }
 
 tl::expected<void, Error<EngineError>> recordCommandBuffer(
-    Vulkan &vulkan, VkCommandBuffer command_buffer, uint32_t image_index) {
+    Vulkan &vulkan, VkCommandBuffer command_buffer, u32 image_index) {
     auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
     auto &pipelineContext = vulkan.pipelineContext;
@@ -354,8 +351,8 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapchainContext.swapchain.extent().width;
-    viewport.height = (float)swapchainContext.swapchain.extent().height;
+    viewport.width = (f32)swapchainContext.swapchain.extent().width;
+    viewport.height = (f32)swapchainContext.swapchain.extent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -401,23 +398,23 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     return {};
 }
 
-void updateUniformBuffer(Vulkan &vulkan, uint32_t current_image) {
+void updateUniformBuffer(Vulkan &vulkan, u32 current_image) {
     auto &sceneContext = vulkan.sceneContext;
     auto &swapchainContext = vulkan.swapchainContext;
 
     static auto start_time = std::chrono::high_resolution_clock::now();
 
     auto current_time = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(
-                     current_time - start_time)
-                     .count();
+    f32 time = std::chrono::duration<f32, std::chrono::seconds::period>(
+                   current_time - start_time)
+                   .count();
 
     UniformBufferObject ubo{};
     ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
         glm::radians(sceneContext.camera.Zoom),
         swapchainContext.swapchain.extent().width /
-            static_cast<float>(swapchainContext.swapchain.extent().height),
+            static_cast<f32>(swapchainContext.swapchain.extent().height),
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;
 

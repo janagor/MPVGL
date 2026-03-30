@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <cstring>
 #include <string>
 #include <utility>
@@ -20,6 +19,7 @@
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
 #include "MPVGL/IO/ResourceBuffer.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -51,7 +51,7 @@ void executeSingleTimeCommands(DeviceContext const& device,
 }  // namespace
 
 Texture::Texture(VkImage image, VkImageView imageView, VkSampler sampler,
-                 VmaAllocation allocation, uint32_t mipLevels,
+                 VmaAllocation allocation, u32 mipLevels,
                  VmaAllocator allocator, vkb::DispatchTable disp) noexcept
     : m_image(image),
       m_imageView(imageView),
@@ -101,7 +101,7 @@ void Texture::cleanup() noexcept {
 tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, VkImage image, VkFormat format,
-    VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+    VkImageLayout oldLayout, VkImageLayout newLayout, u32 mipLevels) {
     tl::expected<void, Error<EngineError>> result = {};
     executeSingleTimeCommands(
         device, commandPool, graphicsQueue, [&](VkCommandBuffer cmd) {
@@ -145,8 +145,7 @@ tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
 void Texture::copyBufferToImage(DeviceContext const& device,
                                 VkCommandPool commandPool,
                                 VkQueue graphicsQueue, VkBuffer buffer,
-                                VkImage image, uint32_t width,
-                                uint32_t height) {
+                                VkImage image, u32 width, u32 height) {
     executeSingleTimeCommands(
         device, commandPool, graphicsQueue, [&](VkCommandBuffer cmd) {
             VkBufferImageCopy region{};
@@ -168,8 +167,8 @@ void Texture::copyBufferToImage(DeviceContext const& device,
 
 tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
     DeviceContext const& device, VkCommandPool commandPool,
-    VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
-    int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+    VkQueue graphicsQueue, VkImage image, VkFormat imageFormat, i32 texWidth,
+    i32 texHeight, u32 mipLevels) {
     VkFormatProperties formatProperties;
     device.instDisp.getPhysicalDeviceFormatProperties(
         device.logicalDevice.physical_device, imageFormat, &formatProperties);
@@ -194,10 +193,10 @@ tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, subresourceRange);
 
-            int32_t mipWidth = texWidth;
-            int32_t mipHeight = texHeight;
+            i32 mipWidth = texWidth;
+            i32 mipHeight = texHeight;
 
-            for (uint32_t i = 1; i < mipLevels; i++) {
+            for (u32 i = 1; i < mipLevels; i++) {
                 barrier.subresourceRange.baseMipLevel = i - 1;
                 barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -281,9 +280,9 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
                           "Failed to decode texture: " + filepath}};
             }
 
-            uint32_t mipLevels = static_cast<uint32_t>(std::floor(
-                                     std::log2(std::max(width, height)))) +
-                                 1;
+            u32 mipLevels = static_cast<u32>(std::floor(
+                                std::log2(std::max(width, height)))) +
+                            1;
             RawPixels pixels{.data = data,
                              .width = width,
                              .height = height,
@@ -345,15 +344,15 @@ tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
             Error{EngineError::VulkanRuntimeError,
                   "Failed to load Texture from: " + filepath}};
     }
-    pixels.mipLevels = static_cast<uint32_t>(std::floor(
+    pixels.mipLevels = static_cast<u32>(std::floor(
                            std::log2(std::max(pixels.width, pixels.height)))) +
                        1;
     return pixels;
 }
 
 tl::expected<std::pair<VkImage, VmaAllocation>, Error<EngineError>>
-Texture::createAllocatedImage(DeviceContext const& device, uint32_t width,
-                              uint32_t height, uint32_t mipLevels) {
+Texture::createAllocatedImage(DeviceContext const& device, u32 width,
+                              u32 height, u32 mipLevels) {
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent = {width, height, 1};
@@ -418,7 +417,7 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
 }
 
 tl::expected<VkImageView, Error<EngineError>> Texture::createImageView(
-    DeviceContext const& device, VkImage image, uint32_t mipLevels) {
+    DeviceContext const& device, VkImage image, u32 mipLevels) {
     auto subresourceRange = VkImageSubresourceRange{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
         .baseMipLevel = 0,
@@ -472,8 +471,7 @@ tl::expected<VkSampler, Error<EngineError>> Texture::createSampler(
 }
 
 tl::expected<Texture, Error<EngineError>> Texture::createDepthTexture(
-    DeviceContext const& device, uint32_t width, uint32_t height,
-    VkFormat format) {
+    DeviceContext const& device, u32 width, u32 height, VkFormat format) {
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent = {width, height, 1};

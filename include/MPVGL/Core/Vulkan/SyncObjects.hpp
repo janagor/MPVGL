@@ -7,6 +7,7 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 

@@ -25,7 +25,6 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <queue>
 #include <span>
 #include <vector>
@@ -34,25 +33,26 @@
 
 #include "MPVGL/Error/CompressionError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
 class HuffmanTree {
    public:
     static constexpr size_t MaxNodes = 511;
-    static constexpr uint16_t NullNode = 0xFFFF;
+    static constexpr u16 NullNode = 0xFFFF;
 
     struct Node {
         char symbol;
         int frequency;
-        uint16_t left;
-        uint16_t right;
+        u16 left;
+        u16 right;
 
         constexpr Node() noexcept
             : symbol('\0'), frequency(0), left(NullNode), right(NullNode) {}
 
-        constexpr Node(char s, int f, uint16_t l = NullNode,
-                       uint16_t r = NullNode) noexcept
+        constexpr Node(char s, int f, u16 l = NullNode,
+                       u16 r = NullNode) noexcept
             : symbol(s), frequency(f), left(l), right(r) {}
 
         [[nodiscard]] constexpr bool isLeaf() const noexcept {
@@ -62,12 +62,11 @@ class HuffmanTree {
 
    private:
     std::array<Node, MaxNodes> buffer{};
-    uint16_t allocated_count = 0;
-    uint16_t root_idx = NullNode;
+    u16 allocated_count = 0;
+    u16 root_idx = NullNode;
 
-    constexpr tl::expected<uint16_t, Error<CompressionError>> createNode(
-        char symbol, int freq, uint16_t left = NullNode,
-        uint16_t right = NullNode) {
+    constexpr tl::expected<u16, Error<CompressionError>> createNode(
+        char symbol, int freq, u16 left = NullNode, u16 right = NullNode) {
         if (allocated_count >= MaxNodes) {
             return tl::unexpected{
                 Error{CompressionError::TreeOverflow,
@@ -88,12 +87,11 @@ class HuffmanTree {
 
         if (frequencies.empty()) return {};
 
-        auto cmp = [this](uint16_t a, uint16_t b) {
+        auto cmp = [this](u16 a, u16 b) {
             return buffer[a].frequency > buffer[b].frequency;
         };
 
-        std::priority_queue<uint16_t, std::vector<uint16_t>, decltype(cmp)> pq{
-            cmp};
+        std::priority_queue<u16, std::vector<u16>, decltype(cmp)> pq{cmp};
 
         for (auto const& [sym, freq] : frequencies) {
             auto node_idx = createNode(sym, freq);
@@ -102,9 +100,9 @@ class HuffmanTree {
         }
 
         while (pq.size() > 1) {
-            uint16_t left = pq.top();
+            u16 left = pq.top();
             pq.pop();
-            uint16_t right = pq.top();
+            u16 right = pq.top();
             pq.pop();
 
             auto sum_freq = buffer[left].frequency + buffer[right].frequency;
@@ -122,12 +120,12 @@ class HuffmanTree {
         return {};
     }
 
-    [[nodiscard]] constexpr uint16_t getRootIndex() const noexcept {
+    [[nodiscard]] constexpr u16 getRootIndex() const noexcept {
         return root_idx;
     }
 
     [[nodiscard]] constexpr tl::expected<Node, Error<CompressionError>> getNode(
-        uint16_t index) const noexcept {
+        u16 index) const noexcept {
         if (index >= allocated_count || index == NullNode) {
             return tl::unexpected{Error{
                 CompressionError::InvalidData,

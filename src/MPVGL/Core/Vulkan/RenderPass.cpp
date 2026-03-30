@@ -59,7 +59,7 @@ tl::expected<RenderPass, Error<EngineError>> RenderPassBuilder::build(
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = info.bindPoint;
         subpass.colorAttachmentCount =
-            static_cast<uint32_t>(info.colorAttachments.size());
+            static_cast<u32>(info.colorAttachments.size());
         subpass.pColorAttachments = info.colorAttachments.data();
 
         if (info.depthAttachment.has_value()) {
