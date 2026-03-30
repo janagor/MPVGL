@@ -13,9 +13,5 @@ CompileFlags:
     - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include
     - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyobjloader
     - -I${CMAKE_CURRENT_SOURCE_DIR}/lib/vk-bootstrap/src
-  Remove:
-    - -fmodules-ts
-    - -fmodule-mapper=*
-    - -fdeps-format=*
-    - -fdeps-file=*
-    - -fdeps-target=*
+    - -Wno-unknown-warning-option
+  Remove: [-m*, -f*]

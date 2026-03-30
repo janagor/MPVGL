@@ -17,6 +17,11 @@
       "name": "format",
       "configurePreset": "dev",
       "targets": ["format"]
+    },
+    {
+      "name": "tidy",
+      "configurePreset": "dev",
+      "targets": ["tidy"]
     }
   ],
   "workflowPresets": [
@@ -25,9 +30,9 @@
       "steps": [
         { "type": "configure", "name": "dev"    },
         { "type": "build",     "name": "format" },
+        { "type": "build",     "name": "tidy"   },
         { "type": "build",     "name": "dev"    }
       ]
     }
   ]
 }
-

@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 4.0)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(MPVGL)
 
 find_package(Vulkan REQUIRED)
@@ -32,8 +31,11 @@ add_library(${PROJECT_NAME} STATIC ${MPVGL_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb
 )
 
@@ -58,3 +60,12 @@ add_custom_target(format
     COMMAND clang-format -i ${ALL_SOURCE_FILES}
     COMMENT "Code formatting..."
 )
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_custom_target(tidy
+    COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    USES_TERMINAL
+    COMMENT "Running static analysis pipeline..."
+)
+
