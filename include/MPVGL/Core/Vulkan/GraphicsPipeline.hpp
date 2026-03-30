@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <filesystem>
 
 #include <tl/expected.hpp>
 #include <vk-bootstrap/src/VkBootstrapDispatch.h>
@@ -9,7 +9,6 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
-#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -27,8 +26,8 @@ class GraphicsPipeline {
     [[nodiscard]] static tl::expected<GraphicsPipeline, Error<EngineError>>
     create(DeviceContext const& device, VkRenderPass renderPass,
            VkDescriptorSetLayout descriptorSetLayout,
-           std::string const& vertexShaderPath,
-           std::string const& fragmentShaderPath);
+           std::filesystem::path const& vertexShaderPath,
+           std::filesystem::path const& fragmentShaderPath);
 
     [[nodiscard]] VkPipeline handle() const noexcept { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const noexcept { return m_layout; }

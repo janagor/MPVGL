@@ -5,29 +5,34 @@
 namespace mpvgl {
 
 struct Color {
-    constexpr Color(u8 red, u8 green, u8 blue) noexcept
-        : m_red(static_cast<f32>(red) / 255.0),
-          m_green(static_cast<f32>(green) / 255.0),
-          m_blue(static_cast<f32>(blue) / 255.0) {}
+    struct RGB {
+        u8 r;
+        u8 g;
+        u8 b;
+    };
+    constexpr Color(RGB rgb) noexcept
+        : m_red(static_cast<f64>(rgb.r) / 255.0),
+          m_green(static_cast<f64>(rgb.g) / 255.0),
+          m_blue(static_cast<f64>(rgb.b) / 255.0) {}
 
     struct literal;
 
-    [[nodiscard]] constexpr f32 red() const noexcept { return m_red; }
-    [[nodiscard]] constexpr f32 green() const noexcept { return m_green; }
-    [[nodiscard]] constexpr f32 blue() const noexcept { return m_blue; }
+    [[nodiscard]] constexpr f64 red() const noexcept { return m_red; }
+    [[nodiscard]] constexpr f64 green() const noexcept { return m_green; }
+    [[nodiscard]] constexpr f64 blue() const noexcept { return m_blue; }
 
    private:
-    f32 m_red;
-    f32 m_green;
-    f32 m_blue;
+    f64 m_red;
+    f64 m_green;
+    f64 m_blue;
 };
 
 struct Color::literal {
-    static constexpr Color Red = Color(255, 0, 0);
-    static constexpr Color Green = Color(0, 255, 0);
-    static constexpr Color Blue = Color(0, 0, 255);
-    static constexpr Color Black = Color(0, 0, 0);
-    static constexpr Color White = Color(255, 255, 255);
+    static constexpr Color Red = Color{{255, 0, 0}};
+    static constexpr Color Green = Color{{0, 255, 0}};
+    static constexpr Color Blue = Color{{0, 0, 255}};
+    static constexpr Color Black = Color{{0, 0, 0}};
+    static constexpr Color White = Color{{255, 255, 255}};
 };
 
 }  // namespace mpvgl

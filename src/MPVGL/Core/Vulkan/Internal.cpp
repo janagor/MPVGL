@@ -29,6 +29,7 @@
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Graphics/Extent.hpp"
 #include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
@@ -160,7 +161,7 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
 }
 
 tl::expected<void, Error<EngineError>> createImage(
-    Vulkan &vulkan, u32 width, u32 height, u32 mipLevels, VkFormat format,
+    Vulkan &vulkan, Extent2D const &extent, u32 mipLevels, VkFormat format,
     VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage,
     VmaAllocationCreateFlags allocFlags, VkImage &image,
     VmaAllocation &imageAllocation) {
@@ -168,8 +169,8 @@ tl::expected<void, Error<EngineError>> createImage(
 
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
+    imageInfo.extent.width = extent.width;
+    imageInfo.extent.height = extent.height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = mipLevels;
     imageInfo.arrayLayers = 1;
@@ -243,13 +244,15 @@ tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
         VkFormatProperties props;
         deviceContext.instDisp.getPhysicalDeviceFormatProperties(
             deviceContext.logicalDevice.physical_device, format, &props);
-        if (tiling == VK_IMAGE_TILING_LINEAR &&
-            (props.linearTilingFeatures & features) == features) {
-            return format;
-        } else if (tiling == VK_IMAGE_TILING_OPTIMAL &&
-                   (props.optimalTilingFeatures & features) == features) {
-            return format;
-        }
+
+        bool const isLinearOk =
+            (tiling == VK_IMAGE_TILING_LINEAR &&
+             (props.linearTilingFeatures & features) == features);
+        bool const isOptimalOk =
+            (tiling == VK_IMAGE_TILING_OPTIMAL &&
+             (props.optimalTilingFeatures & features) == features);
+
+        if (isLinearOk || isOptimalOk) return format;
     }
     return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                 "Failed to find supported Format"}};
@@ -351,8 +354,10 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swapchainContext.swapchain.extent().width;
-    viewport.height = (f32)swapchainContext.swapchain.extent().height;
+    viewport.width =
+        static_cast<f32>(swapchainContext.swapchain.extent().width);
+    viewport.height =
+        static_cast<f32>(swapchainContext.swapchain.extent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -406,8 +411,8 @@ void updateUniformBuffer(Vulkan &vulkan, u32 current_image) {
     UniformBufferObject ubo{};
     ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
-        glm::radians(sceneContext.camera.zoom()),
-        swapchainContext.swapchain.extent().width /
+        glm::radians(static_cast<f32>(sceneContext.camera.zoom())),
+        static_cast<f32>(swapchainContext.swapchain.extent().width) /
             static_cast<f32>(swapchainContext.swapchain.extent().height),
         0.1f, 10.0f);
     ubo.projection[1][1] *= -1;

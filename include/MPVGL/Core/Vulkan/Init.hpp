@@ -50,7 +50,7 @@ class SceneContext {
     std::deque<Model> models{};
     std::unordered_map<std::string, MaterialData> materials{};
     std::vector<RenderObject> renderables{};
-    Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
+    Camera camera{glm::dvec3{2.0, 2.0, 2.0}};
 };
 
 class PipelineContext {

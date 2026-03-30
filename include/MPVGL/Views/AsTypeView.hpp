@@ -30,6 +30,8 @@
 #include <cstring>
 #include <ranges>
 
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl::views {
 
 struct BigEndianTag {};
@@ -97,14 +99,14 @@ class AsTypeView
                 if constexpr (is_big_tag != is_native_big) {
                     if constexpr (std::integral<T>) {
                         return std::byteswap(value);
-                    } else if constexpr (std::f32ing_point<T> &&
+                    } else if constexpr (std::floating_point<T> &&
                                          sizeof(T) == 4) {
                         return std::bit_cast<T>(
                             std::byteswap(std::bit_cast<u32>(value)));
-                    } else if constexpr (std::f32ing_point<T> &&
+                    } else if constexpr (std::floating_point<T> &&
                                          sizeof(T) == 8) {
                         return std::bit_cast<T>(
-                            std::byteswap(std::bit_cast<ui64>(value)));
+                            std::byteswap(std::bit_cast<u64>(value)));
                     }
                 }
                 return value;

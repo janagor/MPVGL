@@ -1,6 +1,6 @@
 Checks: >
   -*,
-  # bugprone-*,
+  bugprone-*,
   cert-*,
   clang-analyzer-*,
   concurrency-*,

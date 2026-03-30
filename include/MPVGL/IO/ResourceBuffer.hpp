@@ -36,14 +36,13 @@
 
 #include "MPVGL/Error/Error.hpp"
 #include "MPVGL/Error/IOError.hpp"
-#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::io {
 
 struct LoadPolicyMmap {};
 struct LoadPolicyHeap {};
 struct LoadPolicyAuto {
-    std::uintmax_t threshold = 16 * 1024;
+    std::uintmax_t threshold = static_cast<std::uintmax_t>(16 * 1024);
 };
 
 inline constexpr LoadPolicyMmap mmap_policy{};
@@ -66,7 +65,7 @@ class ResourceBuffer {
         return loadImpl(path, policy);
     }
 
-    [[nodiscard]] std::span<std::byte const> view() const noexcept {
+    [[nodiscard]] std::span<std::byte const> view() const {
         return std::visit(
             [](auto const& storage) -> std::span<std::byte const> {
                 using T = std::decay_t<decltype(storage)>;

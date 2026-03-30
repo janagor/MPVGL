@@ -13,6 +13,7 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Graphics/Extent.hpp"
 #include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
@@ -63,45 +64,42 @@ class Texture {
     static tl::expected<void, Error<EngineError>> generateMipmaps(
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
-        i32 texWidth, i32 texHeight, u32 mipLevels);
+        Extent2D const& extent, u32 mipLevels);
 
     static void copyBufferToImage(DeviceContext const& device,
                                   VkCommandPool commandPool,
                                   VkQueue graphicsQueue, VkBuffer buffer,
-                                  VkImage image, u32 width, u32 height);
+                                  VkImage image, Extent2D const& extent);
 
    private:
     class RawPixels {
        public:
         constexpr RawPixels() noexcept = default;
 
-        constexpr RawPixels(unsigned char* data, int width, int height,
+        constexpr RawPixels(unsigned char* data, Extent2D const& extent,
                             u32 mipLevels) noexcept
-            : m_data(data),
-              m_width(width),
-              m_height(height),
-              m_mipLevels(mipLevels) {}
+            : m_data(data), m_extent(extent), m_mipLevels(mipLevels) {}
 
         [[nodiscard]] unsigned char* data() const noexcept { return m_data; }
-        [[nodiscard]] int width() const noexcept { return m_width; }
-        [[nodiscard]] int height() const noexcept { return m_height; }
+        [[nodiscard]] Extent2D const& extent() const noexcept {
+            return m_extent;
+        }
         [[nodiscard]] u32 mipLevels() const noexcept { return m_mipLevels; }
 
         [[nodiscard]] unsigned char*& data() noexcept { return m_data; }
-        [[nodiscard]] int& width() noexcept { return m_width; }
-        [[nodiscard]] int& height() noexcept { return m_height; }
+        [[nodiscard]] Extent2D& extent() noexcept { return m_extent; }
         [[nodiscard]] u32& mipLevels() noexcept { return m_mipLevels; }
 
         [[nodiscard]] VkDeviceSize size() const noexcept {
-            return static_cast<VkDeviceSize>(m_width) * m_height * 4;
+            return static_cast<VkDeviceSize>(m_extent.width) * m_extent.height *
+                   4;
         }
 
         void free() noexcept;
 
        private:
         unsigned char* m_data{nullptr};
-        int m_width{0};
-        int m_height{0};
+        Extent2D m_extent{};
         u32 m_mipLevels{0};
     };
 
@@ -109,7 +107,7 @@ class Texture {
         std::string const& filepath);
 
     static tl::expected<std::pair<VkImage, VmaAllocation>, Error<EngineError>>
-    createAllocatedImage(DeviceContext const& device, u32 width, u32 height,
+    createAllocatedImage(DeviceContext const& device, Extent2D const& extent,
                          u32 mipLevels);
 
     static tl::expected<void, Error<EngineError>> uploadAndGenerateMipmaps(

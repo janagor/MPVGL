@@ -1,4 +1,4 @@
-#include <string>
+#include <filesystem>
 
 #include <glm/ext/matrix_float4x4.hpp>
 #include <tl/expected.hpp>
@@ -59,8 +59,8 @@ void GraphicsPipeline::cleanup() noexcept {
 tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     DeviceContext const& device, VkRenderPass renderPass,
     VkDescriptorSetLayout descriptorSetLayout,
-    std::string const& vertexShaderPath,
-    std::string const& fragmentShaderPath) {
+    std::filesystem::path const& vertexShaderPath,
+    std::filesystem::path const& fragmentShaderPath) {
     auto vertBufferRes =
         io::ResourceBuffer::load(vertexShaderPath).map_error([](auto const& e) {
             return Error<EngineError>{EngineError::VulkanRuntimeError,

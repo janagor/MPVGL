@@ -17,6 +17,7 @@
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Graphics/Extent.hpp"
 #include "MPVGL/IO/ResourceBuffer.hpp"
 #include "MPVGL/Utility/Types.hpp"
 
@@ -157,7 +158,7 @@ tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
 void Texture::copyBufferToImage(DeviceContext const& device,
                                 VkCommandPool commandPool,
                                 VkQueue graphicsQueue, VkBuffer buffer,
-                                VkImage image, u32 width, u32 height) {
+                                VkImage image, Extent2D const& extent) {
     executeSingleTimeCommands(
         device, commandPool, graphicsQueue, [&](VkCommandBuffer cmd) {
             VkBufferImageCopy region{};
@@ -169,7 +170,7 @@ void Texture::copyBufferToImage(DeviceContext const& device,
             region.imageSubresource.baseArrayLayer = 0;
             region.imageSubresource.layerCount = 1;
             region.imageOffset = {0, 0, 0};
-            region.imageExtent = {width, height, 1};
+            region.imageExtent = {extent.width, extent.height, 1};
 
             device.logDevDisp.cmdCopyBufferToImage(
                 cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
@@ -179,8 +180,8 @@ void Texture::copyBufferToImage(DeviceContext const& device,
 
 tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
     DeviceContext const& device, VkCommandPool commandPool,
-    VkQueue graphicsQueue, VkImage image, VkFormat imageFormat, i32 texWidth,
-    i32 texHeight, u32 mipLevels) {
+    VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
+    Extent2D const& extent, u32 mipLevels) {
     VkFormatProperties formatProperties;
     device.instDisp.getPhysicalDeviceFormatProperties(
         device.logicalDevice.physical_device, imageFormat, &formatProperties);
@@ -205,8 +206,8 @@ tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, subresourceRange);
 
-            i32 mipWidth = texWidth;
-            i32 mipHeight = texHeight;
+            auto mipWidth = static_cast<i32>(extent.width);
+            auto mipHeight = static_cast<i32>(extent.height);
 
             for (u32 i = 1; i < mipLevels; i++) {
                 barrier.subresourceRange.baseMipLevel = i - 1;
@@ -285,6 +286,10 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
                 reinterpret_cast<stbi_uc const*>(view.data()),
                 static_cast<int>(view.size()), &width, &height, &channels,
                 STBI_rgb_alpha);
+            auto extent = Extent2D{
+                .width = static_cast<u32>(width),
+                .height = static_cast<u32>(height),
+            };
 
             if (!data) {
                 return tl::unexpected{
@@ -295,10 +300,9 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
             u32 const mipLevels = static_cast<u32>(std::floor(
                                       std::log2(std::max(width, height)))) +
                                   1;
-            RawPixels pixels{data, width, height, mipLevels};
+            RawPixels pixels{data, extent, mipLevels};
 
-            auto imageRes =
-                createAllocatedImage(device, width, height, mipLevels);
+            auto imageRes = createAllocatedImage(device, extent, mipLevels);
             if (!imageRes) {
                 pixels.free();
                 return tl::unexpected{imageRes.error()};
@@ -345,27 +349,29 @@ tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
     std::string const& filepath) {
     RawPixels pixels{};
     int channels;
-    pixels.data() = stbi_load(filepath.c_str(), &pixels.width(),
-                              &pixels.height(), &channels, STBI_rgb_alpha);
+    auto const& extent = pixels.extent();
+    auto width = static_cast<int>(extent.width),
+         height = static_cast<int>(extent.height);
+    pixels.data() =
+        stbi_load(filepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
     if (!pixels.data()) {
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
                   "Failed to load Texture from: " + filepath}};
     }
-    pixels.mipLevels() =
-        static_cast<u32>(
-            std::floor(std::log2(std::max(pixels.width(), pixels.height())))) +
-        1;
+    pixels.mipLevels() = static_cast<u32>(std::floor(std::log2(std::max(
+                             pixels.extent().width, pixels.extent().height)))) +
+                         1;
     return pixels;
 }
 
 tl::expected<std::pair<VkImage, VmaAllocation>, Error<EngineError>>
-Texture::createAllocatedImage(DeviceContext const& device, u32 width,
-                              u32 height, u32 mipLevels) {
+Texture::createAllocatedImage(DeviceContext const& device,
+                              Extent2D const& extent, u32 mipLevels) {
     auto imageInfo = initializers::imageCreateInfo();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent = {width, height, 1};
+    imageInfo.extent = {extent.width, extent.height, 1};
     imageInfo.mipLevels = mipLevels;
     imageInfo.arrayLayers = 1;
     imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -418,12 +424,11 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
     }
 
     copyBufferToImage(device, commandPool, graphicsQueue,
-                      stagingBuffer.handle(), image, pixels.width(),
-                      pixels.height());
+                      stagingBuffer.handle(), image, pixels.extent());
 
     return generateMipmaps(device, commandPool, graphicsQueue, image,
-                           VK_FORMAT_R8G8B8A8_SRGB, pixels.width(),
-                           pixels.height(), pixels.mipLevels());
+                           VK_FORMAT_R8G8B8A8_SRGB, pixels.extent(),
+                           pixels.mipLevels());
 }
 
 tl::expected<VkImageView, Error<EngineError>> Texture::createImageView(

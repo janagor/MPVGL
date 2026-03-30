@@ -34,7 +34,7 @@ void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer);
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
                  VkDeviceSize size);
 tl::expected<void, Error<EngineError>> createImage(
-    Vulkan &vulkan, u32 width, u32 height, u32 mipLevels, VkFormat format,
+    Vulkan &vulkan, Extent2D const &extent, u32 mipLevels, VkFormat format,
     VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage,
     VmaAllocationCreateFlags allocFlags, VkImage &image,
     VmaAllocation &imageAllocation);

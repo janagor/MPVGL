@@ -6,7 +6,7 @@
 #include <glm/ext/quaternion_common.hpp>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/ext/quaternion_trigonometric.hpp>
-#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_double3.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -28,47 +28,47 @@ enum class CameraMovement : u8 {
     RollRight
 };
 
-constexpr f32 SPEED = 2.5f;
-constexpr f32 SENSITIVITY = 0.1f;
-constexpr f32 ZOOM = 45.0f;
+constexpr f64 SPEED = 2.5;
+constexpr f64 SENSITIVITY = 0.1;
+constexpr f64 ZOOM = 45.0;
 
 class Camera {
    public:
-    [[nodiscard]] glm::vec3 const& position() const noexcept {
+    [[nodiscard]] glm::dvec3 const& position() const noexcept {
         return m_position;
     }
-    [[nodiscard]] glm::quat const& orientation() const noexcept {
+    [[nodiscard]] glm::dquat const& orientation() const noexcept {
         return m_orientation;
     }
-    [[nodiscard]] glm::vec3 const& front() const noexcept { return m_front; }
-    [[nodiscard]] glm::vec3 const& up() const noexcept { return m_up; }
-    [[nodiscard]] glm::vec3 const& right() const noexcept { return m_right; }
+    [[nodiscard]] glm::dvec3 const& front() const noexcept { return m_front; }
+    [[nodiscard]] glm::dvec3 const& up() const noexcept { return m_up; }
+    [[nodiscard]] glm::dvec3 const& right() const noexcept { return m_right; }
 
-    [[nodiscard]] f32 movementSpeed() const noexcept { return m_movementSpeed; }
-    [[nodiscard]] f32 mouseSensitivity() const noexcept {
+    [[nodiscard]] f64 movementSpeed() const noexcept { return m_movementSpeed; }
+    [[nodiscard]] f64 mouseSensitivity() const noexcept {
         return m_mouseSensitivity;
     }
-    [[nodiscard]] f32 zoom() const noexcept { return m_zoom; }
+    [[nodiscard]] f64 zoom() const noexcept { return m_zoom; }
 
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f))
+    Camera(glm::dvec3 position = glm::dvec3(0.0, 0.0, 0.0))
         : m_movementSpeed(SPEED),
           m_mouseSensitivity(SENSITIVITY),
           m_zoom(ZOOM) {
         m_position = position;
-        auto const lookAt = glm::lookAt(position, glm::vec3(0.0f, 0.0f, 0.0f),
-                                        glm::vec3(0.0f, 0.0f, 1.0f));
+        auto const lookAt = glm::lookAt(position, glm::dvec3(0.0, 0.0, 0.0),
+                                        glm::dvec3(0.0, 0.0, 1.0));
         m_orientation = glm::conjugate(glm::quat_cast(lookAt));
         updateCameraVectors();
     }
 
     glm::mat4 getViewMatrix() const {
         auto const rotate = glm::mat4_cast(glm::conjugate(m_orientation));
-        auto const translate = glm::translate(glm::mat4(1.0f), -m_position);
+        auto const translate = glm::translate(glm::dmat4(1.0), -m_position);
         return rotate * translate;
     }
 
-    void processKeyboard(CameraMovement direction, f32 deltaTime) {
-        f32 const velocity = m_movementSpeed * deltaTime;
+    void processKeyboard(CameraMovement direction, f64 deltaTime) {
+        auto const velocity = m_movementSpeed * deltaTime;
 
         if (direction == CameraMovement::Forward)
             m_position += m_front * velocity;
@@ -96,7 +96,7 @@ class Camera {
         }
     }
 
-    void processMouseMovement(f32 xoffset, f32 yoffset) {
+    void processMouseMovement(f64 xoffset, f64 yoffset) {
         auto const yawAmount = xoffset * m_mouseSensitivity;
         auto const pitchAmount = yoffset * m_mouseSensitivity;
 
@@ -109,30 +109,30 @@ class Camera {
         updateCameraVectors();
     }
 
-    void processMouseScroll(f32 yoffset) {
+    void processMouseScroll(f64 yoffset) {
         m_zoom -= yoffset;
-        if (m_zoom < 1.0f) m_zoom = 1.0f;
-        if (m_zoom > 45.0f) m_zoom = 45.0f;
+        if (m_zoom < 1.0) m_zoom = 1.0;
+        if (m_zoom > 45.0) m_zoom = 45.0;
     }
 
    private:
     void updateCameraVectors() {
-        m_front = glm::normalize(m_orientation * glm::vec3(0.0f, 0.0f, -1.0f));
-        m_right = glm::normalize(m_orientation * glm::vec3(1.0f, 0.0f, 0.0f));
-        m_up = glm::normalize(m_orientation * glm::vec3(0.0f, 1.0f, 0.0f));
+        m_front = glm::normalize(m_orientation * glm::dvec3(0.0, 0.0, -1.0));
+        m_right = glm::normalize(m_orientation * glm::dvec3(1.0, 0.0, 0.0));
+        m_up = glm::normalize(m_orientation * glm::dvec3(0.0, 1.0, 0.0));
     }
 
    private:
-    glm::vec3 m_position;
-    glm::quat m_orientation;
+    glm::dvec3 m_position;
+    glm::dquat m_orientation;
 
-    glm::vec3 m_front;
-    glm::vec3 m_up;
-    glm::vec3 m_right;
+    glm::dvec3 m_front;
+    glm::dvec3 m_up;
+    glm::dvec3 m_right;
 
-    f32 m_movementSpeed;
-    f32 m_mouseSensitivity;
-    f32 m_zoom;
+    f64 m_movementSpeed;
+    f64 m_mouseSensitivity;
+    f64 m_zoom;
 };
 
 }  // namespace mpvgl

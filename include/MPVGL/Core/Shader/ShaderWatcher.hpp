@@ -17,7 +17,8 @@ namespace mpvgl {
 
 class ShaderWatcher {
    public:
-    ShaderWatcher(std::string const &shaderDir, std::string const &outputDir)
+    ShaderWatcher(std::filesystem::path const &shaderDir,
+                  std::filesystem::path const &outputDir)
         : shaderDir(shaderDir), outputDir(outputDir) {
         std::filesystem::create_directories(outputDir);
     }
@@ -100,7 +101,8 @@ class ShaderWatcher {
                         }
 
                         ofile.write(reinterpret_cast<char const *>(data.data()),
-                                    data.size() * sizeof(u32));
+                                    static_cast<std::streamsize>(data.size() *
+                                                                 sizeof(u32)));
 
                         if (!ofile) {
                             return tl::unexpected{

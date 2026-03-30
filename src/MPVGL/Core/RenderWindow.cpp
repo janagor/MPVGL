@@ -49,11 +49,8 @@ int RenderWindow::draw() noexcept {
     std::jthread const watcherThread(
         [&](std::stop_token const &st) { shader_watcher.run(st); });
 
-    f32 deltaTime = 0.0f;
-    f32 lastFrame = 0.0f;
-
-    f64 lastX = 400.0, lastY = 300.0;
-    bool firstMouse = true;
+    f64 deltaTime = 0.0;
+    f64 lastFrame = 0.0;
 
     glfwSetInputMode(vulkan.deviceContext.window, GLFW_CURSOR,
                      GLFW_CURSOR_DISABLED);
@@ -61,24 +58,24 @@ int RenderWindow::draw() noexcept {
     while (!glfwWindowShouldClose(vulkan.deviceContext.window)) {
         glfwPollEvents();
 
-        f32 const currentFrame = glfwGetTime();
+        auto const currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         int i = 0;
         for (auto &object : vulkan.sceneContext.renderables) {
             f32 const speed = (i % 2 == 0) ? 45.0f : -90.0f;
-            object.transformMatrix = glm::rotate(
-                object.transformMatrix, deltaTime * glm::radians(speed),
-                glm::vec3(0.0f, 0.0f, 1.0f));
+            object.transformMatrix =
+                glm::rotate(object.transformMatrix,
+                            static_cast<f32>(deltaTime) * glm::radians(speed),
+                            glm::vec3(0.0f, 0.0f, 1.0f));
             i++;
         }
 
-        InputManager::processKeyboard(vulkan.deviceContext.window,
-                                      vulkan.sceneContext.camera, deltaTime);
-        InputManager::processMouse(vulkan.deviceContext.window,
-                                   vulkan.sceneContext.camera, lastX, lastY,
-                                   firstMouse);
+        m_inputManager.processKeyboard(vulkan.deviceContext.window,
+                                       vulkan.sceneContext.camera, deltaTime);
+        m_inputManager.processMouse(vulkan.deviceContext.window,
+                                    vulkan.sceneContext.camera);
 
         if (auto result = vlk::drawFrame(vulkan); !result.has_value()) {
             std::cout << "failed to draw a Frame:" << result.error().message()

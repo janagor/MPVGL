@@ -58,7 +58,7 @@ class DescriptorAllocator {
    public:
     struct PoolSizeRatio {
         VkDescriptorType type;
-        f32 ratio;
+        f64 ratio;
     };
 
     tl::expected<void, Error<EngineError>> init(
