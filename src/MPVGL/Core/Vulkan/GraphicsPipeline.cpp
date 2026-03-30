@@ -1,8 +1,18 @@
+#include <string>
+
+#include <glm/ext/matrix_float4x4.hpp>
+#include <tl/expected.hpp>
+#include <vk-bootstrap/src/VkBootstrapDispatch.h>
+#include <vulkan/vulkan_core.h>
+
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/GraphicsPipeline.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
 #include "MPVGL/Core/Vulkan/Pipeline.hpp"
 #include "MPVGL/Core/Vulkan/Vertex.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 #include "MPVGL/IO/ResourceBuffer.hpp"
 
 namespace mpvgl::vlk {
@@ -54,7 +64,7 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     auto vertBufferRes =
         io::ResourceBuffer::load(vertexShaderPath).map_error([](auto const& e) {
             return Error<EngineError>{EngineError::VulkanRuntimeError,
-                                      e.message};
+                                      e.message()};
         });
     if (!vertBufferRes) return tl::unexpected{vertBufferRes.error()};
 
@@ -62,7 +72,7 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
         io::ResourceBuffer::load(fragmentShaderPath)
             .map_error([](auto const& e) {
                 return Error<EngineError>{EngineError::VulkanRuntimeError,
-                                          e.message};
+                                          e.message()};
             });
     if (!fragBufferRes) return tl::unexpected{fragBufferRes.error()};
 

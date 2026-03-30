@@ -11,7 +11,7 @@ namespace mpvgl::vlk {
 struct LogicalDeviceBuilder {
     static tl::expected<vkb::Device, std::error_code> getLogicalDevice(
         vkb::PhysicalDevice& physicalDevice) {
-        vkb::DeviceBuilder logicalDeviceBuilder{physicalDevice};
+        vkb::DeviceBuilder const logicalDeviceBuilder{physicalDevice};
         auto logicalDevice = logicalDeviceBuilder.build();
         if (!logicalDevice) return tl::unexpected{logicalDevice.error()};
         return logicalDevice.value();

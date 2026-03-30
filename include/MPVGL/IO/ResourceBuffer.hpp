@@ -93,7 +93,7 @@ class ResourceBuffer {
                       "Failed to open file: " + path.string()}};
         }
 
-        std::streamsize size = file.tellg();
+        std::streamsize const size = file.tellg();
         file.seekg(0, std::ios::beg);
 
         std::vector<std::byte> buffer(size);
@@ -123,8 +123,8 @@ class ResourceBuffer {
 
     [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
         std::filesystem::path const& path, LoadPolicyAuto policy) {
-        std::error_code ec;
-        std::uintmax_t size = std::filesystem::file_size(path, ec);
+        std::error_code ec{};
+        std::uintmax_t const size = std::filesystem::file_size(path, ec);
 
         if (ec) {
             return tl::unexpected{

@@ -24,12 +24,14 @@
 
 namespace mpvgl::vlk {
 
-struct MaterialData {
+class MaterialData {
+   public:
     Texture texture;
     std::vector<VkDescriptorSet> descriptorSets;
 };
 
-struct RenderObject {
+class RenderObject {
+   public:
     Model* model;
     MaterialData* material;
     glm::mat4 transformMatrix;
@@ -37,8 +39,6 @@ struct RenderObject {
 
 class SwapchainContext {
    public:
-    SwapchainContext() = default;
-
     Swapchain swapchain{};
     Texture depthTexture{};
     RenderPass renderPass{};
@@ -47,27 +47,20 @@ class SwapchainContext {
 
 class SceneContext {
    public:
-    SceneContext() = default;
-
     std::deque<Model> models{};
-    std::unordered_map<std::string, MaterialData> materials;
-    std::vector<RenderObject> renderables;
-
+    std::unordered_map<std::string, MaterialData> materials{};
+    std::vector<RenderObject> renderables{};
     Camera camera{glm::vec3{2.0f, 2.0f, 2.0f}};
 };
 
 class PipelineContext {
    public:
-    PipelineContext() = default;
-
     GraphicsPipeline graphicsPipeline{};
     DescriptorSetLayout descriptorSetLayout{};
 };
 
 class FrameData {
    public:
-    FrameData() = default;
-
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     Buffer uniformBuffer{};
     void* uniformBufferMapped{nullptr};
@@ -77,8 +70,6 @@ class FrameData {
 
 class RenderData {
    public:
-    RenderData() = default;
-
     CommandPool commandPool{};
     DescriptorAllocator descriptorAllocator{};
 
@@ -91,8 +82,6 @@ class RenderData {
 
 class Vulkan {
    public:
-    Vulkan() = default;
-
     DeviceContext deviceContext{};
     SwapchainContext swapchainContext{};
     SceneContext sceneContext{};

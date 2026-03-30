@@ -11,7 +11,6 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
-#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -34,7 +33,7 @@ class Buffer {
         DeviceContext const& device, VkCommandPool commandPool,
         VkQueue graphicsQueue, std::vector<T> const& data,
         VkBufferUsageFlags usage) {
-        VkDeviceSize bufferSize = sizeof(T) * data.size();
+        VkDeviceSize const bufferSize = sizeof(T) * data.size();
         return createWithStaging(device, commandPool, graphicsQueue,
                                  data.data(), bufferSize, usage);
     }

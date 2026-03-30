@@ -44,7 +44,7 @@ class IOErrorCategory_impl : public std::error_category {
 };
 
 [[nodiscard]] inline std::error_category const& IOErrorCategory() {
-    static IOErrorCategory_impl instance;
+    static IOErrorCategory_impl const instance{};
     return instance;
 }
 

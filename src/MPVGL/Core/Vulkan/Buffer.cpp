@@ -1,10 +1,12 @@
 #include <cstddef>
+#include <cstdio>
 #include <cstring>
+#include <span>
+#include <string>
 #include <utility>
 
 #include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <tl/expected.hpp>
-#include <vk-bootstrap/src/VkBootstrap.h>
 #include <vulkan/vulkan_core.h>
 
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
@@ -73,7 +75,7 @@ tl::expected<void*, Error<EngineError>> Buffer::map() noexcept {
                                     "Cannot map an uninitialized buffer"}};
     }
 
-    void* mappedData = nullptr;
+    void* mappedData = nullptr;  // NOLINT(misc-const-correctness)
     if (vmaMapMemory(m_allocator, m_allocation, &mappedData) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to map Buffer memory via VMA"}};

@@ -71,16 +71,38 @@ class Texture {
                                   VkImage image, u32 width, u32 height);
 
    private:
-    struct RawPixels {
-        unsigned char* data{nullptr};
-        int width{0};
-        int height{0};
-        u32 mipLevels{0};
+    class RawPixels {
+       public:
+        constexpr RawPixels() noexcept = default;
+
+        constexpr RawPixels(unsigned char* data, int width, int height,
+                            u32 mipLevels) noexcept
+            : m_data(data),
+              m_width(width),
+              m_height(height),
+              m_mipLevels(mipLevels) {}
+
+        [[nodiscard]] unsigned char* data() const noexcept { return m_data; }
+        [[nodiscard]] int width() const noexcept { return m_width; }
+        [[nodiscard]] int height() const noexcept { return m_height; }
+        [[nodiscard]] u32 mipLevels() const noexcept { return m_mipLevels; }
+
+        [[nodiscard]] unsigned char*& data() noexcept { return m_data; }
+        [[nodiscard]] int& width() noexcept { return m_width; }
+        [[nodiscard]] int& height() noexcept { return m_height; }
+        [[nodiscard]] u32& mipLevels() noexcept { return m_mipLevels; }
 
         [[nodiscard]] VkDeviceSize size() const noexcept {
-            return width * height * 4;
+            return static_cast<VkDeviceSize>(m_width) * m_height * 4;
         }
+
         void free() noexcept;
+
+       private:
+        unsigned char* m_data{nullptr};
+        int m_width{0};
+        int m_height{0};
+        u32 m_mipLevels{0};
     };
 
     static tl::expected<RawPixels, Error<EngineError>> loadRawPixels(

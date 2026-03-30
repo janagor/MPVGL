@@ -375,7 +375,7 @@ inline VkImageViewCreateInfo imageViewCreateInfo(
     return VkImageViewCreateInfo{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
-        .flags = 0,
+        .flags = flags,
         .image = image,
         .viewType = viewType,
         .format = format,

@@ -6,25 +6,26 @@
 
 #include <array>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <stb/stb_image.h>
 #include <tinyobjloader/tiny_obj_loader.h>
 #include <tl/expected.hpp>
 #include <vk-bootstrap/src/VkBootstrap.h>
-#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
+#include "MPVGL/Core/Vulkan/CommandPool.hpp"
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
+#include "MPVGL/Core/Vulkan/GraphicsPipeline.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/InstanceBuilder.hpp"
@@ -34,6 +35,7 @@
 #include "MPVGL/Core/Vulkan/PhysicalDeviceBuilder.hpp"
 #include "MPVGL/Core/Vulkan/RenderPass.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/SyncObjects.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
@@ -58,11 +60,13 @@ namespace mpvgl::vlk {
 
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 
-tl::expected<void, Error<EngineError>> deviceInitialization(Vulkan &vulkan) {
+tl::expected<void, Error<EngineError>> deviceInitialization(
+    Vulkan &vulkan, int width, int height, std::string const &title,
+    GLFWmonitor *monitor, GLFWwindow *share, bool resize) {
     auto &surface = vulkan.surface;
     auto &deviceContext = vulkan.deviceContext;
 
-    return createWindow("Vulkan Triangle", true)
+    return createWindow(width, height, title, monitor, share, resize)
         .transform_error([](auto e) { return Error{std::move(e)}; })
         .and_then([&](auto window) {
             deviceContext.window = window;
@@ -135,8 +139,11 @@ tl::expected<void, Error<EngineError>> getQueues(Vulkan &vulkan) {
             [&](VkQueue pQueue) { deviceContext.presentQueue = pQueue; });
 }
 
-tl::expected<void, Error<EngineError>> bootstrap(Vulkan &vulkan) {
-    return deviceInitialization(vulkan)
+tl::expected<void, Error<EngineError>> bootstrap(
+    Vulkan &vulkan, int width, int height, std::string const &title,
+    GLFWmonitor *monitor, GLFWwindow *share, bool resize) {
+    return deviceInitialization(vulkan, width, height, title, monitor, share,
+                                resize)
         .and_then([&] { return createSwapchain(vulkan); })
         .and_then([&] { return getQueues(vulkan); });
 }
@@ -168,7 +175,7 @@ tl::expected<void, Error<EngineError>> setupDescriptorsAndSync(Vulkan &vulkan) {
 tl::expected<void, Error<EngineError>> createRenderPass(Vulkan &vulkan) {
     RenderPassBuilder builder{};
 
-    VkAttachmentDescription colorAttachment = {
+    VkAttachmentDescription const colorAttachment = {
         .format = vulkan.swapchainContext.swapchain.format(),
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -315,7 +322,7 @@ tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
     auto &pipelineContext = vulkan.pipelineContext;
     auto &deviceContext = vulkan.deviceContext;
 
-    for (auto const &node : scene.nodes) {
+    for (auto const &node : scene.nodes()) {
         auto modelRes = Model::create(
             deviceContext, vulkan.data.commandPool.handle(),
             deviceContext.graphicsQueue, node.mesh.vertices, node.mesh.indices);
@@ -332,7 +339,7 @@ tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
             if (!texRes) return tl::unexpected{texRes.error()};
             newMaterial.texture = std::move(texRes.value());
 
-            size_t framesInFlight = vulkan.data.frames.size();
+            size_t const framesInFlight = vulkan.data.frames.size();
             newMaterial.descriptorSets.resize(framesInFlight);
 
             for (size_t i = 0; i < framesInFlight; i++) {
@@ -463,12 +470,12 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
     VkSemaphore availableSemaphore = currentFrame.availableSemaphore.handle();
 
     deviceContext.logDevDisp.waitForFences(1, &inFlightFence, VK_TRUE,
-                                           UINT64_MAX);
+                                           std::numeric_limits<u64>::max());
 
     u32 image_index = 0;
     VkResult result = deviceContext.logDevDisp.acquireNextImageKHR(
-        swapchainContext.swapchain.handle(), UINT64_MAX, availableSemaphore,
-        VK_NULL_HANDLE, &image_index);
+        swapchainContext.swapchain.handle(), std::numeric_limits<u64>::max(),
+        availableSemaphore, VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
         return recreateSwapchain(vulkan);
@@ -479,7 +486,8 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
 
     if (vulkan.data.imageInFlight.at(image_index) != VK_NULL_HANDLE) {
         deviceContext.logDevDisp.waitForFences(
-            1, &vulkan.data.imageInFlight.at(image_index), VK_TRUE, UINT64_MAX);
+            1, &vulkan.data.imageInFlight.at(image_index), VK_TRUE,
+            std::numeric_limits<u64>::max());
     }
     vulkan.data.imageInFlight.at(image_index) = inFlightFence;
 

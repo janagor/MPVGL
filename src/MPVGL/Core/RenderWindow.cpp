@@ -5,6 +5,9 @@
 #include <string>
 #include <thread>
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/trigonometric.hpp>
+
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/InputManager.hpp"
@@ -13,6 +16,7 @@
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 #include "config.hpp"
 
@@ -27,22 +31,22 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     shader_watcher.compileAll();
 
     auto result =
-        vlk::bootstrap(vulkan)
+        vlk::bootstrap(vulkan, width, height, title, monitor, share, true)
             .and_then([&] { return vlk::setupRenderingPipeline(vulkan); })
             .and_then([&] { return vlk::setupRenderTargets(vulkan); })
             .and_then([&] { return vlk::setupDescriptorsAndSync(vulkan); })
             .and_then([&] { return vlk::loadAndPrepareAssets(vulkan, scene); });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
-                  << result.error().message << "\n";
-        throw std::runtime_error("Engine crash: " + result.error().message);
+                  << result.error().message() << "\n";
+        throw std::runtime_error("Engine crash: " + result.error().message());
     }
 }
 
 RenderWindow::~RenderWindow() noexcept { cleanup(vulkan); }
 
 int RenderWindow::draw() noexcept {
-    std::jthread watcherThread(
+    std::jthread const watcherThread(
         [&](std::stop_token const &st) { shader_watcher.run(st); });
 
     f32 deltaTime = 0.0f;
@@ -54,17 +58,16 @@ int RenderWindow::draw() noexcept {
     glfwSetInputMode(vulkan.deviceContext.window, GLFW_CURSOR,
                      GLFW_CURSOR_DISABLED);
 
-    int time = 0;
     while (!glfwWindowShouldClose(vulkan.deviceContext.window)) {
         glfwPollEvents();
 
-        f32 currentFrame = glfwGetTime();
+        f32 const currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         int i = 0;
         for (auto &object : vulkan.sceneContext.renderables) {
-            f32 speed = (i % 2 == 0) ? 45.0f : -90.0f;
+            f32 const speed = (i % 2 == 0) ? 45.0f : -90.0f;
             object.transformMatrix = glm::rotate(
                 object.transformMatrix, deltaTime * glm::radians(speed),
                 glm::vec3(0.0f, 0.0f, 1.0f));
@@ -78,7 +81,7 @@ int RenderWindow::draw() noexcept {
                                    firstMouse);
 
         if (auto result = vlk::drawFrame(vulkan); !result.has_value()) {
-            std::cout << "failed to draw a Frame:" << result.error().message
+            std::cout << "failed to draw a Frame:" << result.error().message()
                       << '\n';
             return -1;
         }
@@ -88,7 +91,7 @@ int RenderWindow::draw() noexcept {
             if (auto result = vlk::reloadShadersAndPipeline(vulkan);
                 !result.has_value()) {
                 std::cerr << "[Hot-Reload] Pipeline creation failed: "
-                          << result.error().message << "\n";
+                          << result.error().message() << "\n";
             } else {
                 std::cout << "[Hot-Reload] Pipeline successfully updated in "
                              "real-time!\n";

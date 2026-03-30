@@ -9,7 +9,6 @@
 #include <stb/stb_image.h>
 #include <tl/expected.hpp>
 #include <vk-bootstrap/src/VkBootstrapDispatch.h>
-#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
@@ -103,10 +102,23 @@ tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
     VkQueue graphicsQueue, VkImage image, VkFormat format,
     VkImageLayout oldLayout, VkImageLayout newLayout, u32 mipLevels) {
     tl::expected<void, Error<EngineError>> result = {};
+
     executeSingleTimeCommands(
         device, commandPool, graphicsQueue, [&](VkCommandBuffer cmd) {
+            VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            if (format == VK_FORMAT_D32_SFLOAT ||
+                format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+                format == VK_FORMAT_D24_UNORM_S8_UINT) {
+                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+                if (format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+                    format == VK_FORMAT_D24_UNORM_S8_UINT) {
+                    aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
+            }
+
             auto subresourceRange = VkImageSubresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .aspectMask = aspectMask,
                 .baseMipLevel = 0,
                 .levelCount = mipLevels,
                 .baseArrayLayer = 0,
@@ -262,7 +274,7 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
     VkQueue graphicsQueue, std::string const& filepath) {
     return io::ResourceBuffer::load(filepath)
         .map_error([](auto const& e) {
-            return Error<EngineError>{EngineError::FileNotFound, e.message};
+            return Error<EngineError>{EngineError::FileNotFound, e.message()};
         })
         .and_then([&](io::ResourceBuffer const& buffer)
                       -> tl::expected<Texture, Error<EngineError>> {
@@ -280,13 +292,10 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
                           "Failed to decode texture: " + filepath}};
             }
 
-            u32 mipLevels = static_cast<u32>(std::floor(
-                                std::log2(std::max(width, height)))) +
-                            1;
-            RawPixels pixels{.data = data,
-                             .width = width,
-                             .height = height,
-                             .mipLevels = mipLevels};
+            u32 const mipLevels = static_cast<u32>(std::floor(
+                                      std::log2(std::max(width, height)))) +
+                                  1;
+            RawPixels pixels{data, width, height, mipLevels};
 
             auto imageRes =
                 createAllocatedImage(device, width, height, mipLevels);
@@ -326,9 +335,9 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
 }
 
 void Texture::RawPixels::free() noexcept {
-    if (data) {
-        stbi_image_free(data);
-        data = nullptr;
+    if (m_data) {
+        stbi_image_free(m_data);
+        m_data = nullptr;
     }
 }
 
@@ -336,17 +345,18 @@ tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
     std::string const& filepath) {
     RawPixels pixels{};
     int channels;
-    pixels.data = stbi_load(filepath.c_str(), &pixels.width, &pixels.height,
-                            &channels, STBI_rgb_alpha);
+    pixels.data() = stbi_load(filepath.c_str(), &pixels.width(),
+                              &pixels.height(), &channels, STBI_rgb_alpha);
 
-    if (!pixels.data) {
+    if (!pixels.data()) {
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
                   "Failed to load Texture from: " + filepath}};
     }
-    pixels.mipLevels = static_cast<u32>(std::floor(
-                           std::log2(std::max(pixels.width, pixels.height)))) +
-                       1;
+    pixels.mipLevels() =
+        static_cast<u32>(
+            std::floor(std::log2(std::max(pixels.width(), pixels.height())))) +
+        1;
     return pixels;
 }
 
@@ -392,7 +402,7 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
     auto stagingBuffer = std::move(stagingRes.value());
 
     if (auto mapRes = stagingBuffer.map()) {
-        std::memcpy(mapRes.value(), pixels.data,
+        std::memcpy(mapRes.value(), pixels.data(),
                     static_cast<size_t>(pixels.size()));
         stagingBuffer.unmap();
     } else {
@@ -402,18 +412,18 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
     if (auto res = transitionImageLayout(
             device, commandPool, graphicsQueue, image, VK_FORMAT_R8G8B8A8_SRGB,
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            pixels.mipLevels);
+            pixels.mipLevels());
         !res) {
         return res;
     }
 
     copyBufferToImage(device, commandPool, graphicsQueue,
-                      stagingBuffer.handle(), image, pixels.width,
-                      pixels.height);
+                      stagingBuffer.handle(), image, pixels.width(),
+                      pixels.height());
 
     return generateMipmaps(device, commandPool, graphicsQueue, image,
-                           VK_FORMAT_R8G8B8A8_SRGB, pixels.width, pixels.height,
-                           pixels.mipLevels);
+                           VK_FORMAT_R8G8B8A8_SRGB, pixels.width(),
+                           pixels.height(), pixels.mipLevels());
 }
 
 tl::expected<VkImageView, Error<EngineError>> Texture::createImageView(

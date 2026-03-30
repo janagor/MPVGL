@@ -1,7 +1,11 @@
 #include <array>
 #include <utility>
 
+#include <GLFW/glfw3.h>
+
+#include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/InputManager.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl {
 
@@ -43,8 +47,8 @@ void InputManager::processMouse(GLFWwindow* window, Camera& camera, f64& lastX,
         firstMouse = false;
     }
 
-    f32 xoffset = static_cast<f32>(xpos - lastX);
-    f32 yoffset = static_cast<f32>(ypos - lastY);
+    auto const xoffset = static_cast<f32>(xpos - lastX);
+    auto const yoffset = static_cast<f32>(ypos - lastY);
     lastX = xpos;
     lastY = ypos;
 

@@ -9,7 +9,9 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<void, Error<EngineError>> bootstrap(Vulkan &vulkan);
+tl::expected<void, Error<EngineError>> bootstrap(
+    Vulkan &vulkan, int width, int height, std::string const &title,
+    GLFWmonitor *monitor, GLFWwindow *share, bool resize);
 tl::expected<void, Error<EngineError>> setupRenderingPipeline(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> setupRenderTargets(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> loadAndPrepareAssets(Vulkan &vulkan,
@@ -34,7 +36,10 @@ tl::expected<void, Error<EngineError>> reloadShadersAndPipeline(Vulkan &vulkan);
 void cleanup(Vulkan &vulkan);
 
 // TODO: remove from public api
-tl::expected<void, Error<EngineError>> deviceInitialization(Vulkan &vulkan);
+
+tl::expected<void, Error<EngineError>> deviceInitialization(
+    Vulkan &vulkan, int width, int height, std::string const &title,
+    GLFWmonitor *monitor, GLFWwindow *share, bool resize);
 tl::expected<void, Error<EngineError>> createSwapchain(Vulkan &vulkan);
 tl::expected<void, Error<EngineError>> getQueues(Vulkan &vulkan);
 

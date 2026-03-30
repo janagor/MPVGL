@@ -5,10 +5,12 @@ Checks: >
   clang-analyzer-*,
   concurrency-*,
   # cppcoreguidelines-*,
-  # misc-*,
+  misc-*,
   # modernize-*,
   performance-*,
   # readability-*,
+  -cert-dcl58-cpp,
+  -misc-header-include-cycle,
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

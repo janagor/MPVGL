@@ -1,4 +1,5 @@
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
 #include "MPVGL/IO/ResourceBuffer.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -22,29 +24,29 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
     VkQueue graphicsQueue, std::string const& filepath) {
     return io::ResourceBuffer::load(filepath)
         .map_error([](auto const& e) {
-            return Error<EngineError>{EngineError::FileNotFound, e.message};  //
+            return Error<EngineError>{EngineError::FileNotFound, e.message()};
         })
         .and_then([&](io::ResourceBuffer const& buffer)
                       -> tl::expected<Model, Error<EngineError>> {
             auto view = buffer.view();
 
-            std::string_view dataView(
+            std::string_view const dataView(
                 reinterpret_cast<char const*>(view.data()), view.size());
 
-            tinyobj::ObjReaderConfig reader_config;
-            tinyobj::ObjReader reader;
+            auto reader_config = tinyobj::ObjReaderConfig{};
+            auto reader = tinyobj::ObjReader{};
 
             if (!reader.ParseFromString(std::string(dataView), "")) {
                 return tl::unexpected{
-                    Error{EngineError::VulkanRuntimeError, reader.Error()}};  //
+                    Error{EngineError::VulkanRuntimeError, reader.Error()}};
             }
 
             auto const& attrib = reader.GetAttrib();
             auto const& shapes = reader.GetShapes();
 
-            std::vector<Vertex> vertices;
-            std::vector<u32> indices;
-            std::unordered_map<Vertex, u32> uniqueVertices;
+            auto vertices = std::vector<Vertex>{};
+            auto indices = std::vector<u32>{};
+            auto uniqueVertices = std::unordered_map<Vertex, u32>{};
 
             for (auto const& shape : shapes) {
                 for (auto const& index : shape.mesh.indices) {

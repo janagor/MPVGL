@@ -12,6 +12,11 @@ struct Color {
 
     struct literal;
 
+    [[nodiscard]] constexpr f32 red() const noexcept { return m_red; }
+    [[nodiscard]] constexpr f32 green() const noexcept { return m_green; }
+    [[nodiscard]] constexpr f32 blue() const noexcept { return m_blue; }
+
+   private:
     f32 m_red;
     f32 m_green;
     f32 m_blue;

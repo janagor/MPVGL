@@ -1,9 +1,14 @@
 #include <utility>
 
+#include <tl/expected.hpp>
+#include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan_core.h>
 
+#include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/SyncObjects.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 
 namespace mpvgl::vlk {
 

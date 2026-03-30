@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <tl/expected.hpp>
+#include <vk-bootstrap/src/VkBootstrapDispatch.h>
 #include <vulkan/vulkan_core.h>
 
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
@@ -115,7 +116,7 @@ DescriptorWriter& DescriptorWriter::writeBuffer(u32 binding, VkBuffer buffer,
     auto& info = m_bufferInfos.emplace_back(VkDescriptorBufferInfo{
         .buffer = buffer, .offset = offset, .range = size});
 
-    VkWriteDescriptorSet write = initializers::writeDescriptorSet(
+    VkWriteDescriptorSet const write = initializers::writeDescriptorSet(
         VK_NULL_HANDLE, binding, 0, type,
         std::span<VkDescriptorBufferInfo const>{&info, 1});
     m_writes.push_back(write);
@@ -130,7 +131,7 @@ DescriptorWriter& DescriptorWriter::writeImage(u32 binding,
     auto& info = m_imageInfos.emplace_back(VkDescriptorImageInfo{
         .sampler = sampler, .imageView = imageView, .imageLayout = layout});
 
-    VkWriteDescriptorSet write = initializers::writeDescriptorSet(
+    VkWriteDescriptorSet const write = initializers::writeDescriptorSet(
         VK_NULL_HANDLE, binding, 0, type,
         std::span<VkDescriptorImageInfo const>{&info, 1});
     m_writes.push_back(write);

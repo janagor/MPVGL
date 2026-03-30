@@ -42,7 +42,7 @@ class ShaderWatcher {
 
             if (auto result = compile(entry.path()); !result.has_value()) {
                 std::cerr << "[ShaderWatcher] Initial Compilation Error: "
-                          << result.error().message << "\n";
+                          << result.error().message() << "\n";
             }
         }
     }
@@ -71,14 +71,15 @@ class ShaderWatcher {
 
         return io::ResourceBuffer::load(shaderPath)
             .map_error([](auto const &e) {
-                return Error<EngineError>{EngineError::FileNotFound, e.message};
+                return Error<EngineError>{EngineError::FileNotFound,
+                                          e.message()};
             })
             .and_then([&](io::ResourceBuffer const &buffer)
                           -> tl::expected<void, Error<EngineError>> {
                 auto view = buffer.view();
 
-                std::string source(reinterpret_cast<char const *>(view.data()),
-                                   view.size());
+                std::string const source(
+                    reinterpret_cast<char const *>(view.data()), view.size());
 
                 ShaderCompiler compiler{};
                 auto extension = shaderPath.extension();
@@ -118,7 +119,7 @@ class ShaderWatcher {
              std::filesystem::directory_iterator(shaderDir)) {
             if (!isShaderFile(entry.path())) continue;
 
-            std::string pathStr = entry.path().string();
+            auto const pathStr = entry.path().string();
             auto currentTime = std::filesystem::last_write_time(entry);
 
             if (timestamps.find(pathStr) == timestamps.end() ||
@@ -129,7 +130,7 @@ class ShaderWatcher {
                     compiledSomething = true;
                 } else {
                     std::cerr << "[ShaderWatcher] Hot-Reload Error: "
-                              << res.error().message << "\n";
+                              << res.error().message() << "\n";
                 }
             }
         }

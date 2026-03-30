@@ -11,19 +11,26 @@
 namespace mpvgl {
 
 struct SceneNode {
-    Mesh<Vertex> mesh;
-    glm::mat4 transform;
-    std::string texturePath;
+    Mesh<Vertex> mesh{};
+    glm::mat4 transform{};
+    std::string texturePath{};
 };
 
 class Scene {
    public:
     void add(Mesh<Vertex> mesh, glm::mat4 transform = glm::mat4(1.0f),
              std::string texturePath = "textures/default.ppm") {
-        nodes.emplace_back(std::move(mesh), transform, std::move(texturePath));
+        m_nodes.emplace_back(std::move(mesh), transform,
+                             std::move(texturePath));
     }
 
-    std::vector<SceneNode> nodes;
+    [[nodiscard]] std::vector<SceneNode> const& nodes() const noexcept {
+        return m_nodes;
+    }
+    [[nodiscard]] std::vector<SceneNode>& nodes() noexcept { return m_nodes; }
+
+   private:
+    std::vector<SceneNode> m_nodes;
 };
 
 }  // namespace mpvgl

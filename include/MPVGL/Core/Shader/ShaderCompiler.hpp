@@ -18,15 +18,15 @@
 namespace mpvgl {
 
 struct GlslShaderIncluder : public glslang::TShader::Includer {
-    virtual IncludeResult *includeSystem(char const *headerName,
-                                         char const *includerName,
-                                         size_t inclusionDepth) override {
+    virtual IncludeResult *includeSystem(char const * /*headerName*/,
+                                         char const * /*includerName*/,
+                                         size_t /*inclusionDepth*/) override {
         return nullptr;
     };
 
-    virtual IncludeResult *includeLocal(char const *headerName,
-                                        char const *includerName,
-                                        size_t inclusionDepth) override {
+    virtual IncludeResult *includeLocal(char const * /*headerName*/,
+                                        char const * /*includerName*/,
+                                        size_t /*inclusionDepth*/) override {
         return nullptr;
     };
 
@@ -56,15 +56,17 @@ struct ShaderCompiler {
    public:
     tl::expected<std::vector<u32>, Error<EngineError>> compile(
         std::string const &source, EShLanguage lang) {
-        glslang::TShader shader(lang);
-        char const *sources[1] = {source.data()};
+        glslang::TShader shader{lang};
+
+        char const *const sources[1] = {source.data()};
         shader.setStrings(sources, 1);
-        glslang::EShTargetClientVersion targetApiVersion =
-            glslang::EShTargetVulkan_1_0;
+
+        auto const targetApiVersion =
+            glslang::EShTargetClientVersion{glslang::EShTargetVulkan_1_0};
         shader.setEnvClient(glslang::EShClientVulkan, targetApiVersion);
 
-        glslang::EShTargetLanguageVersion spirvVersion =
-            glslang::EShTargetSpv_1_0;
+        auto const spirvVersion =
+            glslang::EShTargetLanguageVersion{glslang::EShTargetSpv_1_0};
         shader.setEnvTarget(glslang::EshTargetSpv, spirvVersion);
 
         shader.setEntryPoint("main");
@@ -89,7 +91,7 @@ struct ShaderCompiler {
                           shader.getInfoLog()}};
         }
 
-        char const *preprocessedSources[1] = {preprocessedStr.c_str()};
+        char const *const preprocessedSources[1] = {preprocessedStr.c_str()};
         shader.setStrings(preprocessedSources, 1);
 
         if (!shader.parse(resources, defaultVersion, defaultProfile, false,
@@ -99,7 +101,7 @@ struct ShaderCompiler {
                 std::string("Shader Parse failed:\n") + shader.getInfoLog()}};
         }
 
-        glslang::TProgram program;
+        glslang::TProgram program{};
         program.addShader(&shader);
         if (!program.link(messageFlags)) {
             return tl::unexpected{Error{
@@ -107,7 +109,7 @@ struct ShaderCompiler {
                 std::string("Shader Link failed: ") + program.getInfoLog()}};
         }
 
-        glslang::TIntermediate &intermediateRef =
+        glslang::TIntermediate const &intermediateRef =
             *(program.getIntermediate(lang));
         std::vector<u32> spirv;
         glslang::SpvOptions options{};

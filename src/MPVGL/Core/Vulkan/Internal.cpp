@@ -1,18 +1,16 @@
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/vector_float3.hpp>
 #include <glm/trigonometric.hpp>
 #include <tl/expected.hpp>
 #include <vulkan/vulkan_core.h>
@@ -27,14 +25,17 @@
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
 #include "MPVGL/Core/Vulkan/Swapchain.hpp"
+#include "MPVGL/Core/Vulkan/SyncObjects.hpp"
 #include "MPVGL/Core/Vulkan/Texture.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
+#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
 tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
-    char const *window_name, bool resize) {
+    int width, int height, std::string const &title, GLFWmonitor *monitor,
+    GLFWwindow *share, bool resize) {
     glfwSetErrorCallback([](int error, char const *description) {
         std::cerr << "GLFW Error (" << error << "): " << description << '\n';
     });
@@ -49,11 +50,10 @@ tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     }
 
-    GLFWwindow *window =
-        glfwCreateWindow(800, 600, window_name, nullptr, nullptr);
+    GLFWwindow *window =  // NOLINT(misc-const-correctness)
+        glfwCreateWindow(width, height, title.c_str(), monitor, share);
 
     if (!window) {
-        glfwTerminate();
         return tl::unexpected{
             Error{EngineError::WindowError, "Failed to create GLFW window!"}};
     }
@@ -68,11 +68,11 @@ void destroy_window_glfw(GLFWwindow *window) {
 VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
                                  VkAllocationCallbacks *allocator) {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VkResult err =
+    VkResult const err =
         glfwCreateWindowSurface(instance, window, allocator, &surface);
     if (err) {
         char const *error_msg;
-        int ret = glfwGetError(&error_msg);
+        int const ret = glfwGetError(&error_msg);
         if (ret != 0) {
             std::cout << ret << " ";
             if (error_msg != nullptr) std::cout << error_msg;
@@ -85,8 +85,8 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
 
 VkShaderModule createShaderModule(DeviceContext const &context,
                                   std::span<std::byte const> code) {
-    std::span<u32 const> code_span{reinterpret_cast<u32 const *>(code.data()),
-                                   code.size() / sizeof(u32)};
+    std::span<u32 const> const code_span{
+        reinterpret_cast<u32 const *>(code.data()), code.size() / sizeof(u32)};
 
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
@@ -152,7 +152,7 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
 
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(vulkan);
 
-    VkBufferCopy copyRegion{.size = size};
+    VkBufferCopy const copyRegion{.size = size};
     deviceContext.logDevDisp.cmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer,
                                            1, &copyRegion);
 
@@ -369,7 +369,8 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
             &object.material->descriptorSets[vulkan.data.currentFrame], 0,
             nullptr);
 
-        VkBuffer vertexBuffers[] = {object.model->vertexBuffer().handle()};
+        VkBuffer const vertexBuffers[] = {
+            object.model->vertexBuffer().handle()};
         VkDeviceSize offsets[] = {0};
         deviceContext.logDevDisp.cmdBindVertexBuffers(command_buffer, 0, 1,
                                                       vertexBuffers, offsets);
@@ -405,7 +406,7 @@ void updateUniformBuffer(Vulkan &vulkan, u32 current_image) {
     UniformBufferObject ubo{};
     ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
-        glm::radians(sceneContext.camera.Zoom),
+        glm::radians(sceneContext.camera.zoom()),
         swapchainContext.swapchain.extent().width /
             static_cast<f32>(swapchainContext.swapchain.extent().height),
         0.1f, 10.0f);
