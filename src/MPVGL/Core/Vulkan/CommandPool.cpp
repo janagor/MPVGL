@@ -8,17 +8,17 @@
 namespace mpvgl::vlk {
 
 CommandPool::CommandPool(VkCommandPool pool, vkb::DispatchTable disp) noexcept
-    : m_pool(pool), m_disp(std::move(disp)) {}
+    : m_pool(pool), m_disp(disp) {}
 
 CommandPool::CommandPool(CommandPool&& other) noexcept
     : m_pool(std::exchange(other.m_pool, VK_NULL_HANDLE)),
-      m_disp(std::move(other.m_disp)) {}
+      m_disp(other.m_disp) {}
 
 CommandPool& CommandPool::operator=(CommandPool&& other) noexcept {
     if (this != &other) {
         cleanup();
         m_pool = std::exchange(other.m_pool, VK_NULL_HANDLE);
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
     }
     return *this;
 }

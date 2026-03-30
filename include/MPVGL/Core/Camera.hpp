@@ -18,7 +18,7 @@
 
 namespace mpvgl {
 
-enum class CameraMovement {
+enum class CameraMovement : u8 {
     Forward,
     Backward,
     Left,

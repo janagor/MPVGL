@@ -43,7 +43,7 @@ RenderWindow::~RenderWindow() noexcept { cleanup(vulkan); }
 
 int RenderWindow::draw() noexcept {
     std::jthread watcherThread(
-        [&](std::stop_token st) { shader_watcher.run(st); });
+        [&](std::stop_token const &st) { shader_watcher.run(st); });
 
     f32 deltaTime = 0.0f;
     f32 lastFrame = 0.0f;
@@ -79,7 +79,7 @@ int RenderWindow::draw() noexcept {
 
         if (auto result = vlk::drawFrame(vulkan); !result.has_value()) {
             std::cout << "failed to draw a Frame:" << result.error().message
-                      << std::endl;
+                      << '\n';
             return -1;
         }
 

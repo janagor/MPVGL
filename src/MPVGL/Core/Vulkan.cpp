@@ -63,7 +63,7 @@ tl::expected<void, Error<EngineError>> deviceInitialization(Vulkan &vulkan) {
     auto &deviceContext = vulkan.deviceContext;
 
     return createWindow("Vulkan Triangle", true)
-        .transform_error([](auto e) { return Error{e}; })
+        .transform_error([](auto e) { return Error{std::move(e)}; })
         .and_then([&](auto window) {
             deviceContext.window = window;
 
@@ -93,7 +93,7 @@ tl::expected<void, Error<EngineError>> deviceInitialization(Vulkan &vulkan) {
         })
         .and_then([&](auto logicalDevice)
                       -> tl::expected<void, Error<EngineError>> {
-            deviceContext.logicalDevice = logicalDevice;
+            deviceContext.logicalDevice = std::move(logicalDevice);
             deviceContext.logDevDisp = deviceContext.logicalDevice.make_table();
 
             VmaAllocatorCreateInfo allocatorInfo = {};

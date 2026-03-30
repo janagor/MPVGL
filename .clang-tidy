@@ -7,7 +7,7 @@ Checks: >
   # cppcoreguidelines-*,
   # misc-*,
   # modernize-*,
-  # performance-*,
+  performance-*,
   # readability-*,
 
 WarningsAsErrors: '*'

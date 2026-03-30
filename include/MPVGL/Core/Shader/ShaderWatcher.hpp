@@ -28,7 +28,7 @@ class ShaderWatcher {
     ShaderWatcher &operator=(ShaderWatcher &&other) noexcept = delete;
 
    public:
-    inline void run(std::stop_token stopToken) {
+    inline void run(std::stop_token const &stopToken) {
         while (!stopToken.stop_requested()) {
             scanAndCompile();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -67,10 +67,10 @@ class ShaderWatcher {
     inline tl::expected<void, Error<EngineError>> compile(
         std::filesystem::path const &shaderPath) {
         std::cout << "[ShaderWatcher] Compiling: " << shaderPath.filename()
-                  << std::endl;
+                  << '\n';
 
         return io::ResourceBuffer::load(shaderPath)
-            .map_error([](auto e) {
+            .map_error([](auto const &e) {
                 return Error<EngineError>{EngineError::FileNotFound, e.message};
             })
             .and_then([&](io::ResourceBuffer const &buffer)

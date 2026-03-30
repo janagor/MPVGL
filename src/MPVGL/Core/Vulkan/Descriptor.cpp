@@ -16,10 +16,10 @@ namespace mpvgl::vlk {
 
 DescriptorSetLayout::DescriptorSetLayout(VkDescriptorSetLayout layout,
                                          vkb::DispatchTable disp) noexcept
-    : m_layout(layout), m_disp(std::move(disp)) {}
+    : m_layout(layout), m_disp(disp) {}
 
 DescriptorSetLayout::DescriptorSetLayout(DescriptorSetLayout&& other) noexcept
-    : m_layout(other.m_layout), m_disp(std::move(other.m_disp)) {
+    : m_layout(other.m_layout), m_disp(other.m_disp) {
     other.m_layout = VK_NULL_HANDLE;
 }
 
@@ -28,7 +28,7 @@ DescriptorSetLayout& DescriptorSetLayout::operator=(
     if (this != &other) {
         cleanup();
         m_layout = other.m_layout;
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
         other.m_layout = VK_NULL_HANDLE;
     }
     return *this;

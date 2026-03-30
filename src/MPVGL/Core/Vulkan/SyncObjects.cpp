@@ -8,17 +8,17 @@
 namespace mpvgl::vlk {
 
 Semaphore::Semaphore(VkSemaphore semaphore, vkb::DispatchTable disp) noexcept
-    : m_semaphore(semaphore), m_disp(std::move(disp)) {}
+    : m_semaphore(semaphore), m_disp(disp) {}
 
 Semaphore::Semaphore(Semaphore&& other) noexcept
     : m_semaphore(std::exchange(other.m_semaphore, VK_NULL_HANDLE)),
-      m_disp(std::move(other.m_disp)) {}
+      m_disp(other.m_disp) {}
 
 Semaphore& Semaphore::operator=(Semaphore&& other) noexcept {
     if (this != &other) {
         cleanup();
         m_semaphore = std::exchange(other.m_semaphore, VK_NULL_HANDLE);
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
     }
     return *this;
 }
@@ -44,17 +44,17 @@ tl::expected<Semaphore, Error<EngineError>> Semaphore::create(
 }
 
 Fence::Fence(VkFence fence, vkb::DispatchTable disp) noexcept
-    : m_fence(fence), m_disp(std::move(disp)) {}
+    : m_fence(fence), m_disp(disp) {}
 
 Fence::Fence(Fence&& other) noexcept
     : m_fence(std::exchange(other.m_fence, VK_NULL_HANDLE)),
-      m_disp(std::move(other.m_disp)) {}
+      m_disp(other.m_disp) {}
 
 Fence& Fence::operator=(Fence&& other) noexcept {
     if (this != &other) {
         cleanup();
         m_fence = std::exchange(other.m_fence, VK_NULL_HANDLE);
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
     }
     return *this;
 }

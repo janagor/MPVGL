@@ -4,9 +4,11 @@
 #include <system_error>
 #include <type_traits>
 
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl {
 
-enum class EngineError {
+enum class EngineError : u8 {
     Unknown = 1,
     VulkanInitFailed,
     VulkanRuntimeError,

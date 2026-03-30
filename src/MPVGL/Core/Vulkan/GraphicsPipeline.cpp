@@ -1,5 +1,3 @@
-#include <utility>
-
 #include "MPVGL/Core/Vulkan/GraphicsPipeline.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/Internal.hpp"
@@ -11,12 +9,12 @@ namespace mpvgl::vlk {
 
 GraphicsPipeline::GraphicsPipeline(VkPipeline pipeline, VkPipelineLayout layout,
                                    vkb::DispatchTable disp) noexcept
-    : m_pipeline(pipeline), m_layout(layout), m_disp(std::move(disp)) {}
+    : m_pipeline(pipeline), m_layout(layout), m_disp(disp) {}
 
 GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) noexcept
     : m_pipeline(other.m_pipeline),
       m_layout(other.m_layout),
-      m_disp(std::move(other.m_disp)) {
+      m_disp(other.m_disp) {
     other.m_pipeline = VK_NULL_HANDLE;
     other.m_layout = VK_NULL_HANDLE;
 }
@@ -27,7 +25,7 @@ GraphicsPipeline& GraphicsPipeline::operator=(
         cleanup();
         m_pipeline = other.m_pipeline;
         m_layout = other.m_layout;
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
 
         other.m_pipeline = VK_NULL_HANDLE;
         other.m_layout = VK_NULL_HANDLE;
@@ -54,17 +52,18 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     std::string const& vertexShaderPath,
     std::string const& fragmentShaderPath) {
     auto vertBufferRes =
-        io::ResourceBuffer::load(vertexShaderPath).map_error([](auto e) {
+        io::ResourceBuffer::load(vertexShaderPath).map_error([](auto const& e) {
             return Error<EngineError>{EngineError::VulkanRuntimeError,
                                       e.message};
         });
     if (!vertBufferRes) return tl::unexpected{vertBufferRes.error()};
 
     auto fragBufferRes =
-        io::ResourceBuffer::load(fragmentShaderPath).map_error([](auto e) {
-            return Error<EngineError>{EngineError::VulkanRuntimeError,
-                                      e.message};
-        });
+        io::ResourceBuffer::load(fragmentShaderPath)
+            .map_error([](auto const& e) {
+                return Error<EngineError>{EngineError::VulkanRuntimeError,
+                                          e.message};
+            });
     if (!fragBufferRes) return tl::unexpected{fragBufferRes.error()};
 
     auto vertModule = createShaderModule(device, vertBufferRes->view());

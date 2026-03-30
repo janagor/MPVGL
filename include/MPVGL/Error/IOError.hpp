@@ -4,9 +4,11 @@
 #include <system_error>
 #include <type_traits>
 
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl {
 
-enum class IOError {
+enum class IOError : u8 {
     Unknown = 1,
     FileNotFound,
     EndOfFile,

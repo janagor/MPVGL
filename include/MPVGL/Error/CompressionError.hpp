@@ -28,9 +28,11 @@
 #include <system_error>
 #include <type_traits>
 
+#include "MPVGL/Utility/Types.hpp"
+
 namespace mpvgl {
 
-enum class CompressionError {
+enum class CompressionError : u8 {
     Unknown = 1,
     InvalidData,
     TreeOverflow,

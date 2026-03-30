@@ -261,7 +261,7 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
     return io::ResourceBuffer::load(filepath)
-        .map_error([](auto e) {
+        .map_error([](auto const& e) {
             return Error<EngineError>{EngineError::FileNotFound, e.message};
         })
         .and_then([&](io::ResourceBuffer const& buffer)

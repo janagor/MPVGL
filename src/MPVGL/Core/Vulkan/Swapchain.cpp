@@ -17,30 +17,27 @@ namespace mpvgl::vlk {
 
 Swapchain::Swapchain(vkb::Swapchain vkbSwapchain,
                      vkb::DispatchTable disp) noexcept
-    : m_swapchain(std::move(vkbSwapchain)),
-      m_images({}),
-      m_imageViews({}),
-      m_disp(std::move(disp)) {
+    : m_swapchain(vkbSwapchain), m_images({}), m_imageViews({}), m_disp(disp) {
     if (auto images = m_swapchain.get_images(); images.has_value()) {
         m_images = images.value();
     }
 }
 
 Swapchain::Swapchain(Swapchain&& other) noexcept
-    : m_swapchain(std::move(other.m_swapchain)),
+    : m_swapchain(other.m_swapchain),
       m_images(std::move(other.m_images)),
       m_imageViews(std::move(other.m_imageViews)),
-      m_disp(std::move(other.m_disp)) {
+      m_disp(other.m_disp) {
     other.m_swapchain.swapchain = VK_NULL_HANDLE;
 }
 
 Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
     if (this != &other) {
         cleanup();
-        m_swapchain = std::move(other.m_swapchain);
+        m_swapchain = other.m_swapchain;
         m_images = std::move(other.m_images);
         m_imageViews = std::move(other.m_imageViews);
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
         other.m_swapchain.swapchain = VK_NULL_HANDLE;
     }
     return *this;

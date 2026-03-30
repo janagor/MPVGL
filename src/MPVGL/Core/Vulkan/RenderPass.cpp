@@ -1,5 +1,3 @@
-#include <utility>
-
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
 #include "MPVGL/Core/Vulkan/RenderPass.hpp"
 
@@ -7,10 +5,10 @@ namespace mpvgl::vlk {
 
 RenderPass::RenderPass(VkRenderPass renderPass,
                        vkb::DispatchTable disp) noexcept
-    : m_renderPass(renderPass), m_disp(std::move(disp)) {}
+    : m_renderPass(renderPass), m_disp(disp) {}
 
 RenderPass::RenderPass(RenderPass&& other) noexcept
-    : m_renderPass(other.m_renderPass), m_disp(std::move(other.m_disp)) {
+    : m_renderPass(other.m_renderPass), m_disp(other.m_disp) {
     other.m_renderPass = VK_NULL_HANDLE;
 }
 
@@ -18,7 +16,7 @@ RenderPass& RenderPass::operator=(RenderPass&& other) noexcept {
     if (this != &other) {
         cleanup();
         m_renderPass = other.m_renderPass;
-        m_disp = std::move(other.m_disp);
+        m_disp = other.m_disp;
         other.m_renderPass = VK_NULL_HANDLE;
     }
     return *this;
