@@ -373,7 +373,6 @@ tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
 
 tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan) {
     auto bufferSize = sizeof(UniformBufferObject);
-    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
 
     for (size_t i = {}; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         auto result =

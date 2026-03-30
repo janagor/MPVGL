@@ -402,13 +402,6 @@ void updateUniformBuffer(Vulkan &vulkan, u32 current_image) {
     auto &sceneContext = vulkan.sceneContext;
     auto &swapchainContext = vulkan.swapchainContext;
 
-    static auto start_time = std::chrono::high_resolution_clock::now();
-
-    auto current_time = std::chrono::high_resolution_clock::now();
-    f32 time = std::chrono::duration<f32, std::chrono::seconds::period>(
-                   current_time - start_time)
-                   .count();
-
     UniformBufferObject ubo{};
     ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
