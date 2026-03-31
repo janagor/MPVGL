@@ -19,11 +19,11 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<Model, Error<EngineError>> Model::loadFromFile(
-    DeviceContext const& device, VkCommandPool commandPool,
-    VkQueue graphicsQueue, std::string const& filepath) {
+auto Model::loadFromFile(DeviceContext const& device, VkCommandPool commandPool,
+                         VkQueue graphicsQueue, std::string const& filepath)
+    -> tl::expected<Model, Error<EngineError>> {
     return io::ResourceBuffer::load(filepath)
-        .map_error([](auto const& error) {
+        .map_error([](auto const& error) -> auto {
             return Error<EngineError>{EngineError::FileNotFound,
                                       error.message()};
         })
@@ -91,10 +91,10 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
         });
 }
 
-tl::expected<Model, Error<EngineError>> Model::create(
-    DeviceContext const& device, VkCommandPool commandPool,
-    VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
-    std::vector<u32> const& indices) {
+auto Model::create(DeviceContext const& device, VkCommandPool commandPool,
+                   VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
+                   std::vector<u32> const& indices)
+    -> tl::expected<Model, Error<EngineError>> {
     auto vBufferRes = Buffer::createFromData(
         device, commandPool, graphicsQueue, vertices,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);

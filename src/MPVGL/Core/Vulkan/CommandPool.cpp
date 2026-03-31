@@ -20,7 +20,7 @@ CommandPool::CommandPool(CommandPool&& other) noexcept
     : m_pool(std::exchange(other.m_pool, VK_NULL_HANDLE)),
       m_disp(other.m_disp) {}
 
-CommandPool& CommandPool::operator=(CommandPool&& other) noexcept {
+auto CommandPool::operator=(CommandPool&& other) noexcept -> CommandPool& {
     if (this != &other) {
         cleanup();
         m_pool = std::exchange(other.m_pool, VK_NULL_HANDLE);
@@ -38,8 +38,8 @@ void CommandPool::cleanup() noexcept {
     m_pool = VK_NULL_HANDLE;
 }
 
-tl::expected<CommandPool, Error<EngineError>> CommandPool::create(
-    DeviceContext const& device, u32 queueFamilyIndex) {
+auto CommandPool::create(DeviceContext const& device, u32 queueFamilyIndex)
+    -> tl::expected<CommandPool, Error<EngineError>> {
     auto poolInfo = initializers::commandPoolCreateInfo(
         queueFamilyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 

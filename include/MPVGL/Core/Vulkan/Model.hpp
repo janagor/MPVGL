@@ -24,22 +24,28 @@ class Model {
           m_indexBuffer(std::move(indexBuffer)),
           m_indexCount(indexCount) {}
 
-    [[nodiscard]] static tl::expected<Model, Error<EngineError>> loadFromFile(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, std::string const& filepath);
+    [[nodiscard]] static auto loadFromFile(DeviceContext const& device,
+                                           VkCommandPool commandPool,
+                                           VkQueue graphicsQueue,
+                                           std::string const& filepath)
+        -> tl::expected<Model, Error<EngineError>>;
 
-    [[nodiscard]] static tl::expected<Model, Error<EngineError>> create(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, std::vector<Vertex> const& vertices,
-        std::vector<u32> const& indices);
+    [[nodiscard]] static auto create(DeviceContext const& device,
+                                     VkCommandPool commandPool,
+                                     VkQueue graphicsQueue,
+                                     std::vector<Vertex> const& vertices,
+                                     std::vector<u32> const& indices)
+        -> tl::expected<Model, Error<EngineError>>;
 
-    [[nodiscard]] Buffer const& vertexBuffer() const noexcept {
+    [[nodiscard]] auto vertexBuffer() const noexcept -> Buffer const& {
         return m_vertexBuffer;
     }
-    [[nodiscard]] Buffer const& indexBuffer() const noexcept {
+    [[nodiscard]] auto indexBuffer() const noexcept -> Buffer const& {
         return m_indexBuffer;
     }
-    [[nodiscard]] u32 indexCount() const noexcept { return m_indexCount; }
+    [[nodiscard]] auto indexCount() const noexcept -> u32 {
+        return m_indexCount;
+    }
 
    private:
     Buffer m_vertexBuffer;

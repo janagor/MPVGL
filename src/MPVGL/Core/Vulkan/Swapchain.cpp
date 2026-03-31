@@ -31,7 +31,7 @@ Swapchain::Swapchain(Swapchain&& other) noexcept
     other.m_swapchain.swapchain = VK_NULL_HANDLE;
 }
 
-Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
+auto Swapchain::operator=(Swapchain&& other) noexcept -> Swapchain& {
     if (this != &other) {
         cleanup();
         m_swapchain = other.m_swapchain;
@@ -55,8 +55,8 @@ void Swapchain::cleanup() noexcept {
     m_images.clear();
 }
 
-tl::expected<Swapchain, Error<EngineError>> Swapchain::create(
-    DeviceContext const& deviceContext) {
+auto Swapchain::create(DeviceContext const& deviceContext)
+    -> tl::expected<Swapchain, Error<EngineError>> {
     auto vkbSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window);
     if (!vkbSwapchain) {
@@ -70,8 +70,8 @@ tl::expected<Swapchain, Error<EngineError>> Swapchain::create(
     return swapchain;
 }
 
-tl::expected<void, Error<EngineError>> Swapchain::recreate(
-    DeviceContext const& deviceContext) {
+auto Swapchain::recreate(DeviceContext const& deviceContext)
+    -> tl::expected<void, Error<EngineError>> {
     auto newSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window, m_swapchain);
     if (!newSwapchain) {
@@ -89,7 +89,7 @@ tl::expected<void, Error<EngineError>> Swapchain::recreate(
     return initImageViews();
 }
 
-tl::expected<void, Error<EngineError>> Swapchain::initImageViews() {
+auto Swapchain::initImageViews() -> tl::expected<void, Error<EngineError>> {
     m_imageViews.resize(m_images.size());
     for (size_t i = 0; i < m_images.size(); ++i) {
         auto subresourceRange = VkImageSubresourceRange{

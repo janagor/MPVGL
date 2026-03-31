@@ -34,10 +34,10 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
-    int width, int height, std::string const &title, GLFWmonitor *monitor,
-    GLFWwindow *share, bool resize) {
-    glfwSetErrorCallback([](int error, char const *description) {
+auto createWindow(int width, int height, std::string const &title,
+                  GLFWmonitor *monitor, GLFWwindow *share, bool resize)
+    -> tl::expected<GLFWwindow *, Error<EngineError>> {
+    glfwSetErrorCallback([](int error, char const *description) -> void {
         std::cerr << "GLFW Error (" << error << "): " << description << '\n';
     });
 
@@ -66,8 +66,8 @@ void destroy_window_glfw(GLFWwindow *window) {
     glfwTerminate();
 }
 
-VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
-                                 VkAllocationCallbacks *allocator) {
+auto create_surface_glfw(VkInstance instance, GLFWwindow *window,
+                         VkAllocationCallbacks *allocator) -> VkSurfaceKHR {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkResult const err =
         glfwCreateWindowSurface(instance, window, allocator, &surface);
@@ -86,8 +86,8 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
     return surface;
 }
 
-VkShaderModule createShaderModule(DeviceContext const &context,
-                                  std::span<std::byte const> code) {
+auto createShaderModule(DeviceContext const &context,
+                        std::span<std::byte const> code) -> VkShaderModule {
     std::span<u32 const> const code_span{
         reinterpret_cast<u32 const *>(code.data()), code.size() / sizeof(u32)};
 
@@ -102,10 +102,11 @@ VkShaderModule createShaderModule(DeviceContext const &context,
     return shaderModule;
 }
 
-tl::expected<void, Error<EngineError>> createBuffer(
-    Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
-    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
-    VkBuffer &buffer, VmaAllocation &bufferAllocation) {
+auto createBuffer(Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
+                  VmaMemoryUsage memoryUsage,
+                  VmaAllocationCreateFlags allocFlags, VkBuffer &buffer,
+                  VmaAllocation &bufferAllocation)
+    -> tl::expected<void, Error<EngineError>> {
     auto bufferInfo = initializers::bufferCreateInfo(size, usage);
 
     VmaAllocationCreateInfo allocInfo = {};
@@ -120,7 +121,7 @@ tl::expected<void, Error<EngineError>> createBuffer(
     return {};
 }
 
-VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
+auto beginSingleTimeCommands(Vulkan &vulkan) -> VkCommandBuffer {
     auto &deviceContext = vulkan.deviceContext;
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
@@ -162,11 +163,12 @@ void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
     endSingleTimeCommands(vulkan, commandBuffer);
 }
 
-tl::expected<void, Error<EngineError>> createImage(
-    Vulkan &vulkan, Extent2D const &extent, u32 mipLevels, VkFormat format,
-    VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage,
-    VmaAllocationCreateFlags allocFlags, VkImage &image,
-    VmaAllocation &imageAllocation) {
+auto createImage(Vulkan &vulkan, Extent2D const &extent, u32 mipLevels,
+                 VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                 VmaMemoryUsage memoryUsage,
+                 VmaAllocationCreateFlags allocFlags, VkImage &image,
+                 VmaAllocation &imageAllocation)
+    -> tl::expected<void, Error<EngineError>> {
     auto &deviceContext = vulkan.deviceContext;
 
     auto imageInfo = initializers::imageCreateInfo();
@@ -195,9 +197,9 @@ tl::expected<void, Error<EngineError>> createImage(
     return {};
 }
 
-tl::expected<VkImageView, Error<EngineError>> createImageView(
-    Vulkan &vulkan, VkImage image, VkFormat format,
-    VkImageAspectFlags aspectFlags, u32 mipLevels) {
+auto createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
+                     VkImageAspectFlags aspectFlags, u32 mipLevels)
+    -> tl::expected<VkImageView, Error<EngineError>> {
     auto &deviceContext = vulkan.deviceContext;
 
     auto subresourceRange = VkImageSubresourceRange{
@@ -220,7 +222,8 @@ tl::expected<VkImageView, Error<EngineError>> createImageView(
     return imageView;
 }
 
-tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan) {
+auto createImageViews(Vulkan &vulkan)
+    -> tl::expected<void, Error<EngineError>> {
     auto &swapchainContext = vulkan.swapchainContext;
 
     swapchainContext.swapchain.imageViews().resize(
@@ -237,9 +240,10 @@ tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan) {
     return {};
 }
 
-tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
-    Vulkan &vulkan, std::vector<VkFormat> const &candidates,
-    VkImageTiling tiling, VkFormatFeatureFlags features) {
+auto findSupportedFormat(Vulkan &vulkan,
+                         std::vector<VkFormat> const &candidates,
+                         VkImageTiling tiling, VkFormatFeatureFlags features)
+    -> tl::expected<VkFormat, Error<EngineError>> {
     auto &deviceContext = vulkan.deviceContext;
 
     for (VkFormat format : candidates) {
@@ -262,7 +266,8 @@ tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
                                 "Failed to find supported Format"}};
 }
 
-tl::expected<VkFormat, Error<EngineError>> findDepthFormat(Vulkan &vulkan) {
+auto findDepthFormat(Vulkan &vulkan)
+    -> tl::expected<VkFormat, Error<EngineError>> {
     return findSupportedFormat(
         vulkan,
         {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -271,7 +276,7 @@ tl::expected<VkFormat, Error<EngineError>> findDepthFormat(Vulkan &vulkan) {
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-bool has_stencil_component(VkFormat format) {
+auto has_stencil_component(VkFormat format) -> bool {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
            format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
@@ -288,7 +293,8 @@ void cleanupSwapChain(Vulkan &vulkan) {
     swapchainContext.swapchain = Swapchain();
 }
 
-tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
+auto recreateSwapchain(Vulkan &vulkan)
+    -> tl::expected<void, Error<EngineError>> {
     auto &deviceContext = vulkan.deviceContext;
     auto &swapchainContext = vulkan.swapchainContext;
 
@@ -301,8 +307,12 @@ tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
     swapchainContext.framebuffers.clear();
 
     return swapchainContext.swapchain.recreate(vulkan.deviceContext)
-        .and_then([&]() { return createDepthResources(vulkan); })
-        .and_then([&]() { return createFramebuffers(vulkan); })
+        .and_then([&]() -> tl::expected<void, Error<EngineError>> {
+            return createDepthResources(vulkan);
+        })
+        .and_then([&]() -> tl::expected<void, Error<EngineError>> {
+            return createFramebuffers(vulkan);
+        })
         .and_then([&]() -> tl::expected<void, Error<EngineError>> {
             auto imageCount = swapchainContext.swapchain.imageCount();
             vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
@@ -323,8 +333,9 @@ tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
         });
 }
 
-tl::expected<void, Error<EngineError>> recordCommandBuffer(
-    Vulkan &vulkan, VkCommandBuffer command_buffer, u32 image_index) {
+auto recordCommandBuffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
+                         u32 image_index)
+    -> tl::expected<void, Error<EngineError>> {
     auto &sceneContext = vulkan.sceneContext;
     auto &deviceContext = vulkan.deviceContext;
     auto &pipelineContext = vulkan.pipelineContext;
@@ -340,7 +351,7 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {{0.0F, 0.0F, 0.0F, 1.0F}};
-    clearValues[1].depthStencil = {1.0F, 0};
+    clearValues[1].depthStencil = {.depth = 1.0F, .stencil = 0};
 
     auto renderPassInfo = initializers::renderPassBeginInfo(
         swapchainContext.renderPass.handle(),
@@ -367,7 +378,7 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {};
-    scissor.offset = {0, 0};
+    scissor.offset = {.x = 0, .y = 0};
     scissor.extent = swapchainContext.swapchain.extent();
     deviceContext.logDevDisp.cmdSetScissor(command_buffer, 0, 1, &scissor);
 

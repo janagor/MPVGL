@@ -21,13 +21,18 @@ struct Vertex {
           m_color({color.red(), color.green(), color.blue()}),
           m_texCoord(texCoord) {}
 
-    [[nodiscard]] glm::vec3 const& pos() const noexcept { return m_pos; }
-    [[nodiscard]] glm::vec3 const& color() const noexcept { return m_color; }
-    [[nodiscard]] glm::vec2 const& texCoord() const noexcept {
+    [[nodiscard]] auto pos() const noexcept -> glm::vec3 const& {
+        return m_pos;
+    }
+    [[nodiscard]] auto color() const noexcept -> glm::vec3 const& {
+        return m_color;
+    }
+    [[nodiscard]] auto texCoord() const noexcept -> glm::vec2 const& {
         return m_texCoord;
     }
 
-    static VkVertexInputBindingDescription getBindingDescription() noexcept {
+    static auto getBindingDescription() noexcept
+        -> VkVertexInputBindingDescription {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
@@ -35,8 +40,8 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static constexpr std::array<VkVertexInputAttributeDescription, 3>
-    getAttributeDescriptions() noexcept {
+    static constexpr auto getAttributeDescriptions() noexcept
+        -> std::array<VkVertexInputAttributeDescription, 3> {
         std::array<VkVertexInputAttributeDescription, 3>
             attributeDescriptions{};
 
@@ -57,7 +62,7 @@ struct Vertex {
 
         return attributeDescriptions;
     }
-    bool operator==(Vertex const& other) const {
+    auto operator==(Vertex const& other) const -> bool {
         return m_pos == other.pos() && m_color == other.color() &&
                m_texCoord == other.texCoord();
     }
@@ -74,7 +79,7 @@ namespace std {
 
 template <>
 struct hash<mpvgl::Vertex> {
-    size_t operator()(mpvgl::Vertex const& vertex) const {
+    auto operator()(mpvgl::Vertex const& vertex) const -> size_t {
         return ((hash<glm::vec3>()(vertex.pos()) ^
                  (hash<glm::vec3>()(vertex.color()) << 1)) >>
                 1) ^

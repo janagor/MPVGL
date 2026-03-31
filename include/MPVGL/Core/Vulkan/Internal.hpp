@@ -17,40 +17,46 @@
 
 namespace mpvgl::vlk {
 
-tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
-    int width, int height, std::string const &title, GLFWmonitor *monitor,
-    GLFWwindow *share, bool resize);
+auto createWindow(int width, int height, std::string const &title,
+                  GLFWmonitor *monitor, GLFWwindow *share, bool resize)
+    -> tl::expected<GLFWwindow *, Error<EngineError>>;
 void destroy_window_glfw(GLFWwindow *window);
-VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
-                                 VkAllocationCallbacks *allocator);
-VkShaderModule createShaderModule(DeviceContext const &context,
-                                  std::span<std::byte const> code);
-tl::expected<void, Error<EngineError>> createBuffer(
-    Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
-    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags,
-    VkBuffer &buffer, VmaAllocation &bufferAllocation);
-VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan);
+auto create_surface_glfw(VkInstance instance, GLFWwindow *window,
+                         VkAllocationCallbacks *allocator) -> VkSurfaceKHR;
+auto createShaderModule(DeviceContext const &context,
+                        std::span<std::byte const> code) -> VkShaderModule;
+auto createBuffer(Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,
+                  VmaMemoryUsage memoryUsage,
+                  VmaAllocationCreateFlags allocFlags, VkBuffer &buffer,
+                  VmaAllocation &bufferAllocation)
+    -> tl::expected<void, Error<EngineError>>;
+auto beginSingleTimeCommands(Vulkan &vulkan) -> VkCommandBuffer;
 void endSingleTimeCommands(Vulkan &vulkan, VkCommandBuffer commandBuffer);
 void copy_buffer(Vulkan &vulkan, VkBuffer srcBuffer, VkBuffer dstBuffer,
                  VkDeviceSize size);
-tl::expected<void, Error<EngineError>> createImage(
-    Vulkan &vulkan, Extent2D const &extent, u32 mipLevels, VkFormat format,
-    VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage,
-    VmaAllocationCreateFlags allocFlags, VkImage &image,
-    VmaAllocation &imageAllocation);
-tl::expected<VkImageView, Error<EngineError>> createImageView(
-    Vulkan &vulkan, VkImage image, VkFormat format,
-    VkImageAspectFlags aspectFlags, u32 mipLevels);
-tl::expected<void, Error<EngineError>> createImageViews(Vulkan &vulkan);
-tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
-    Vulkan &vulkan, std::vector<VkFormat> const &candidates,
-    VkImageTiling tiling, VkFormatFeatureFlags features);
-tl::expected<VkFormat, Error<EngineError>> findDepthFormat(Vulkan &vulkan);
-bool has_stencil_component(VkFormat format);
+auto createImage(Vulkan &vulkan, Extent2D const &extent, u32 mipLevels,
+                 VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                 VmaMemoryUsage memoryUsage,
+                 VmaAllocationCreateFlags allocFlags, VkImage &image,
+                 VmaAllocation &imageAllocation)
+    -> tl::expected<void, Error<EngineError>>;
+auto createImageView(Vulkan &vulkan, VkImage image, VkFormat format,
+                     VkImageAspectFlags aspectFlags, u32 mipLevels)
+    -> tl::expected<VkImageView, Error<EngineError>>;
+auto createImageViews(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>>;
+auto findSupportedFormat(Vulkan &vulkan,
+                         std::vector<VkFormat> const &candidates,
+                         VkImageTiling tiling, VkFormatFeatureFlags features)
+    -> tl::expected<VkFormat, Error<EngineError>>;
+auto findDepthFormat(Vulkan &vulkan)
+    -> tl::expected<VkFormat, Error<EngineError>>;
+auto has_stencil_component(VkFormat format) -> bool;
 void cleanupSwapChain(Vulkan &vulkan);
-tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan);
-tl::expected<void, Error<EngineError>> recordCommandBuffer(
-    Vulkan &vulkan, VkCommandBuffer command_buffer, u32 image_index);
+auto recreateSwapchain(Vulkan &vulkan)
+    -> tl::expected<void, Error<EngineError>>;
+auto recordCommandBuffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
+                         u32 image_index)
+    -> tl::expected<void, Error<EngineError>>;
 void updateUniformBuffer(Vulkan &vulkan, u32 current_image);
 
 }  // namespace mpvgl::vlk

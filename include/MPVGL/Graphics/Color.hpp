@@ -18,9 +18,11 @@ struct Color {
 
     struct Literal;
 
-    [[nodiscard]] constexpr f64 red() const noexcept { return m_red; }
-    [[nodiscard]] constexpr f64 green() const noexcept { return m_green; }
-    [[nodiscard]] constexpr f64 blue() const noexcept { return m_blue; }
+    [[nodiscard]] constexpr auto red() const noexcept -> f64 { return m_red; }
+    [[nodiscard]] constexpr auto green() const noexcept -> f64 {
+        return m_green;
+    }
+    [[nodiscard]] constexpr auto blue() const noexcept -> f64 { return m_blue; }
 
    private:
     f64 m_red;
@@ -29,11 +31,11 @@ struct Color {
 };
 
 struct Color::Literal {
-    static constexpr Color Red = Color{{255, 0, 0}};
-    static constexpr Color Green = Color{{0, 255, 0}};
-    static constexpr Color Blue = Color{{0, 0, 255}};
-    static constexpr Color Black = Color{{0, 0, 0}};
-    static constexpr Color White = Color{{255, 255, 255}};
+    static constexpr Color Red = Color{{.r = 255, .g = 0, .b = 0}};
+    static constexpr Color Green = Color{{.r = 0, .g = 255, .b = 0}};
+    static constexpr Color Blue = Color{{.r = 0, .g = 0, .b = 255}};
+    static constexpr Color Black = Color{{.r = 0, .g = 0, .b = 0}};
+    static constexpr Color White = Color{{.r = 255, .g = 255, .b = 255}};
 };
 
 }  // namespace mpvgl

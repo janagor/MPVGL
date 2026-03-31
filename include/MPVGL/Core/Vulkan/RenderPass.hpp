@@ -18,12 +18,14 @@ class RenderPass {
     ~RenderPass() noexcept;
 
     RenderPass(RenderPass const&) = delete;
-    RenderPass& operator=(RenderPass const&) = delete;
+    auto operator=(RenderPass const&) -> RenderPass& = delete;
 
     RenderPass(RenderPass&& other) noexcept;
-    RenderPass& operator=(RenderPass&& other) noexcept;
+    auto operator=(RenderPass&& other) noexcept -> RenderPass&;
 
-    [[nodiscard]] VkRenderPass handle() const noexcept { return m_renderPass; }
+    [[nodiscard]] auto handle() const noexcept -> VkRenderPass {
+        return m_renderPass;
+    }
 
     RenderPass(VkRenderPass renderPass, vkb::DispatchTable disp) noexcept;
 
@@ -44,12 +46,14 @@ class RenderPassBuilder {
    public:
     RenderPassBuilder() = default;
 
-    RenderPassBuilder& addAttachment(VkAttachmentDescription const& attachment);
-    RenderPassBuilder& addSubpass(SubpassInfo const& subpass);
-    RenderPassBuilder& addDependency(VkSubpassDependency const& dependency);
+    auto addAttachment(VkAttachmentDescription const& attachment)
+        -> RenderPassBuilder&;
+    auto addSubpass(SubpassInfo const& subpass) -> RenderPassBuilder&;
+    auto addDependency(VkSubpassDependency const& dependency)
+        -> RenderPassBuilder&;
 
-    tl::expected<RenderPass, Error<EngineError>> build(
-        DeviceContext const& device);
+    auto build(DeviceContext const& device)
+        -> tl::expected<RenderPass, Error<EngineError>>;
 
    private:
     std::vector<VkAttachmentDescription> m_attachments;

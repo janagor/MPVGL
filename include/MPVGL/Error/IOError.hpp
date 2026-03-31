@@ -27,11 +27,12 @@ namespace mpvgl {
 
 class IOErrorCategoryImpl : public std::error_category {
    public:
-    [[nodiscard]] char const* name() const noexcept override {
+    [[nodiscard]] auto name() const noexcept -> char const* override {
         return "mpvgl::IO";
     }
 
-    [[nodiscard]] constexpr std::string message(int error) const override {
+    [[nodiscard]] constexpr auto message(int error) const
+        -> std::string override {
         switch (static_cast<IOError>(error)) {
             case IOError::FileNotFound:
                 return "File not found";
@@ -43,12 +44,12 @@ class IOErrorCategoryImpl : public std::error_category {
     }
 };
 
-[[nodiscard]] inline std::error_category const& IOErrorCategory() {
+[[nodiscard]] inline auto IOErrorCategory() -> std::error_category const& {
     static IOErrorCategoryImpl const instance{};
     return instance;
 }
 
-[[nodiscard]] inline std::error_code make_error_code(IOError error) {
+[[nodiscard]] inline auto make_error_code(IOError error) -> std::error_code {
     return {static_cast<int>(error), IOErrorCategory()};
 }
 

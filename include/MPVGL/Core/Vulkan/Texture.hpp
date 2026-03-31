@@ -22,22 +22,29 @@ class Texture {
    public:
     Texture() = default;
     Texture(Texture const&) = delete;
-    Texture& operator=(Texture const&) = delete;
+    auto operator=(Texture const&) -> Texture& = delete;
     Texture(Texture&& other) noexcept;
-    Texture& operator=(Texture&& other) noexcept;
+    auto operator=(Texture&& other) noexcept -> Texture&;
     ~Texture();
 
-    [[nodiscard]] static tl::expected<Texture, Error<EngineError>> loadFromFile(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, std::string const& filepath);
-    [[nodiscard]] static tl::expected<Texture, Error<EngineError>>
-    createDepthTexture(DeviceContext const& device, u32 width, u32 height,
-                       VkFormat format);
+    [[nodiscard]] static auto loadFromFile(DeviceContext const& device,
+                                           VkCommandPool commandPool,
+                                           VkQueue graphicsQueue,
+                                           std::string const& filepath)
+        -> tl::expected<Texture, Error<EngineError>>;
+    [[nodiscard]] static auto createDepthTexture(DeviceContext const& device,
+                                                 u32 width, u32 height,
+                                                 VkFormat format)
+        -> tl::expected<Texture, Error<EngineError>>;
 
-    [[nodiscard]] VkImage handle() const noexcept { return m_image; }
-    [[nodiscard]] VkImageView imageView() const noexcept { return m_imageView; }
-    [[nodiscard]] VkSampler sampler() const noexcept { return m_sampler; }
-    [[nodiscard]] u32 mipLevels() const noexcept { return m_mipLevels; }
+    [[nodiscard]] auto handle() const noexcept -> VkImage { return m_image; }
+    [[nodiscard]] auto imageView() const noexcept -> VkImageView {
+        return m_imageView;
+    }
+    [[nodiscard]] auto sampler() const noexcept -> VkSampler {
+        return m_sampler;
+    }
+    [[nodiscard]] auto mipLevels() const noexcept -> u32 { return m_mipLevels; }
 
    private:
     VmaAllocator m_allocator{VK_NULL_HANDLE};
@@ -55,15 +62,19 @@ class Texture {
 
     void cleanup() noexcept;
 
-    static tl::expected<void, Error<EngineError>> transitionImageLayout(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, VkImage image, VkFormat format,
-        VkImageLayout oldLayout, VkImageLayout newLayout, u32 mipLevels);
+    static auto transitionImageLayout(DeviceContext const& device,
+                                      VkCommandPool commandPool,
+                                      VkQueue graphicsQueue, VkImage image,
+                                      VkFormat format, VkImageLayout oldLayout,
+                                      VkImageLayout newLayout, u32 mipLevels)
+        -> tl::expected<void, Error<EngineError>>;
 
-    static tl::expected<void, Error<EngineError>> generateMipmaps(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, VkImage image, VkFormat imageFormat,
-        Extent2D const& extent, u32 mipLevels);
+    static auto generateMipmaps(DeviceContext const& device,
+                                VkCommandPool commandPool,
+                                VkQueue graphicsQueue, VkImage image,
+                                VkFormat imageFormat, Extent2D const& extent,
+                                u32 mipLevels)
+        -> tl::expected<void, Error<EngineError>>;
 
     static void copyBufferToImage(DeviceContext const& device,
                                   VkCommandPool commandPool,
@@ -78,17 +89,21 @@ class Texture {
                             u32 mipLevels) noexcept
             : m_data(data), m_extent(extent), m_mipLevels(mipLevels) {}
 
-        [[nodiscard]] unsigned char* data() const noexcept { return m_data; }
-        [[nodiscard]] Extent2D const& extent() const noexcept {
+        [[nodiscard]] auto data() const noexcept -> unsigned char* {
+            return m_data;
+        }
+        [[nodiscard]] auto extent() const noexcept -> Extent2D const& {
             return m_extent;
         }
-        [[nodiscard]] u32 mipLevels() const noexcept { return m_mipLevels; }
+        [[nodiscard]] auto mipLevels() const noexcept -> u32 {
+            return m_mipLevels;
+        }
 
-        [[nodiscard]] unsigned char*& data() noexcept { return m_data; }
-        [[nodiscard]] Extent2D& extent() noexcept { return m_extent; }
-        [[nodiscard]] u32& mipLevels() noexcept { return m_mipLevels; }
+        [[nodiscard]] auto data() noexcept -> unsigned char*& { return m_data; }
+        [[nodiscard]] auto extent() noexcept -> Extent2D& { return m_extent; }
+        [[nodiscard]] auto mipLevels() noexcept -> u32& { return m_mipLevels; }
 
-        [[nodiscard]] VkDeviceSize size() const noexcept {
+        [[nodiscard]] auto size() const noexcept -> VkDeviceSize {
             return static_cast<VkDeviceSize>(m_extent.width) * m_extent.height *
                    4;
         }
@@ -101,22 +116,25 @@ class Texture {
         u32 m_mipLevels{0};
     };
 
-    static tl::expected<RawPixels, Error<EngineError>> loadRawPixels(
-        std::string const& filepath);
+    static auto loadRawPixels(std::string const& filepath)
+        -> tl::expected<RawPixels, Error<EngineError>>;
 
-    static tl::expected<std::pair<VkImage, VmaAllocation>, Error<EngineError>>
-    createAllocatedImage(DeviceContext const& device, Extent2D const& extent,
-                         u32 mipLevels);
+    static auto createAllocatedImage(DeviceContext const& device,
+                                     Extent2D const& extent, u32 mipLevels)
+        -> tl::expected<std::pair<VkImage, VmaAllocation>, Error<EngineError>>;
 
-    static tl::expected<void, Error<EngineError>> uploadAndGenerateMipmaps(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, VkImage image, RawPixels const& pixels);
+    static auto uploadAndGenerateMipmaps(DeviceContext const& device,
+                                         VkCommandPool commandPool,
+                                         VkQueue graphicsQueue, VkImage image,
+                                         RawPixels const& pixels)
+        -> tl::expected<void, Error<EngineError>>;
 
-    static tl::expected<VkImageView, Error<EngineError>> createImageView(
-        DeviceContext const& device, VkImage image, u32 mipLevels);
+    static auto createImageView(DeviceContext const& device, VkImage image,
+                                u32 mipLevels)
+        -> tl::expected<VkImageView, Error<EngineError>>;
 
-    static tl::expected<VkSampler, Error<EngineError>> createSampler(
-        DeviceContext const& device);
+    static auto createSampler(DeviceContext const& device)
+        -> tl::expected<VkSampler, Error<EngineError>>;
 };
 
 }  // namespace mpvgl::vlk

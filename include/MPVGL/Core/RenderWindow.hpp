@@ -32,12 +32,13 @@ class RenderWindow {
     RenderWindow(RenderWindow const &other) noexcept = delete;
     RenderWindow(RenderWindow &&other) noexcept = delete;
 
-    RenderWindow &operator=(RenderWindow const &other) noexcept = delete;
-    RenderWindow &operator=(RenderWindow &&other) noexcept = delete;
+    auto operator=(RenderWindow const &other) noexcept
+        -> RenderWindow & = delete;
+    auto operator=(RenderWindow &&other) noexcept -> RenderWindow & = delete;
 
     ~RenderWindow() noexcept;
 
-    int draw() noexcept;
+    auto draw() noexcept -> int;
 
    private:
     vlk::Vulkan vulkan{};

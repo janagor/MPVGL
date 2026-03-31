@@ -30,7 +30,7 @@ Buffer::Buffer(Buffer&& other) noexcept
       m_size(other.m_size),
       m_allocator(other.m_allocator) {}
 
-Buffer& Buffer::operator=(Buffer&& other) noexcept {
+auto Buffer::operator=(Buffer&& other) noexcept -> Buffer& {
     if (this != &other) {
         cleanup();
         m_buffer = std::exchange(other.m_buffer, VK_NULL_HANDLE);
@@ -43,9 +43,10 @@ Buffer& Buffer::operator=(Buffer&& other) noexcept {
 
 Buffer::~Buffer() { cleanup(); }
 
-tl::expected<Buffer, Error<EngineError>> Buffer::create(
-    DeviceContext const& device, VkDeviceSize size, VkBufferUsageFlags usage,
-    VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocFlags) {
+auto Buffer::create(DeviceContext const& device, VkDeviceSize size,
+                    VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                    VmaAllocationCreateFlags allocFlags)
+    -> tl::expected<Buffer, Error<EngineError>> {
     auto bufferInfo = initializers::bufferCreateInfo(size, usage);
 
     VmaAllocationCreateInfo allocInfo = {};
@@ -63,13 +64,15 @@ tl::expected<Buffer, Error<EngineError>> Buffer::create(
     return Buffer{buffer, allocation, size, device.allocator};
 }
 
-VkBuffer Buffer::handle() const noexcept { return m_buffer; };
+auto Buffer::handle() const noexcept -> VkBuffer { return m_buffer; };
 
-VmaAllocation Buffer::allocation() const noexcept { return m_allocation; }
+auto Buffer::allocation() const noexcept -> VmaAllocation {
+    return m_allocation;
+}
 
-VkDeviceSize Buffer::size() const noexcept { return m_size; }
+auto Buffer::size() const noexcept -> VkDeviceSize { return m_size; }
 
-tl::expected<void*, Error<EngineError>> Buffer::map() noexcept {
+auto Buffer::map() noexcept -> tl::expected<void*, Error<EngineError>> {
     if (m_allocation == VK_NULL_HANDLE || m_allocator == VK_NULL_HANDLE) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Cannot map an uninitialized buffer"}};
@@ -117,31 +120,35 @@ void Buffer::copyBuffer(DeviceContext const& device, VkCommandPool commandPool,
     device.logDevDisp.freeCommandBuffers(commandPool, 1, &commandBuffer);
 }
 
-tl::expected<Buffer, Error<EngineError>> Buffer::createWithStaging(
-    DeviceContext const& device, VkCommandPool commandPool,
-    VkQueue graphicsQueue, void const* data, VkDeviceSize size,
-    VkBufferUsageFlags usage) {
+auto Buffer::createWithStaging(DeviceContext const& device,
+                               VkCommandPool commandPool, VkQueue graphicsQueue,
+                               void const* data, VkDeviceSize size,
+                               VkBufferUsageFlags usage)
+    -> tl::expected<Buffer, Error<EngineError>> {
     return Buffer::create(
                device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                VMA_MEMORY_USAGE_AUTO,
                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
-        .and_then([&](Buffer staging) {
-            return staging.map().transform([&](void* mappedData) {
-                std::memcpy(mappedData, data, static_cast<size_t>(size));
-                staging.unmap();
-                return std::move(staging);
-            });
-        })
-        .and_then([&](Buffer staging) {
-            return Buffer::create(device, size,
-                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
-                                  VMA_MEMORY_USAGE_AUTO, 0)
-                .transform([&](Buffer gpu) {
-                    Buffer::copyBuffer(device, commandPool, graphicsQueue,
-                                       staging.handle(), gpu.handle(), size);
-                    return std::move(gpu);
+        .and_then(
+            [&](Buffer staging) -> tl::expected<Buffer, Error<EngineError>> {
+                return staging.map().transform([&](void* mappedData) -> Buffer {
+                    std::memcpy(mappedData, data, static_cast<size_t>(size));
+                    staging.unmap();
+                    return std::move(staging);
                 });
-        });
+            })
+        .and_then(
+            [&](Buffer staging) -> tl::expected<Buffer, Error<EngineError>> {
+                return Buffer::create(device, size,
+                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
+                                      VMA_MEMORY_USAGE_AUTO, 0)
+                    .transform([&](Buffer gpu) -> Buffer {
+                        Buffer::copyBuffer(device, commandPool, graphicsQueue,
+                                           staging.handle(), gpu.handle(),
+                                           size);
+                        return std::move(gpu);
+                    });
+            });
 }
 
 void Buffer::cleanup() noexcept {

@@ -38,21 +38,27 @@ constexpr f64 MAX_ZOOM = 45.0;
 
 class Camera {
    public:
-    [[nodiscard]] glm::dvec3 const& position() const noexcept {
+    [[nodiscard]] auto position() const noexcept -> glm::dvec3 const& {
         return m_position;
     }
-    [[nodiscard]] glm::dquat const& orientation() const noexcept {
+    [[nodiscard]] auto orientation() const noexcept -> glm::dquat const& {
         return m_orientation;
     }
-    [[nodiscard]] glm::dvec3 const& front() const noexcept { return m_front; }
-    [[nodiscard]] glm::dvec3 const& up() const noexcept { return m_up; }
-    [[nodiscard]] glm::dvec3 const& right() const noexcept { return m_right; }
+    [[nodiscard]] auto front() const noexcept -> glm::dvec3 const& {
+        return m_front;
+    }
+    [[nodiscard]] auto up() const noexcept -> glm::dvec3 const& { return m_up; }
+    [[nodiscard]] auto right() const noexcept -> glm::dvec3 const& {
+        return m_right;
+    }
 
-    [[nodiscard]] f64 movementSpeed() const noexcept { return m_movementSpeed; }
-    [[nodiscard]] f64 mouseSensitivity() const noexcept {
+    [[nodiscard]] auto movementSpeed() const noexcept -> f64 {
+        return m_movementSpeed;
+    }
+    [[nodiscard]] auto mouseSensitivity() const noexcept -> f64 {
         return m_mouseSensitivity;
     }
-    [[nodiscard]] f64 zoom() const noexcept { return m_zoom; }
+    [[nodiscard]] auto zoom() const noexcept -> f64 { return m_zoom; }
 
     Camera(glm::dvec3 position = glm::dvec3(0.0, 0.0, 0.0))
         : m_position(position) {
@@ -62,7 +68,7 @@ class Camera {
         updateCameraVectors();
     }
 
-    glm::mat4 getViewMatrix() const {
+    [[nodiscard]] auto getViewMatrix() const -> glm::mat4 {
         auto const rotate = glm::mat4_cast(glm::conjugate(m_orientation));
         auto const translate = glm::translate(glm::dmat4(1.0), -m_position);
         return rotate * translate;

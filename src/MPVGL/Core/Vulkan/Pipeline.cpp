@@ -27,8 +27,9 @@ PipelineBuilder::PipelineBuilder() {
     disableColorBlending();
 }
 
-PipelineBuilder& PipelineBuilder::setShaders(VkShaderModule vertexShader,
-                                             VkShaderModule fragmentShader) {
+auto PipelineBuilder::setShaders(VkShaderModule vertexShader,
+                                 VkShaderModule fragmentShader)
+    -> PipelineBuilder& {
     m_shaderStages.clear();
     m_shaderStages.push_back(initializers::pipelineShaderStageCreateInfo(
         VK_SHADER_STAGE_VERTEX_BIT, vertexShader, "main"));
@@ -37,41 +38,43 @@ PipelineBuilder& PipelineBuilder::setShaders(VkShaderModule vertexShader,
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setVertexInput(
+auto PipelineBuilder::setVertexInput(
     std::vector<VkVertexInputBindingDescription> bindings,
-    std::vector<VkVertexInputAttributeDescription> attributes) {
+    std::vector<VkVertexInputAttributeDescription> attributes)
+    -> PipelineBuilder& {
     m_vertexBindings = std::move(bindings);
     m_vertexAttributes = std::move(attributes);
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setInputTopology(
-    VkPrimitiveTopology topology) {
+auto PipelineBuilder::setInputTopology(VkPrimitiveTopology topology)
+    -> PipelineBuilder& {
     m_inputAssembly.topology = topology;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setPolygonMode(VkPolygonMode mode) {
+auto PipelineBuilder::setPolygonMode(VkPolygonMode mode) -> PipelineBuilder& {
     m_rasterizer.polygonMode = mode;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setCullMode(VkCullModeFlags cullMode,
-                                              VkFrontFace frontFace) {
+auto PipelineBuilder::setCullMode(VkCullModeFlags cullMode,
+                                  VkFrontFace frontFace) -> PipelineBuilder& {
     m_rasterizer.cullMode = cullMode;
     m_rasterizer.frontFace = frontFace;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setMultisampling(
-    VkSampleCountFlagBits samples) {
+auto PipelineBuilder::setMultisampling(VkSampleCountFlagBits samples)
+    -> PipelineBuilder& {
     m_multisampling.rasterizationSamples = samples;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setDepthStencil(VkBool32 depthTestEnable,
-                                                  VkBool32 depthWriteEnable,
-                                                  VkCompareOp compareOp) {
+auto PipelineBuilder::setDepthStencil(VkBool32 depthTestEnable,
+                                      VkBool32 depthWriteEnable,
+                                      VkCompareOp compareOp)
+    -> PipelineBuilder& {
     m_depthStencil = initializers::pipelineDepthStencilStateCreateInfo(
         depthTestEnable, depthWriteEnable, compareOp);
     m_depthStencil.minDepthBounds = 0.0F;
@@ -79,7 +82,7 @@ PipelineBuilder& PipelineBuilder::setDepthStencil(VkBool32 depthTestEnable,
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::disableColorBlending() {
+auto PipelineBuilder::disableColorBlending() -> PipelineBuilder& {
     m_colorBlendAttachment = {};
     m_colorBlendAttachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
@@ -88,14 +91,15 @@ PipelineBuilder& PipelineBuilder::disableColorBlending() {
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setDynamicStates(
-    std::vector<VkDynamicState> states) {
+auto PipelineBuilder::setDynamicStates(std::vector<VkDynamicState> states)
+    -> PipelineBuilder& {
     m_dynamicStates = std::move(states);
     return *this;
 }
 
-tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
-    DeviceContext const& device, VkRenderPass pass, VkPipelineLayout layout) {
+auto PipelineBuilder::build(DeviceContext const& device, VkRenderPass pass,
+                            VkPipelineLayout layout)
+    -> tl::expected<VkPipeline, Error<EngineError>> {
     auto vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo(
         m_vertexBindings, m_vertexAttributes);
     auto viewportState = initializers::pipelineViewportStateCreateInfo(1, 1);
@@ -103,8 +107,7 @@ tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
     auto colorBlending = initializers::pipelineColorBlendStateCreateInfo(
         {&m_colorBlendAttachment, 1}, VK_FALSE, VK_LOGIC_OP_COPY);
     auto blendConstants = std::array{0.0F, 0.0F, 0.0F, 0.0F};
-    std::copy(blendConstants.begin(), blendConstants.end(),
-              std::begin(colorBlending.blendConstants));
+    std::ranges::copy(blendConstants, std::begin(colorBlending.blendConstants));
 
     auto dynamicInfo =
         initializers::pipelineDynamicStateCreateInfo(m_dynamicStates);

@@ -10,8 +10,8 @@
 namespace mpvgl::vlk {
 
 struct PhysicalDeviceBuilder {
-    static tl::expected<vkb::PhysicalDevice, std::error_code> getPhysicalDevice(
-        vkb::Instance instance, VkSurfaceKHR surface) {
+    static auto getPhysicalDevice(vkb::Instance instance, VkSurfaceKHR surface)
+        -> tl::expected<vkb::PhysicalDevice, std::error_code> {
         vkb::PhysicalDeviceSelector phys_device_selector(instance);
         auto phys_device_ret =
             phys_device_selector.set_surface(surface).select();

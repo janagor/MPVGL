@@ -16,15 +16,17 @@ class Semaphore {
     ~Semaphore() noexcept;
 
     Semaphore(Semaphore const&) = delete;
-    Semaphore& operator=(Semaphore const&) = delete;
+    auto operator=(Semaphore const&) -> Semaphore& = delete;
 
     Semaphore(Semaphore&& other) noexcept;
-    Semaphore& operator=(Semaphore&& other) noexcept;
+    auto operator=(Semaphore&& other) noexcept -> Semaphore&;
 
-    [[nodiscard]] static tl::expected<Semaphore, Error<EngineError>> create(
-        DeviceContext const& device);
+    [[nodiscard]] static auto create(DeviceContext const& device)
+        -> tl::expected<Semaphore, Error<EngineError>>;
 
-    [[nodiscard]] VkSemaphore handle() const noexcept { return m_semaphore; }
+    [[nodiscard]] auto handle() const noexcept -> VkSemaphore {
+        return m_semaphore;
+    }
 
    private:
     Semaphore(VkSemaphore semaphore, vkb::DispatchTable disp) noexcept;
@@ -40,15 +42,16 @@ class Fence {
     ~Fence() noexcept;
 
     Fence(Fence const&) = delete;
-    Fence& operator=(Fence const&) = delete;
+    auto operator=(Fence const&) -> Fence& = delete;
 
     Fence(Fence&& other) noexcept;
-    Fence& operator=(Fence&& other) noexcept;
+    auto operator=(Fence&& other) noexcept -> Fence&;
 
-    [[nodiscard]] static tl::expected<Fence, Error<EngineError>> create(
-        DeviceContext const& device, VkFenceCreateFlags flags = 0);
+    [[nodiscard]] static auto create(DeviceContext const& device,
+                                     VkFenceCreateFlags flags = 0)
+        -> tl::expected<Fence, Error<EngineError>>;
 
-    [[nodiscard]] VkFence handle() const noexcept { return m_fence; }
+    [[nodiscard]] auto handle() const noexcept -> VkFence { return m_fence; }
 
    private:
     Fence(VkFence fence, vkb::DispatchTable disp) noexcept;

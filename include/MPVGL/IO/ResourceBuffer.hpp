@@ -54,19 +54,20 @@ class ResourceBuffer {
     using Storage = std::variant<std::vector<std::byte>, mio::mmap_source>;
 
     ResourceBuffer(ResourceBuffer const&) = delete;
-    ResourceBuffer& operator=(ResourceBuffer const&) = delete;
+    auto operator=(ResourceBuffer const&) -> ResourceBuffer& = delete;
 
     ResourceBuffer(ResourceBuffer&&) noexcept = default;
-    ResourceBuffer& operator=(ResourceBuffer&&) noexcept = default;
+    auto operator=(ResourceBuffer&&) noexcept -> ResourceBuffer& = default;
     ~ResourceBuffer() = default;
 
     template <typename PolicyTag = LoadPolicyAuto>
-    [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> load(
-        std::filesystem::path const& path, PolicyTag policy = auto_policy) {
+    [[nodiscard]] static auto load(std::filesystem::path const& path,
+                                   PolicyTag policy = auto_policy)
+        -> tl::expected<ResourceBuffer, Error<IOError>> {
         return loadImpl(path, policy);
     }
 
-    [[nodiscard]] std::span<std::byte const> view() const {
+    [[nodiscard]] auto view() const -> std::span<std::byte const> {
         return std::visit(
             [](auto const& storage) -> std::span<std::byte const> {
                 using T = std::decay_t<decltype(storage)>;
@@ -84,8 +85,9 @@ class ResourceBuffer {
    private:
     explicit ResourceBuffer(Storage storage) : m_storage(std::move(storage)) {}
 
-    [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
-        std::filesystem::path const& path, LoadPolicyHeap /*loadPolicyHeap*/) {
+    [[nodiscard]] static auto loadImpl(std::filesystem::path const& path,
+                                       LoadPolicyHeap /*loadPolicyHeap*/)
+        -> tl::expected<ResourceBuffer, Error<IOError>> {
         std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file.is_open()) {
             return tl::unexpected{
@@ -106,8 +108,9 @@ class ResourceBuffer {
         return ResourceBuffer{std::move(buffer)};
     }
 
-    [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
-        std::filesystem::path const& path, LoadPolicyMmap /*loadPolicyMmap*/) {
+    [[nodiscard]] static auto loadImpl(std::filesystem::path const& path,
+                                       LoadPolicyMmap /*loadPolicyMmap*/)
+        -> tl::expected<ResourceBuffer, Error<IOError>> {
         std::error_code errorCode;
         mio::mmap_source mmap;
 
@@ -121,8 +124,9 @@ class ResourceBuffer {
         return ResourceBuffer{std::move(mmap)};
     }
 
-    [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
-        std::filesystem::path const& path, LoadPolicyAuto policy) {
+    [[nodiscard]] static auto loadImpl(std::filesystem::path const& path,
+                                       LoadPolicyAuto policy)
+        -> tl::expected<ResourceBuffer, Error<IOError>> {
         std::error_code errorCode{};
         std::uintmax_t const size = std::filesystem::file_size(path, errorCode);
 

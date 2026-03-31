@@ -29,8 +29,8 @@ GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) noexcept
     other.m_layout = VK_NULL_HANDLE;
 }
 
-GraphicsPipeline& GraphicsPipeline::operator=(
-    GraphicsPipeline&& other) noexcept {
+auto GraphicsPipeline::operator=(GraphicsPipeline&& other) noexcept
+    -> GraphicsPipeline& {
     if (this != &other) {
         cleanup();
         m_pipeline = other.m_pipeline;
@@ -56,14 +56,15 @@ void GraphicsPipeline::cleanup() noexcept {
     }
 }
 
-tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
-    DeviceContext const& device, VkRenderPass renderPass,
-    VkDescriptorSetLayout descriptorSetLayout,
-    std::filesystem::path const& vertexShaderPath,
-    std::filesystem::path const& fragmentShaderPath) {
+auto GraphicsPipeline::create(DeviceContext const& device,
+                              VkRenderPass renderPass,
+                              VkDescriptorSetLayout descriptorSetLayout,
+                              std::filesystem::path const& vertexShaderPath,
+                              std::filesystem::path const& fragmentShaderPath)
+    -> tl::expected<GraphicsPipeline, Error<EngineError>> {
     auto vertBufferRes =
         io::ResourceBuffer::load(vertexShaderPath)
-            .map_error([](auto const& error) {
+            .map_error([](auto const& error) -> auto {
                 return Error<EngineError>{EngineError::VulkanRuntimeError,
                                           error.message()};
             });
@@ -73,7 +74,7 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
 
     auto fragBufferRes =
         io::ResourceBuffer::load(fragmentShaderPath)
-            .map_error([](auto const& error) {
+            .map_error([](auto const& error) -> auto {
                 return Error<EngineError>{EngineError::VulkanRuntimeError,
                                           error.message()};
             });

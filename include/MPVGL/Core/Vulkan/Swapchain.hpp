@@ -19,9 +19,9 @@
 namespace mpvgl::vlk {
 
 struct SwapchainBuilder {
-    static tl::expected<vkb::Swapchain, Error<EngineError>> getSwapchain(
-        vkb::Device const& device, GLFWwindow* window,
-        vkb::Swapchain const& oldSwapchain = {}) {
+    static auto getSwapchain(vkb::Device const& device, GLFWwindow* window,
+                             vkb::Swapchain const& oldSwapchain = {})
+        -> tl::expected<vkb::Swapchain, Error<EngineError>> {
         vkb::SwapchainBuilder swapchainBuilder{device};
         int width{};
         int height{};
@@ -45,36 +45,39 @@ class Swapchain {
    public:
     Swapchain() = default;
     Swapchain(Swapchain const&) = delete;
-    Swapchain& operator=(Swapchain const&) = delete;
+    auto operator=(Swapchain const&) -> Swapchain& = delete;
     Swapchain(Swapchain&& other) noexcept;
-    Swapchain& operator=(Swapchain&& other) noexcept;
+    auto operator=(Swapchain&& other) noexcept -> Swapchain&;
     ~Swapchain();
 
-    [[nodiscard]] static tl::expected<Swapchain, Error<EngineError>> create(
-        DeviceContext const& deviceContext);
-    [[nodiscard]] tl::expected<void, Error<EngineError>> recreate(
-        DeviceContext const& deviceContext);
+    [[nodiscard]] static auto create(DeviceContext const& deviceContext)
+        -> tl::expected<Swapchain, Error<EngineError>>;
+    [[nodiscard]] auto recreate(DeviceContext const& deviceContext)
+        -> tl::expected<void, Error<EngineError>>;
 
-    [[nodiscard]] VkSwapchainKHR handle() const noexcept {
+    [[nodiscard]] auto handle() const noexcept -> VkSwapchainKHR {
         return m_swapchain.swapchain;
     }
-    [[nodiscard]] VkFormat format() const noexcept {
+    [[nodiscard]] auto format() const noexcept -> VkFormat {
         return m_swapchain.image_format;
     }
-    [[nodiscard]] VkExtent2D const& extent() const noexcept {
+    [[nodiscard]] auto extent() const noexcept -> VkExtent2D const& {
         return m_swapchain.extent;
     }
-    [[nodiscard]] u32 imageCount() const noexcept {
+    [[nodiscard]] auto imageCount() const noexcept -> u32 {
         return m_swapchain.image_count;
     }
-    [[nodiscard]] std::vector<VkImage> const& images() const noexcept {
+    [[nodiscard]] auto images() const noexcept -> std::vector<VkImage> const& {
         return m_images;
     }
-    [[nodiscard]] std::vector<VkImage>& images() noexcept { return m_images; }
-    [[nodiscard]] std::vector<VkImageView> const& imageViews() const noexcept {
+    [[nodiscard]] auto images() noexcept -> std::vector<VkImage>& {
+        return m_images;
+    }
+    [[nodiscard]] auto imageViews() const noexcept
+        -> std::vector<VkImageView> const& {
         return m_imageViews;
     }
-    [[nodiscard]] std::vector<VkImageView>& imageViews() noexcept {
+    [[nodiscard]] auto imageViews() noexcept -> std::vector<VkImageView>& {
         return m_imageViews;
     }
 
@@ -87,7 +90,7 @@ class Swapchain {
 
     Swapchain(vkb::Swapchain vkbSwapchain, vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
-    tl::expected<void, Error<EngineError>> initImageViews();
+    auto initImageViews() -> tl::expected<void, Error<EngineError>>;
 };
 
 }  // namespace mpvgl::vlk

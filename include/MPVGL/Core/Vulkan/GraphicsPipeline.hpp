@@ -18,19 +18,24 @@ class GraphicsPipeline {
     ~GraphicsPipeline() noexcept;
 
     GraphicsPipeline(GraphicsPipeline const&) = delete;
-    GraphicsPipeline& operator=(GraphicsPipeline const&) = delete;
+    auto operator=(GraphicsPipeline const&) -> GraphicsPipeline& = delete;
 
     GraphicsPipeline(GraphicsPipeline&& other) noexcept;
-    GraphicsPipeline& operator=(GraphicsPipeline&& other) noexcept;
+    auto operator=(GraphicsPipeline&& other) noexcept -> GraphicsPipeline&;
 
-    [[nodiscard]] static tl::expected<GraphicsPipeline, Error<EngineError>>
-    create(DeviceContext const& device, VkRenderPass renderPass,
-           VkDescriptorSetLayout descriptorSetLayout,
-           std::filesystem::path const& vertexShaderPath,
-           std::filesystem::path const& fragmentShaderPath);
+    [[nodiscard]] static auto create(
+        DeviceContext const& device, VkRenderPass renderPass,
+        VkDescriptorSetLayout descriptorSetLayout,
+        std::filesystem::path const& vertexShaderPath,
+        std::filesystem::path const& fragmentShaderPath)
+        -> tl::expected<GraphicsPipeline, Error<EngineError>>;
 
-    [[nodiscard]] VkPipeline handle() const noexcept { return m_pipeline; }
-    [[nodiscard]] VkPipelineLayout layout() const noexcept { return m_layout; }
+    [[nodiscard]] auto handle() const noexcept -> VkPipeline {
+        return m_pipeline;
+    }
+    [[nodiscard]] auto layout() const noexcept -> VkPipelineLayout {
+        return m_layout;
+    }
 
    private:
     GraphicsPipeline(VkPipeline pipeline, VkPipelineLayout layout,

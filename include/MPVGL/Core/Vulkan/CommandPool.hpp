@@ -15,15 +15,18 @@ class CommandPool {
    public:
     CommandPool() = default;
     CommandPool(CommandPool const&) = delete;
-    CommandPool& operator=(CommandPool const&) = delete;
+    auto operator=(CommandPool const&) -> CommandPool& = delete;
     CommandPool(CommandPool&& other) noexcept;
-    CommandPool& operator=(CommandPool&& other) noexcept;
+    auto operator=(CommandPool&& other) noexcept -> CommandPool&;
     ~CommandPool() noexcept;
 
-    [[nodiscard]] static tl::expected<CommandPool, Error<EngineError>> create(
-        DeviceContext const& device, u32 queueFamilyIndex);
+    [[nodiscard]] static auto create(DeviceContext const& device,
+                                     u32 queueFamilyIndex)
+        -> tl::expected<CommandPool, Error<EngineError>>;
 
-    [[nodiscard]] VkCommandPool handle() const noexcept { return m_pool; }
+    [[nodiscard]] auto handle() const noexcept -> VkCommandPool {
+        return m_pool;
+    }
 
    private:
     CommandPool(VkCommandPool pool, vkb::DispatchTable disp) noexcept;

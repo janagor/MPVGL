@@ -24,10 +24,12 @@ class Scene {
                              std::move(texturePath));
     }
 
-    [[nodiscard]] std::vector<SceneNode> const& nodes() const noexcept {
+    [[nodiscard]] auto nodes() const noexcept -> std::vector<SceneNode> const& {
         return m_nodes;
     }
-    [[nodiscard]] std::vector<SceneNode>& nodes() noexcept { return m_nodes; }
+    [[nodiscard]] auto nodes() noexcept -> std::vector<SceneNode>& {
+        return m_nodes;
+    }
 
    private:
     std::vector<SceneNode> m_nodes;

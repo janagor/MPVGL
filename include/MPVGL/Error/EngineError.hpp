@@ -30,11 +30,12 @@ namespace mpvgl {
 
 class EngineErrorCategoryImpl : public std::error_category {
    public:
-    [[nodiscard]] char const* name() const noexcept override {
+    [[nodiscard]] auto name() const noexcept -> char const* override {
         return "mpvgl::Engine";
     }
 
-    [[nodiscard]] constexpr std::string message(int error) const override {
+    [[nodiscard]] constexpr auto message(int error) const
+        -> std::string override {
         switch (static_cast<EngineError>(error)) {
             case EngineError::VulkanInitFailed:
                 return "Vulkan initialization failed";
@@ -52,12 +53,13 @@ class EngineErrorCategoryImpl : public std::error_category {
     }
 };
 
-[[nodiscard]] inline std::error_category const& EngineErrorCategory() {
+[[nodiscard]] inline auto EngineErrorCategory() -> std::error_category const& {
     static EngineErrorCategoryImpl const instance;
     return instance;
 }
 
-[[nodiscard]] inline std::error_code make_error_code(EngineError error) {
+[[nodiscard]] inline auto make_error_code(EngineError error)
+    -> std::error_code {
     return {static_cast<int>(error), EngineErrorCategory()};
 }
 

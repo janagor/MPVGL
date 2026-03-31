@@ -6,7 +6,7 @@ Checks: >
   concurrency-*,
   cppcoreguidelines-*,
   misc-*,
-  # modernize-*,
+  modernize-*,
   performance-*,
   readability-*,
   -cert-dcl58-cpp,

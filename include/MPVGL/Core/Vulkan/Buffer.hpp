@@ -18,31 +18,33 @@ class Buffer {
    public:
     Buffer() = default;
     Buffer(Buffer const&) = delete;
-    Buffer& operator=(Buffer const&) = delete;
+    auto operator=(Buffer const&) -> Buffer& = delete;
     Buffer(Buffer&& other) noexcept;
-    Buffer& operator=(Buffer&& other) noexcept;
+    auto operator=(Buffer&& other) noexcept -> Buffer&;
     ~Buffer();
 
-    static tl::expected<Buffer, Error<EngineError>> create(
-        DeviceContext const& device, VkDeviceSize size,
-        VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-        VmaAllocationCreateFlags allocFlags = 0);
+    static auto create(DeviceContext const& device, VkDeviceSize size,
+                       VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                       VmaAllocationCreateFlags allocFlags = 0)
+        -> tl::expected<Buffer, Error<EngineError>>;
 
     template <typename T>
-    static tl::expected<Buffer, Error<EngineError>> createFromData(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, std::vector<T> const& data,
-        VkBufferUsageFlags usage) {
+    static auto createFromData(DeviceContext const& device,
+                               VkCommandPool commandPool, VkQueue graphicsQueue,
+                               std::vector<T> const& data,
+                               VkBufferUsageFlags usage)
+        -> tl::expected<Buffer, Error<EngineError>> {
         VkDeviceSize const bufferSize = sizeof(T) * data.size();
         return createWithStaging(device, commandPool, graphicsQueue,
                                  data.data(), bufferSize, usage);
     }
 
-    [[nodiscard]] VkBuffer handle() const noexcept;
-    [[nodiscard]] VmaAllocation allocation() const noexcept;
-    [[nodiscard]] VkDeviceSize size() const noexcept;
+    [[nodiscard]] auto handle() const noexcept -> VkBuffer;
+    [[nodiscard]] auto allocation() const noexcept -> VmaAllocation;
+    [[nodiscard]] auto size() const noexcept -> VkDeviceSize;
 
-    [[nodiscard]] tl::expected<void*, Error<EngineError>> map() noexcept;
+    [[nodiscard]] auto map() noexcept
+        -> tl::expected<void*, Error<EngineError>>;
     void unmap() noexcept;
 
    private:
@@ -54,10 +56,11 @@ class Buffer {
 
     Buffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize size,
            VmaAllocator allocator) noexcept;
-    static tl::expected<Buffer, Error<EngineError>> createWithStaging(
-        DeviceContext const& device, VkCommandPool commandPool,
-        VkQueue graphicsQueue, void const* data, VkDeviceSize size,
-        VkBufferUsageFlags usage);
+    static auto createWithStaging(DeviceContext const& device,
+                                  VkCommandPool commandPool,
+                                  VkQueue graphicsQueue, void const* data,
+                                  VkDeviceSize size, VkBufferUsageFlags usage)
+        -> tl::expected<Buffer, Error<EngineError>>;
     static void copyBuffer(DeviceContext const& device,
                            VkCommandPool commandPool, VkQueue graphicsQueue,
                            VkBuffer srcBuffer, VkBuffer dstBuffer,

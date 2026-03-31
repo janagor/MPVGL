@@ -24,8 +24,8 @@ DescriptorSetLayout::DescriptorSetLayout(DescriptorSetLayout&& other) noexcept
     other.m_layout = VK_NULL_HANDLE;
 }
 
-DescriptorSetLayout& DescriptorSetLayout::operator=(
-    DescriptorSetLayout&& other) noexcept {
+auto DescriptorSetLayout::operator=(DescriptorSetLayout&& other) noexcept
+    -> DescriptorSetLayout& {
     if (this != &other) {
         cleanup();
         m_layout = other.m_layout;
@@ -44,8 +44,9 @@ void DescriptorSetLayout::cleanup() noexcept {
     }
 }
 
-DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(
-    u32 binding, VkDescriptorType type, VkShaderStageFlags stageFlags) {
+auto DescriptorLayoutBuilder::addBinding(u32 binding, VkDescriptorType type,
+                                         VkShaderStageFlags stageFlags)
+    -> DescriptorLayoutBuilder& {
     VkDescriptorSetLayoutBinding newBinding{};
     newBinding.binding = binding;
     newBinding.descriptorCount = 1;
@@ -58,8 +59,8 @@ DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(
 
 void DescriptorLayoutBuilder::clear() { m_bindings.clear(); }
 
-tl::expected<DescriptorSetLayout, Error<EngineError>>
-DescriptorLayoutBuilder::build(DeviceContext const& device) {
+auto DescriptorLayoutBuilder::build(DeviceContext const& device)
+    -> tl::expected<DescriptorSetLayout, Error<EngineError>> {
     auto info = initializers::descriptorSetLayoutCreateInfo(m_bindings);
     VkDescriptorSetLayout layout = nullptr;
     if (device.logDevDisp.createDescriptorSetLayout(&info, nullptr, &layout) !=
@@ -71,9 +72,9 @@ DescriptorLayoutBuilder::build(DeviceContext const& device) {
     return DescriptorSetLayout{layout, device.logDevDisp};
 }
 
-tl::expected<void, Error<EngineError>> DescriptorAllocator::init(
-    DeviceContext const& device, u32 maxSets,
-    std::span<PoolSizeRatio> poolRatios) {
+auto DescriptorAllocator::init(DeviceContext const& device, u32 maxSets,
+                               std::span<PoolSizeRatio> poolRatios)
+    -> tl::expected<void, Error<EngineError>> {
     std::vector<VkDescriptorPoolSize> poolSizes;
     for (auto ratio : poolRatios) {
         poolSizes.push_back(VkDescriptorPoolSize{
@@ -97,8 +98,9 @@ void DescriptorAllocator::cleanup(DeviceContext const& device) {
     }
 }
 
-tl::expected<VkDescriptorSet, Error<EngineError>> DescriptorAllocator::allocate(
-    DeviceContext const& device, VkDescriptorSetLayout layout) {
+auto DescriptorAllocator::allocate(DeviceContext const& device,
+                                   VkDescriptorSetLayout layout)
+    -> tl::expected<VkDescriptorSet, Error<EngineError>> {
     auto allocInfo =
         initializers::descriptorSetAllocateInfo(m_pool, {&layout, 1});
     VkDescriptorSet set = nullptr;
@@ -110,9 +112,9 @@ tl::expected<VkDescriptorSet, Error<EngineError>> DescriptorAllocator::allocate(
     return set;
 }
 
-DescriptorWriter& DescriptorWriter::writeBuffer(u32 binding, VkBuffer buffer,
-                                                size_t size, size_t offset,
-                                                VkDescriptorType type) {
+auto DescriptorWriter::writeBuffer(u32 binding, VkBuffer buffer, size_t size,
+                                   size_t offset, VkDescriptorType type)
+    -> DescriptorWriter& {
     auto& info = m_bufferInfos.emplace_back(VkDescriptorBufferInfo{
         .buffer = buffer, .offset = offset, .range = size});
 
@@ -123,11 +125,9 @@ DescriptorWriter& DescriptorWriter::writeBuffer(u32 binding, VkBuffer buffer,
     return *this;
 }
 
-DescriptorWriter& DescriptorWriter::writeImage(u32 binding,
-                                               VkImageView imageView,
-                                               VkSampler sampler,
-                                               VkImageLayout layout,
-                                               VkDescriptorType type) {
+auto DescriptorWriter::writeImage(u32 binding, VkImageView imageView,
+                                  VkSampler sampler, VkImageLayout layout,
+                                  VkDescriptorType type) -> DescriptorWriter& {
     auto& info = m_imageInfos.emplace_back(VkDescriptorImageInfo{
         .sampler = sampler, .imageView = imageView, .imageLayout = layout});
 

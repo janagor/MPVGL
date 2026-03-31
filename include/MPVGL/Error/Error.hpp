@@ -19,8 +19,10 @@ class Error {
         : m_code(err),
           m_message(msg.empty() ? m_code.message() : std::move(msg)) {}
 
-    [[nodiscard]] std::error_code code() const noexcept { return m_code; }
-    [[nodiscard]] std::string const& message() const noexcept {
+    [[nodiscard]] auto code() const noexcept -> std::error_code {
+        return m_code;
+    }
+    [[nodiscard]] auto message() const noexcept -> std::string const& {
         return m_message;
     }
 

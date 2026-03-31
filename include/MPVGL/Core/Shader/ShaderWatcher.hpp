@@ -26,9 +26,10 @@ class ShaderWatcher {
     }
 
     ShaderWatcher(ShaderWatcher const &other) noexcept = delete;
-    ShaderWatcher &operator=(ShaderWatcher const &other) noexcept = delete;
+    auto operator=(ShaderWatcher const &other) noexcept
+        -> ShaderWatcher & = delete;
     ShaderWatcher(ShaderWatcher &&other) noexcept = delete;
-    ShaderWatcher &operator=(ShaderWatcher &&other) noexcept = delete;
+    auto operator=(ShaderWatcher &&other) noexcept -> ShaderWatcher & = delete;
     ~ShaderWatcher() = default;
 
     void run(std::stop_token const &stopToken) {
@@ -53,7 +54,7 @@ class ShaderWatcher {
         }
     }
 
-    bool consumeChange() { return m_shadersChanged.exchange(false); }
+    auto consumeChange() -> bool { return m_shadersChanged.exchange(false); }
 
    private:
     std::string shaderDir;
@@ -61,21 +62,21 @@ class ShaderWatcher {
     std::map<std::string, std::filesystem::file_time_type> timestamps;
     std::atomic<bool> m_shadersChanged{false};
 
-    static bool isShaderFile(std::filesystem::path const &path) {
+    static auto isShaderFile(std::filesystem::path const &path) -> bool {
         return path.extension() == ".vert" || path.extension() == ".frag";
     }
 
-    std::string outputPath(std::filesystem::path const &input) {
+    auto outputPath(std::filesystem::path const &input) -> std::string {
         return outputDir + "/" + input.filename().string() + ".spv";
     }
 
-    tl::expected<void, Error<EngineError>> compile(
-        std::filesystem::path const &shaderPath) {
+    auto compile(std::filesystem::path const &shaderPath)
+        -> tl::expected<void, Error<EngineError>> {
         std::cout << "[ShaderWatcher] Compiling: " << shaderPath.filename()
                   << '\n';
 
         return io::ResourceBuffer::load(shaderPath)
-            .map_error([](auto const &error) {
+            .map_error([](auto const &error) -> auto {
                 return Error<EngineError>{EngineError::FileNotFound,
                                           error.message()};
             })

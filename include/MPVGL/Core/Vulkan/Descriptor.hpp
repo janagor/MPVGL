@@ -23,12 +23,13 @@ class DescriptorSetLayout {
     ~DescriptorSetLayout() noexcept;
 
     DescriptorSetLayout(DescriptorSetLayout const&) = delete;
-    DescriptorSetLayout& operator=(DescriptorSetLayout const&) = delete;
+    auto operator=(DescriptorSetLayout const&) -> DescriptorSetLayout& = delete;
 
     DescriptorSetLayout(DescriptorSetLayout&& other) noexcept;
-    DescriptorSetLayout& operator=(DescriptorSetLayout&& other) noexcept;
+    auto operator=(DescriptorSetLayout&& other) noexcept
+        -> DescriptorSetLayout&;
 
-    [[nodiscard]] VkDescriptorSetLayout handle() const noexcept {
+    [[nodiscard]] auto handle() const noexcept -> VkDescriptorSetLayout {
         return m_layout;
     }
 
@@ -44,11 +45,11 @@ class DescriptorSetLayout {
 
 class DescriptorLayoutBuilder {
    public:
-    DescriptorLayoutBuilder& addBinding(u32 binding, VkDescriptorType type,
-                                        VkShaderStageFlags stageFlags);
+    auto addBinding(u32 binding, VkDescriptorType type,
+                    VkShaderStageFlags stageFlags) -> DescriptorLayoutBuilder&;
     void clear();
-    tl::expected<DescriptorSetLayout, Error<EngineError>> build(
-        DeviceContext const& device);
+    auto build(DeviceContext const& device)
+        -> tl::expected<DescriptorSetLayout, Error<EngineError>>;
 
    private:
     std::vector<VkDescriptorSetLayoutBinding> m_bindings;
@@ -61,13 +62,13 @@ class DescriptorAllocator {
         f64 ratio;
     };
 
-    tl::expected<void, Error<EngineError>> init(
-        DeviceContext const& device, u32 maxSets,
-        std::span<PoolSizeRatio> poolRatios);
+    auto init(DeviceContext const& device, u32 maxSets,
+              std::span<PoolSizeRatio> poolRatios)
+        -> tl::expected<void, Error<EngineError>>;
     void cleanup(DeviceContext const& device);
 
-    tl::expected<VkDescriptorSet, Error<EngineError>> allocate(
-        DeviceContext const& device, VkDescriptorSetLayout layout);
+    auto allocate(DeviceContext const& device, VkDescriptorSetLayout layout)
+        -> tl::expected<VkDescriptorSet, Error<EngineError>>;
 
    private:
     VkDescriptorPool m_pool{VK_NULL_HANDLE};
@@ -75,11 +76,11 @@ class DescriptorAllocator {
 
 class DescriptorWriter {
    public:
-    DescriptorWriter& writeBuffer(u32 binding, VkBuffer buffer, size_t size,
-                                  size_t offset, VkDescriptorType type);
-    DescriptorWriter& writeImage(u32 binding, VkImageView imageView,
-                                 VkSampler sampler, VkImageLayout layout,
-                                 VkDescriptorType type);
+    auto writeBuffer(u32 binding, VkBuffer buffer, size_t size, size_t offset,
+                     VkDescriptorType type) -> DescriptorWriter&;
+    auto writeImage(u32 binding, VkImageView imageView, VkSampler sampler,
+                    VkImageLayout layout, VkDescriptorType type)
+        -> DescriptorWriter&;
 
     void updateSet(DeviceContext const& device, VkDescriptorSet set);
     void clear();

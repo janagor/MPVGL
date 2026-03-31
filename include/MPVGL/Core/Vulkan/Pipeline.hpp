@@ -16,25 +16,26 @@ class PipelineBuilder {
    public:
     PipelineBuilder();
 
-    PipelineBuilder& setShaders(VkShaderModule vertexShader,
-                                VkShaderModule fragmentShader);
-    PipelineBuilder& setVertexInput(
+    auto setShaders(VkShaderModule vertexShader, VkShaderModule fragmentShader)
+        -> PipelineBuilder&;
+    auto setVertexInput(
         std::vector<VkVertexInputBindingDescription> bindings,
-        std::vector<VkVertexInputAttributeDescription> attributes);
-    PipelineBuilder& setInputTopology(VkPrimitiveTopology topology);
-    PipelineBuilder& setPolygonMode(VkPolygonMode mode);
-    PipelineBuilder& setCullMode(VkCullModeFlags cullMode,
-                                 VkFrontFace frontFace);
-    PipelineBuilder& setMultisampling(VkSampleCountFlagBits samples);
-    PipelineBuilder& setDepthStencil(VkBool32 depthTestEnable,
-                                     VkBool32 depthWriteEnable,
-                                     VkCompareOp compareOp);
-    PipelineBuilder& disableColorBlending();
-    PipelineBuilder& setDynamicStates(std::vector<VkDynamicState> states);
+        std::vector<VkVertexInputAttributeDescription> attributes)
+        -> PipelineBuilder&;
+    auto setInputTopology(VkPrimitiveTopology topology) -> PipelineBuilder&;
+    auto setPolygonMode(VkPolygonMode mode) -> PipelineBuilder&;
+    auto setCullMode(VkCullModeFlags cullMode, VkFrontFace frontFace)
+        -> PipelineBuilder&;
+    auto setMultisampling(VkSampleCountFlagBits samples) -> PipelineBuilder&;
+    auto setDepthStencil(VkBool32 depthTestEnable, VkBool32 depthWriteEnable,
+                         VkCompareOp compareOp) -> PipelineBuilder&;
+    auto disableColorBlending() -> PipelineBuilder&;
+    auto setDynamicStates(std::vector<VkDynamicState> states)
+        -> PipelineBuilder&;
 
-    tl::expected<VkPipeline, Error<EngineError>> build(
-        DeviceContext const& device, VkRenderPass pass,
-        VkPipelineLayout layout);
+    auto build(DeviceContext const& device, VkRenderPass pass,
+               VkPipelineLayout layout)
+        -> tl::expected<VkPipeline, Error<EngineError>>;
 
    private:
     std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;

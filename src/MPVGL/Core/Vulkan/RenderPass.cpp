@@ -22,7 +22,7 @@ RenderPass::RenderPass(RenderPass&& other) noexcept
     other.m_renderPass = VK_NULL_HANDLE;
 }
 
-RenderPass& RenderPass::operator=(RenderPass&& other) noexcept {
+auto RenderPass::operator=(RenderPass&& other) noexcept -> RenderPass& {
     if (this != &other) {
         cleanup();
         m_renderPass = other.m_renderPass;
@@ -41,25 +41,26 @@ void RenderPass::cleanup() noexcept {
     }
 }
 
-RenderPassBuilder& RenderPassBuilder::addAttachment(
-    VkAttachmentDescription const& attachment) {
+auto RenderPassBuilder::addAttachment(VkAttachmentDescription const& attachment)
+    -> RenderPassBuilder& {
     m_attachments.push_back(attachment);
     return *this;
 }
 
-RenderPassBuilder& RenderPassBuilder::addSubpass(SubpassInfo const& subpass) {
+auto RenderPassBuilder::addSubpass(SubpassInfo const& subpass)
+    -> RenderPassBuilder& {
     m_subpassInfos.push_back(subpass);
     return *this;
 }
 
-RenderPassBuilder& RenderPassBuilder::addDependency(
-    VkSubpassDependency const& dependency) {
+auto RenderPassBuilder::addDependency(VkSubpassDependency const& dependency)
+    -> RenderPassBuilder& {
     m_dependencies.push_back(dependency);
     return *this;
 }
 
-tl::expected<RenderPass, Error<EngineError>> RenderPassBuilder::build(
-    DeviceContext const& device) {
+auto RenderPassBuilder::build(DeviceContext const& device)
+    -> tl::expected<RenderPass, Error<EngineError>> {
     std::vector<VkSubpassDescription> subpasses;
     subpasses.reserve(m_subpassInfos.size());
 

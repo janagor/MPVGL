@@ -18,22 +18,22 @@
 namespace mpvgl {
 
 struct GlslShaderIncluder : public glslang::TShader::Includer {
-    IncludeResult *includeSystem(char const * /*headerName*/,
-                                 char const * /*includerName*/,
-                                 size_t /*inclusionDepth*/) override {
+    auto includeSystem(char const * /*headerName*/,
+                       char const * /*includerName*/, size_t /*inclusionDepth*/)
+        -> IncludeResult * override {
         return nullptr;
     };
 
-    IncludeResult *includeLocal(char const * /*headerName*/,
-                                char const * /*includerName*/,
-                                size_t /*inclusionDepth*/) override {
+    auto includeLocal(char const * /*headerName*/,
+                      char const * /*includerName*/, size_t /*inclusionDepth*/)
+        -> IncludeResult * override {
         return nullptr;
     };
 
     void releaseInclude(IncludeResult * /*includeResult*/) override {};
 
    private:
-    static IncludeResult *getFailResult() {
+    static auto getFailResult() -> IncludeResult * {
         static std::string const sEmpty;
         static IncludeResult sFailResult(sEmpty, "Header does not exist!", 0,
                                          nullptr);
@@ -46,16 +46,17 @@ struct GlslShaderIncluder : public glslang::TShader::Includer {
 
 struct ShaderCompiler {
    public:
-    ShaderCompiler() noexcept {};
+    ShaderCompiler() noexcept = default;
 
     ShaderCompiler(ShaderCompiler const &) = delete;
-    ShaderCompiler &operator=(ShaderCompiler const &) = delete;
+    auto operator=(ShaderCompiler const &) -> ShaderCompiler & = delete;
     ShaderCompiler(ShaderCompiler &&other) noexcept = delete;
-    ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
+    auto operator=(ShaderCompiler &&other) noexcept
+        -> ShaderCompiler & = delete;
     ~ShaderCompiler() = default;
 
-    static tl::expected<std::vector<u32>, Error<EngineError>> compile(
-        std::string const &source, EShLanguage lang) {
+    static auto compile(std::string const &source, EShLanguage lang)
+        -> tl::expected<std::vector<u32>, Error<EngineError>> {
         glslang::TShader shader{lang};
 
         auto sources = std::array<char const *, 1>{{source.c_str()}};

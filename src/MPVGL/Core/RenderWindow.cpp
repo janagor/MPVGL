@@ -8,6 +8,7 @@
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/trigonometric.hpp>
+#include <tl/expected.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -17,6 +18,8 @@
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
+#include "MPVGL/Error/EngineError.hpp"
+#include "MPVGL/Error/Error.hpp"
 #include "MPVGL/Utility/Types.hpp"
 
 #include "config.hpp"
@@ -33,10 +36,18 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
 
     auto result =
         vlk::bootstrap(vulkan, width, height, title, monitor, share, true)
-            .and_then([&] { return vlk::setupRenderingPipeline(vulkan); })
-            .and_then([&] { return vlk::setupRenderTargets(vulkan); })
-            .and_then([&] { return vlk::setupDescriptorsAndSync(vulkan); })
-            .and_then([&] { return vlk::loadAndPrepareAssets(vulkan, scene); });
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return vlk::setupRenderingPipeline(vulkan);
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return vlk::setupRenderTargets(vulkan);
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return vlk::setupDescriptorsAndSync(vulkan);
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return vlk::loadAndPrepareAssets(vulkan, scene);
+            });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
                   << result.error().message() << "\n";
@@ -46,10 +57,11 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
 
 RenderWindow::~RenderWindow() noexcept { cleanup(vulkan); }
 
-int RenderWindow::draw() noexcept {
-    std::jthread const watcherThread([&](std::stop_token const &stopToken) {
-        shader_watcher.run(stopToken);
-    });
+auto RenderWindow::draw() noexcept -> int {
+    std::jthread const watcherThread(
+        [&](std::stop_token const &stopToken) -> void {
+            shader_watcher.run(stopToken);
+        });
 
     f64 deltaTime = 0.0;
     f64 lastFrame = 0.0;
