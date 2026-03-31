@@ -52,8 +52,8 @@ tl::expected<Buffer, Error<EngineError>> Buffer::create(
     allocInfo.usage = memoryUsage;
     allocInfo.flags = allocFlags;
 
-    VkBuffer buffer;
-    VmaAllocation allocation;
+    VkBuffer buffer = nullptr;
+    VmaAllocation allocation = nullptr;
 
     if (vmaCreateBuffer(device.allocator, &bufferInfo, &allocInfo, &buffer,
                         &allocation, nullptr) != VK_SUCCESS) {
@@ -95,7 +95,7 @@ void Buffer::copyBuffer(DeviceContext const& device, VkCommandPool commandPool,
                         VkBuffer dstBuffer, VkDeviceSize size) {
     auto allocInfo = initializers::commandBufferAllocateInfo(
         commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-    VkCommandBuffer commandBuffer;
+    VkCommandBuffer commandBuffer = nullptr;
     device.logDevDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
 
     auto beginInfo = initializers::commandBufferBeginInfo(

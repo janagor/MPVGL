@@ -18,19 +18,19 @@
 namespace mpvgl {
 
 struct GlslShaderIncluder : public glslang::TShader::Includer {
-    virtual IncludeResult *includeSystem(char const * /*headerName*/,
-                                         char const * /*includerName*/,
-                                         size_t /*inclusionDepth*/) override {
+    IncludeResult *includeSystem(char const * /*headerName*/,
+                                 char const * /*includerName*/,
+                                 size_t /*inclusionDepth*/) override {
         return nullptr;
     };
 
-    virtual IncludeResult *includeLocal(char const * /*headerName*/,
-                                        char const * /*includerName*/,
-                                        size_t /*inclusionDepth*/) override {
+    IncludeResult *includeLocal(char const * /*headerName*/,
+                                char const * /*includerName*/,
+                                size_t /*inclusionDepth*/) override {
         return nullptr;
     };
 
-    virtual void releaseInclude(IncludeResult * /*includeResult*/) override {};
+    void releaseInclude(IncludeResult * /*includeResult*/) override {};
 
    private:
     static IncludeResult *getFailResult() {
@@ -52,13 +52,14 @@ struct ShaderCompiler {
     ShaderCompiler &operator=(ShaderCompiler const &) = delete;
     ShaderCompiler(ShaderCompiler &&other) noexcept = delete;
     ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
+    ~ShaderCompiler() = default;
 
     static tl::expected<std::vector<u32>, Error<EngineError>> compile(
         std::string const &source, EShLanguage lang) {
         glslang::TShader shader{lang};
 
-        char const *const sources[1] = {source.data()};
-        shader.setStrings(sources, 1);
+        auto sources = std::array<char const *, 1>{{source.c_str()}};
+        shader.setStrings(sources.data(), 1);
 
         auto const targetApiVersion =
             glslang::EShTargetClientVersion{glslang::EShTargetVulkan_1_0};
@@ -90,8 +91,9 @@ struct ShaderCompiler {
                           shader.getInfoLog()}};
         }
 
-        char const *const preprocessedSources[1] = {preprocessedStr.c_str()};
-        shader.setStrings(preprocessedSources, 1);
+        auto preprocessedSources =
+            std::array<char const *, 1>{{preprocessedStr.c_str()}};
+        shader.setStrings(preprocessedSources.data(), 1);
 
         if (!shader.parse(resources, defaultVersion, defaultProfile, false,
                           forwardCompatible, messageFlags, includer)) {

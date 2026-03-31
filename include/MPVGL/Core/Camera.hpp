@@ -55,10 +55,7 @@ class Camera {
     [[nodiscard]] f64 zoom() const noexcept { return m_zoom; }
 
     Camera(glm::dvec3 position = glm::dvec3(0.0, 0.0, 0.0))
-        : m_movementSpeed(SPEED),
-          m_mouseSensitivity(SENSITIVITY),
-          m_zoom(DEFAULT_ZOOM) {
-        m_position = position;
+        : m_position(position) {
         auto const lookAt = glm::lookAt(position, glm::dvec3(0.0, 0.0, 0.0),
                                         glm::dvec3(0.0, 0.0, 1.0));
         m_orientation = glm::conjugate(glm::quat_cast(lookAt));
@@ -134,16 +131,16 @@ class Camera {
         m_up = glm::normalize(m_orientation * glm::dvec3(0.0, 1.0, 0.0));
     }
 
-    glm::dvec3 m_position;
-    glm::dquat m_orientation;
+    glm::dvec3 m_position{};
+    glm::dquat m_orientation{};
 
-    glm::dvec3 m_front;
-    glm::dvec3 m_up;
-    glm::dvec3 m_right;
+    glm::dvec3 m_front{};
+    glm::dvec3 m_up{};
+    glm::dvec3 m_right{};
 
-    f64 m_movementSpeed;
-    f64 m_mouseSensitivity;
-    f64 m_zoom;
+    f64 m_movementSpeed{SPEED};
+    f64 m_mouseSensitivity{SENSITIVITY};
+    f64 m_zoom{DEFAULT_ZOOM};
 };
 
 }  // namespace mpvgl

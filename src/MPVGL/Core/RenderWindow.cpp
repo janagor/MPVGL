@@ -64,7 +64,7 @@ int RenderWindow::draw() noexcept {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        for (auto [index, object] :
+        for (auto &&[index, object] :
              vulkan.sceneContext.renderables | std::views::enumerate) {
             f32 const speed = (index % 2 == 0) ? 45.0F : -90.0F;
             object.transformMatrix =

@@ -79,7 +79,7 @@ tl::expected<RenderPass, Error<EngineError>> RenderPassBuilder::build(
     auto renderPassInfo = initializers::renderPassCreateInfo(
         m_attachments, subpasses, m_dependencies, 0);
 
-    VkRenderPass renderPass;
+    VkRenderPass renderPass = nullptr;
     if (device.logDevDisp.createRenderPass(&renderPassInfo, nullptr,
                                            &renderPass) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,

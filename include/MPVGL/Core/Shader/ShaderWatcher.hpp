@@ -29,6 +29,7 @@ class ShaderWatcher {
     ShaderWatcher &operator=(ShaderWatcher const &other) noexcept = delete;
     ShaderWatcher(ShaderWatcher &&other) noexcept = delete;
     ShaderWatcher &operator=(ShaderWatcher &&other) noexcept = delete;
+    ~ShaderWatcher() = default;
 
     void run(std::stop_token const &stopToken) {
         while (!stopToken.stop_requested()) {

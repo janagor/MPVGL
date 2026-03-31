@@ -4,13 +4,14 @@ Checks: >
   cert-*,
   clang-analyzer-*,
   concurrency-*,
-  # cppcoreguidelines-*,
+  cppcoreguidelines-*,
   misc-*,
   # modernize-*,
   performance-*,
   readability-*,
   -cert-dcl58-cpp,
   -misc-header-include-cycle,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

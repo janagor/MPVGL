@@ -43,7 +43,7 @@ tl::expected<CommandPool, Error<EngineError>> CommandPool::create(
     auto poolInfo = initializers::commandPoolCreateInfo(
         queueFamilyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-    VkCommandPool pool;
+    VkCommandPool pool = nullptr;
     if (device.logDevDisp.createCommandPool(&poolInfo, nullptr, &pool) !=
         VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,

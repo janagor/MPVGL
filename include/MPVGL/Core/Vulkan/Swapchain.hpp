@@ -23,8 +23,8 @@ struct SwapchainBuilder {
         vkb::Device const& device, GLFWwindow* window,
         vkb::Swapchain const& oldSwapchain = {}) {
         vkb::SwapchainBuilder swapchainBuilder{device};
-        int width;
-        int height;
+        int width{};
+        int height{};
         glfwGetWindowSize(window, &width, &height);
         auto newSwapchain = swapchainBuilder
                                 .set_desired_extent(static_cast<u32>(width),

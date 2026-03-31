@@ -72,7 +72,7 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
     VkResult const err =
         glfwCreateWindowSurface(instance, window, allocator, &surface);
     if (err != VK_SUCCESS) {
-        char const *error_msg;
+        char const *error_msg = nullptr;
         int const ret = glfwGetError(&error_msg);
         if (ret != 0) {
             std::cout << ret << " ";
@@ -93,7 +93,7 @@ VkShaderModule createShaderModule(DeviceContext const &context,
 
     auto create_info = initializers::shaderModuleCreateInfo(code_span);
 
-    VkShaderModule shaderModule;
+    VkShaderModule shaderModule = nullptr;
     if (context.logDevDisp.createShaderModule(&create_info, nullptr,
                                               &shaderModule) != VK_SUCCESS) {
         return VK_NULL_HANDLE;
@@ -126,7 +126,7 @@ VkCommandBuffer beginSingleTimeCommands(Vulkan &vulkan) {
     auto allocInfo = initializers::commandBufferAllocateInfo(
         vulkan.data.commandPool.handle(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-    VkCommandBuffer commandBuffer;
+    VkCommandBuffer commandBuffer = nullptr;
     deviceContext.logDevDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
 
     auto beginInfo = initializers::commandBufferBeginInfo(
@@ -210,7 +210,7 @@ tl::expected<VkImageView, Error<EngineError>> createImageView(
     auto viewInfo = initializers::imageViewCreateInfo(
         image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
 
-    VkImageView imageView;
+    VkImageView imageView = nullptr;
     if (deviceContext.logDevDisp.createImageView(&viewInfo, nullptr,
                                                  &imageView) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -378,11 +378,12 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
             &object.material->descriptorSets[vulkan.data.currentFrame], 0,
             nullptr);
 
-        VkBuffer const vertexBuffers[] = {
-            object.model->vertexBuffer().handle()};
-        VkDeviceSize offsets[] = {0};
-        deviceContext.logDevDisp.cmdBindVertexBuffers(command_buffer, 0, 1,
-                                                      vertexBuffers, offsets);
+        constexpr VkDeviceSize DEFAULT_OFFSET = 0;
+        auto const vertexBuffers =
+            std::array{object.model->vertexBuffer().handle()};
+        auto const offsets = std::array{DEFAULT_OFFSET};
+        deviceContext.logDevDisp.cmdBindVertexBuffers(
+            command_buffer, 0, 1, vertexBuffers.data(), offsets.data());
 
         deviceContext.logDevDisp.cmdBindIndexBuffer(
             command_buffer, object.model->indexBuffer().handle(), 0,

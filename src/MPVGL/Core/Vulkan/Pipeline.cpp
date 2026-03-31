@@ -104,7 +104,7 @@ tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
         {&m_colorBlendAttachment, 1}, VK_FALSE, VK_LOGIC_OP_COPY);
     auto blendConstants = std::array{0.0F, 0.0F, 0.0F, 0.0F};
     std::copy(blendConstants.begin(), blendConstants.end(),
-              colorBlending.blendConstants);
+              std::begin(colorBlending.blendConstants));
 
     auto dynamicInfo =
         initializers::pipelineDynamicStateCreateInfo(m_dynamicStates);
@@ -125,7 +125,7 @@ tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    VkPipeline newPipeline;
+    VkPipeline newPipeline = nullptr;
     if (device.logDevDisp.createGraphicsPipelines(VK_NULL_HANDLE, 1,
                                                   &pipelineInfo, nullptr,
                                                   &newPipeline) != VK_SUCCESS) {

@@ -40,7 +40,7 @@ void Semaphore::cleanup() noexcept {
 tl::expected<Semaphore, Error<EngineError>> Semaphore::create(
     DeviceContext const& device) {
     auto info = initializers::semaphoreCreateInfo();
-    VkSemaphore semaphore;
+    VkSemaphore semaphore = nullptr;
     if (device.logDevDisp.createSemaphore(&info, nullptr, &semaphore) !=
         VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -77,7 +77,7 @@ void Fence::cleanup() noexcept {
 tl::expected<Fence, Error<EngineError>> Fence::create(
     DeviceContext const& device, VkFenceCreateFlags flags) {
     auto info = initializers::fenceCreateInfo(flags);
-    VkFence fence;
+    VkFence fence = nullptr;
     if (device.logDevDisp.createFence(&info, nullptr, &fence) != VK_SUCCESS) {
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError, "Failed to create Fence"}};

@@ -31,14 +31,14 @@ void executeSingleTimeCommands(DeviceContext const& device,
                                F&& action) {
     auto allocInfo = initializers::commandBufferAllocateInfo(
         commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-    VkCommandBuffer commandBuffer;
+    VkCommandBuffer commandBuffer = nullptr;
     device.logDevDisp.allocateCommandBuffers(&allocInfo, &commandBuffer);
 
     auto beginInfo = initializers::commandBufferBeginInfo(
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     device.logDevDisp.beginCommandBuffer(commandBuffer, &beginInfo);
 
-    action(commandBuffer);
+    std::forward<F>(action)(commandBuffer);
 
     device.logDevDisp.endCommandBuffer(commandBuffer);
     auto submitInfo = initializers::submitInfo({}, {}, {&commandBuffer, 1}, {});
@@ -131,8 +131,8 @@ tl::expected<void, Error<EngineError>> Texture::transitionImageLayout(
             };
             auto barrier = initializers::imageMemoryBarrier(
                 oldLayout, newLayout, image, subresourceRange);
-            VkPipelineStageFlags sourceStage;
-            VkPipelineStageFlags destinationStage;
+            VkPipelineStageFlags sourceStage = 0;
+            VkPipelineStageFlags destinationStage = 0;
 
             if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
                 newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
@@ -289,9 +289,9 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
         .and_then([&](io::ResourceBuffer const& buffer)
                       -> tl::expected<Texture, Error<EngineError>> {
             auto view = buffer.view();
-            int width;
-            int height;
-            int channels;
+            int width{};
+            int height{};
+            int channels{};
 
             unsigned char* data = stbi_load_from_memory(
                 reinterpret_cast<stbi_uc const*>(view.data()),
@@ -359,7 +359,7 @@ void Texture::RawPixels::free() noexcept {
 tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
     std::string const& filepath) {
     RawPixels pixels{};
-    int channels;
+    int channels{};
     auto const& extent = pixels.extent();
     auto width = static_cast<int>(extent.width);
     auto height = static_cast<int>(extent.height);
@@ -397,8 +397,8 @@ Texture::createAllocatedImage(DeviceContext const& device,
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
-    VkImage image;
-    VmaAllocation allocation;
+    VkImage image = nullptr;
+    VmaAllocation allocation = nullptr;
     if (vmaCreateImage(device.allocator, &imageInfo, &allocInfo, &image,
                        &allocation, nullptr) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -457,7 +457,7 @@ tl::expected<VkImageView, Error<EngineError>> Texture::createImageView(
         image, VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB,
         subresourceRange);
 
-    VkImageView imageView;
+    VkImageView imageView = nullptr;
     if (device.logDevDisp.createImageView(&viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -489,7 +489,7 @@ tl::expected<VkSampler, Error<EngineError>> Texture::createSampler(
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
-    VkSampler sampler;
+    VkSampler sampler = nullptr;
     if (device.logDevDisp.createSampler(&samplerInfo, nullptr, &sampler) !=
         VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -515,8 +515,8 @@ tl::expected<Texture, Error<EngineError>> Texture::createDepthTexture(
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
-    VkImage image;
-    VmaAllocation allocation;
+    VkImage image = nullptr;
+    VmaAllocation allocation = nullptr;
     if (vmaCreateImage(device.allocator, &imageInfo, &allocInfo, &image,
                        &allocation, nullptr) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -533,7 +533,7 @@ tl::expected<Texture, Error<EngineError>> Texture::createDepthTexture(
     auto viewInfo = initializers::imageViewCreateInfo(
         image, VK_IMAGE_VIEW_TYPE_2D, format, subresourceRange);
 
-    VkImageView imageView;
+    VkImageView imageView = nullptr;
     if (device.logDevDisp.createImageView(&viewInfo, nullptr, &imageView) !=
         VK_SUCCESS) {
         vmaDestroyImage(device.allocator, image, allocation);

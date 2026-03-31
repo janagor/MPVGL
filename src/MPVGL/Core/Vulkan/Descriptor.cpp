@@ -61,7 +61,7 @@ void DescriptorLayoutBuilder::clear() { m_bindings.clear(); }
 tl::expected<DescriptorSetLayout, Error<EngineError>>
 DescriptorLayoutBuilder::build(DeviceContext const& device) {
     auto info = initializers::descriptorSetLayoutCreateInfo(m_bindings);
-    VkDescriptorSetLayout layout;
+    VkDescriptorSetLayout layout = nullptr;
     if (device.logDevDisp.createDescriptorSetLayout(&info, nullptr, &layout) !=
         VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
@@ -101,7 +101,7 @@ tl::expected<VkDescriptorSet, Error<EngineError>> DescriptorAllocator::allocate(
     DeviceContext const& device, VkDescriptorSetLayout layout) {
     auto allocInfo =
         initializers::descriptorSetAllocateInfo(m_pool, {&layout, 1});
-    VkDescriptorSet set;
+    VkDescriptorSet set = nullptr;
     if (device.logDevDisp.allocateDescriptorSets(&allocInfo, &set) !=
         VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,

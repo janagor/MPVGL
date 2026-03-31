@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include <array>
 #include <utility>
 
@@ -37,8 +39,8 @@ void InputManager::processKeyboard(GLFWwindow* window, Camera& camera,
 }
 
 void InputManager::processMouse(GLFWwindow* window, Camera& camera) {
-    f64 xpos;
-    f64 ypos;
+    f64 xpos{};
+    f64 ypos{};
     glfwGetCursorPos(window, &xpos, &ypos);
 
     if (m_firstMouse) {

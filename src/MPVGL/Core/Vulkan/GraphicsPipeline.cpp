@@ -102,7 +102,7 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
 
     auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(
         {&descriptorSetLayout, 1}, {&pushConstantRange, 1});
-    VkPipelineLayout pipelineLayout;
+    VkPipelineLayout pipelineLayout = nullptr;
 
     if (device.logDevDisp.createPipelineLayout(&pipelineLayoutInfo, nullptr,
                                                &pipelineLayout) != VK_SUCCESS) {

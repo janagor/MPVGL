@@ -50,9 +50,9 @@ tl::expected<T, mpvgl::Error<mpvgl::EngineError>> vkb_to_expected(
     vkb::Result<T> &&res, std::string const &msg) {
     if (!res) {
         return tl::unexpected{
-            mpvgl::Error<mpvgl::EngineError>{res.error(), msg}};
+            mpvgl::Error<mpvgl::EngineError>{std::move(res).error(), msg}};
     }
-    return std::move(res.value());
+    return std::move(res).value();
 }
 
 }  // namespace
@@ -516,11 +516,11 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
     VkSemaphore finishedSemaphore =
         vulkan.data.finishedSemaphores[image_index].handle();
 
-    VkPipelineStageFlags wait_stages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    auto wait_stages = std::array<VkPipelineStageFlags, 1>{
+        {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}};
 
     auto submitInfo = initializers::submitInfo(
-        {&availableSemaphore, 1}, {wait_stages, 1},
+        {&availableSemaphore, 1}, {wait_stages.data(), 1},
         {&currentFrame.commandBuffer, 1}, {&finishedSemaphore, 1});
 
     deviceContext.logDevDisp.resetFences(1, &inFlightFence);

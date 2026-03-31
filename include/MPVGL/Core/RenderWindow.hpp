@@ -41,7 +41,7 @@ class RenderWindow {
 
    private:
     vlk::Vulkan vulkan{};
-    GLFWwindow *window;
+    GLFWwindow *window = nullptr;
     ShaderWatcher shader_watcher;
     InputManager m_inputManager{};
 };

@@ -58,6 +58,7 @@ class ResourceBuffer {
 
     ResourceBuffer(ResourceBuffer&&) noexcept = default;
     ResourceBuffer& operator=(ResourceBuffer&&) noexcept = default;
+    ~ResourceBuffer() = default;
 
     template <typename PolicyTag = LoadPolicyAuto>
     [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> load(
