@@ -7,7 +7,6 @@
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
-#include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
 
@@ -31,9 +30,8 @@ class Semaphore {
     Semaphore(VkSemaphore semaphore, vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
 
-   private:
     VkSemaphore m_semaphore{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 };
 
 class Fence {
@@ -56,9 +54,8 @@ class Fence {
     Fence(VkFence fence, vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
 
-   private:
     VkFence m_fence{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 };
 
 }  // namespace mpvgl::vlk

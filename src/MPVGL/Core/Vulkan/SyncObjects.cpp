@@ -31,8 +31,9 @@ Semaphore& Semaphore::operator=(Semaphore&& other) noexcept {
 Semaphore::~Semaphore() noexcept { cleanup(); }
 
 void Semaphore::cleanup() noexcept {
-    if (m_semaphore != VK_NULL_HANDLE)
+    if (m_semaphore != VK_NULL_HANDLE) {
         m_disp.destroySemaphore(m_semaphore, nullptr);
+    }
     m_semaphore = VK_NULL_HANDLE;
 }
 
@@ -67,7 +68,9 @@ Fence& Fence::operator=(Fence&& other) noexcept {
 Fence::~Fence() noexcept { cleanup(); }
 
 void Fence::cleanup() noexcept {
-    if (m_fence != VK_NULL_HANDLE) m_disp.destroyFence(m_fence, nullptr);
+    if (m_fence != VK_NULL_HANDLE) {
+        m_disp.destroyFence(m_fence, nullptr);
+    }
     m_fence = VK_NULL_HANDLE;
 }
 

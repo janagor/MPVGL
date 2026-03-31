@@ -84,7 +84,7 @@ class ResourceBuffer {
     explicit ResourceBuffer(Storage storage) : m_storage(std::move(storage)) {}
 
     [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
-        std::filesystem::path const& path, LoadPolicyHeap) {
+        std::filesystem::path const& path, LoadPolicyHeap /*loadPolicyHeap*/) {
         std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file.is_open()) {
             return tl::unexpected{
@@ -106,15 +106,15 @@ class ResourceBuffer {
     }
 
     [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
-        std::filesystem::path const& path, LoadPolicyMmap) {
-        std::error_code ec;
+        std::filesystem::path const& path, LoadPolicyMmap /*loadPolicyMmap*/) {
+        std::error_code errorCode;
         mio::mmap_source mmap;
 
-        mmap.map(path.string(), ec);
-        if (ec) {
+        mmap.map(path.string(), errorCode);
+        if (errorCode) {
             return tl::unexpected{Error{
                 IOError::Unknown, "Failed to mmap file: " + path.string() +
-                                      " [" + ec.message() + "]"}};
+                                      " [" + errorCode.message() + "]"}};
         }
 
         return ResourceBuffer{std::move(mmap)};
@@ -122,10 +122,10 @@ class ResourceBuffer {
 
     [[nodiscard]] static tl::expected<ResourceBuffer, Error<IOError>> loadImpl(
         std::filesystem::path const& path, LoadPolicyAuto policy) {
-        std::error_code ec{};
-        std::uintmax_t const size = std::filesystem::file_size(path, ec);
+        std::error_code errorCode{};
+        std::uintmax_t const size = std::filesystem::file_size(path, errorCode);
 
-        if (ec) {
+        if (errorCode) {
             return tl::unexpected{
                 Error{IOError::FileNotFound,
                       "Failed to get file size: " + path.string()}};
@@ -133,12 +133,10 @@ class ResourceBuffer {
 
         if (size >= policy.threshold) {
             return loadImpl(path, mmap_policy);
-        } else {
-            return loadImpl(path, heap_policy);
         }
+        return loadImpl(path, heap_policy);
     }
 
-   private:
     Storage m_storage;
 };
 

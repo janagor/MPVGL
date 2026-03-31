@@ -39,44 +39,48 @@ class RenderObject {
 
 class SwapchainContext {
    public:
-    Swapchain swapchain{};
-    Texture depthTexture{};
-    RenderPass renderPass{};
-    std::vector<VkFramebuffer> framebuffers{};
+    Swapchain swapchain;
+    Texture depthTexture;
+    RenderPass renderPass;
+    std::vector<VkFramebuffer> framebuffers;
 };
 
 class SceneContext {
    public:
-    std::deque<Model> models{};
-    std::unordered_map<std::string, MaterialData> materials{};
-    std::vector<RenderObject> renderables{};
-    Camera camera{glm::dvec3{2.0, 2.0, 2.0}};
+    std::deque<Model> models;
+    std::unordered_map<std::string, MaterialData> materials;
+    std::vector<RenderObject> renderables;
+    Camera camera{
+        glm::dvec3{DEFAULT_POS_VAL, DEFAULT_POS_VAL, DEFAULT_POS_VAL}};
+
+   private:
+    static constexpr f64 DEFAULT_POS_VAL = 2.0;
 };
 
 class PipelineContext {
    public:
-    GraphicsPipeline graphicsPipeline{};
-    DescriptorSetLayout descriptorSetLayout{};
+    GraphicsPipeline graphicsPipeline;
+    DescriptorSetLayout descriptorSetLayout;
 };
 
 class FrameData {
    public:
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-    Buffer uniformBuffer{};
+    Buffer uniformBuffer;
     void* uniformBufferMapped{nullptr};
-    Semaphore availableSemaphore{};
-    Fence inFlightFence{};
+    Semaphore availableSemaphore;
+    Fence inFlightFence;
 };
 
 class RenderData {
    public:
-    CommandPool commandPool{};
+    CommandPool commandPool;
     DescriptorAllocator descriptorAllocator{};
 
-    std::vector<FrameData> frames{};
-    std::vector<Semaphore> finishedSemaphores{};
+    std::vector<FrameData> frames;
+    std::vector<Semaphore> finishedSemaphores;
 
-    std::vector<VkFence> imageInFlight{};
+    std::vector<VkFence> imageInFlight;
     size_t currentFrame{};
 };
 

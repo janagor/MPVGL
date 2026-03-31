@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <iostream>
+#include <ranges>
 #include <stdexcept>
 #include <stop_token>
 #include <string>
@@ -46,8 +47,9 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
 RenderWindow::~RenderWindow() noexcept { cleanup(vulkan); }
 
 int RenderWindow::draw() noexcept {
-    std::jthread const watcherThread(
-        [&](std::stop_token const &st) { shader_watcher.run(st); });
+    std::jthread const watcherThread([&](std::stop_token const &stopToken) {
+        shader_watcher.run(stopToken);
+    });
 
     f64 deltaTime = 0.0;
     f64 lastFrame = 0.0;
@@ -55,25 +57,24 @@ int RenderWindow::draw() noexcept {
     glfwSetInputMode(vulkan.deviceContext.window, GLFW_CURSOR,
                      GLFW_CURSOR_DISABLED);
 
-    while (!glfwWindowShouldClose(vulkan.deviceContext.window)) {
+    while (glfwWindowShouldClose(vulkan.deviceContext.window) == GLFW_FALSE) {
         glfwPollEvents();
 
         auto const currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        int i = 0;
-        for (auto &object : vulkan.sceneContext.renderables) {
-            f32 const speed = (i % 2 == 0) ? 45.0f : -90.0f;
+        for (auto [index, object] :
+             vulkan.sceneContext.renderables | std::views::enumerate) {
+            f32 const speed = (index % 2 == 0) ? 45.0F : -90.0F;
             object.transformMatrix =
                 glm::rotate(object.transformMatrix,
                             static_cast<f32>(deltaTime) * glm::radians(speed),
-                            glm::vec3(0.0f, 0.0f, 1.0f));
-            i++;
+                            glm::vec3(0.0F, 0.0F, 1.0F));
         }
 
-        m_inputManager.processKeyboard(vulkan.deviceContext.window,
-                                       vulkan.sceneContext.camera, deltaTime);
+        InputManager::processKeyboard(vulkan.deviceContext.window,
+                                      vulkan.sceneContext.camera, deltaTime);
         m_inputManager.processMouse(vulkan.deviceContext.window,
                                     vulkan.sceneContext.camera);
 

@@ -59,7 +59,9 @@ tl::expected<Swapchain, Error<EngineError>> Swapchain::create(
     DeviceContext const& deviceContext) {
     auto vkbSwapchain = SwapchainBuilder::getSwapchain(
         deviceContext.logicalDevice, deviceContext.window);
-    if (!vkbSwapchain) return tl::unexpected{vkbSwapchain.error()};
+    if (!vkbSwapchain) {
+        return tl::unexpected{vkbSwapchain.error()};
+    }
 
     Swapchain swapchain(vkbSwapchain.value(), deviceContext.logDevDisp);
     if (auto res = swapchain.initImageViews(); !res.has_value()) {

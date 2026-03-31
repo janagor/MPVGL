@@ -37,7 +37,6 @@ class RenderWindow {
 
     ~RenderWindow() noexcept;
 
-   public:
     int draw() noexcept;
 
    private:

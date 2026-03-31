@@ -25,14 +25,14 @@ struct is_error_code_enum<mpvgl::IOError> : true_type {};
 
 namespace mpvgl {
 
-class IOErrorCategory_impl : public std::error_category {
+class IOErrorCategoryImpl : public std::error_category {
    public:
     [[nodiscard]] char const* name() const noexcept override {
         return "mpvgl::IO";
     }
 
-    [[nodiscard]] constexpr std::string message(int ev) const override {
-        switch (static_cast<IOError>(ev)) {
+    [[nodiscard]] constexpr std::string message(int error) const override {
+        switch (static_cast<IOError>(error)) {
             case IOError::FileNotFound:
                 return "File not found";
             case IOError::EndOfFile:
@@ -44,12 +44,12 @@ class IOErrorCategory_impl : public std::error_category {
 };
 
 [[nodiscard]] inline std::error_category const& IOErrorCategory() {
-    static IOErrorCategory_impl const instance{};
+    static IOErrorCategoryImpl const instance{};
     return instance;
 }
 
-[[nodiscard]] inline std::error_code make_error_code(IOError e) {
-    return {static_cast<int>(e), IOErrorCategory()};
+[[nodiscard]] inline std::error_code make_error_code(IOError error) {
+    return {static_cast<int>(error), IOErrorCategory()};
 }
 
 }  // namespace mpvgl

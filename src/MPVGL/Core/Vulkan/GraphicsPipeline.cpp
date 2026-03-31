@@ -62,28 +62,35 @@ tl::expected<GraphicsPipeline, Error<EngineError>> GraphicsPipeline::create(
     std::filesystem::path const& vertexShaderPath,
     std::filesystem::path const& fragmentShaderPath) {
     auto vertBufferRes =
-        io::ResourceBuffer::load(vertexShaderPath).map_error([](auto const& e) {
-            return Error<EngineError>{EngineError::VulkanRuntimeError,
-                                      e.message()};
-        });
-    if (!vertBufferRes) return tl::unexpected{vertBufferRes.error()};
+        io::ResourceBuffer::load(vertexShaderPath)
+            .map_error([](auto const& error) {
+                return Error<EngineError>{EngineError::VulkanRuntimeError,
+                                          error.message()};
+            });
+    if (!vertBufferRes) {
+        return tl::unexpected{vertBufferRes.error()};
+    }
 
     auto fragBufferRes =
         io::ResourceBuffer::load(fragmentShaderPath)
-            .map_error([](auto const& e) {
+            .map_error([](auto const& error) {
                 return Error<EngineError>{EngineError::VulkanRuntimeError,
-                                          e.message()};
+                                          error.message()};
             });
-    if (!fragBufferRes) return tl::unexpected{fragBufferRes.error()};
+    if (!fragBufferRes) {
+        return tl::unexpected{fragBufferRes.error()};
+    }
 
-    auto vertModule = createShaderModule(device, vertBufferRes->view());
-    auto fragModule = createShaderModule(device, fragBufferRes->view());
+    auto* vertModule = createShaderModule(device, vertBufferRes->view());
+    auto* fragModule = createShaderModule(device, fragBufferRes->view());
 
     if (vertModule == VK_NULL_HANDLE || fragModule == VK_NULL_HANDLE) {
-        if (vertModule != VK_NULL_HANDLE)
+        if (vertModule != VK_NULL_HANDLE) {
             device.logDevDisp.destroyShaderModule(vertModule, nullptr);
-        if (fragModule != VK_NULL_HANDLE)
+        }
+        if (fragModule != VK_NULL_HANDLE) {
             device.logDevDisp.destroyShaderModule(fragModule, nullptr);
+        }
         return tl::unexpected{
             Error{EngineError::ShaderError, "Failed to create Shader Modules"}};
     }

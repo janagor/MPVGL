@@ -37,10 +37,10 @@ class PipelineBuilder {
         VkPipelineLayout layout);
 
    private:
-    std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages{};
-    std::vector<VkVertexInputBindingDescription> m_vertexBindings{};
-    std::vector<VkVertexInputAttributeDescription> m_vertexAttributes{};
-    std::vector<VkDynamicState> m_dynamicStates{};
+    std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
+    std::vector<VkVertexInputBindingDescription> m_vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> m_vertexAttributes;
+    std::vector<VkDynamicState> m_dynamicStates;
 
     VkPipelineInputAssemblyStateCreateInfo m_inputAssembly{};
     VkPipelineRasterizationStateCreateInfo m_rasterizer{};

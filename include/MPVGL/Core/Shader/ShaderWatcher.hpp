@@ -17,6 +17,8 @@ namespace mpvgl {
 
 class ShaderWatcher {
    public:
+    static constexpr std::chrono::milliseconds SCAN_INTERVAL{100};
+
     ShaderWatcher(std::filesystem::path const &shaderDir,
                   std::filesystem::path const &outputDir)
         : shaderDir(shaderDir), outputDir(outputDir) {
@@ -28,18 +30,20 @@ class ShaderWatcher {
     ShaderWatcher(ShaderWatcher &&other) noexcept = delete;
     ShaderWatcher &operator=(ShaderWatcher &&other) noexcept = delete;
 
-   public:
-    inline void run(std::stop_token const &stopToken) {
+    void run(std::stop_token const &stopToken) {
         while (!stopToken.stop_requested()) {
             scanAndCompile();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(SCAN_INTERVAL));
         };
     }
 
-    inline void compileAll() {
+    void compileAll() {
         for (auto const &entry :
              std::filesystem::directory_iterator(shaderDir)) {
-            if (!isShaderFile(entry.path())) continue;
+            if (!isShaderFile(entry.path())) {
+                continue;
+            }
 
             if (auto result = compile(entry.path()); !result.has_value()) {
                 std::cerr << "[ShaderWatcher] Initial Compilation Error: "
@@ -56,24 +60,23 @@ class ShaderWatcher {
     std::map<std::string, std::filesystem::file_time_type> timestamps;
     std::atomic<bool> m_shadersChanged{false};
 
-   private:
-    inline bool isShaderFile(std::filesystem::path const &path) {
+    static bool isShaderFile(std::filesystem::path const &path) {
         return path.extension() == ".vert" || path.extension() == ".frag";
     }
 
-    inline std::string outputPath(std::filesystem::path const &input) {
+    std::string outputPath(std::filesystem::path const &input) {
         return outputDir + "/" + input.filename().string() + ".spv";
     }
 
-    inline tl::expected<void, Error<EngineError>> compile(
+    tl::expected<void, Error<EngineError>> compile(
         std::filesystem::path const &shaderPath) {
         std::cout << "[ShaderWatcher] Compiling: " << shaderPath.filename()
                   << '\n';
 
         return io::ResourceBuffer::load(shaderPath)
-            .map_error([](auto const &e) {
+            .map_error([](auto const &error) {
                 return Error<EngineError>{EngineError::FileNotFound,
-                                          e.message()};
+                                          error.message()};
             })
             .and_then([&](io::ResourceBuffer const &buffer)
                           -> tl::expected<void, Error<EngineError>> {
@@ -82,13 +85,13 @@ class ShaderWatcher {
                 std::string const source(
                     reinterpret_cast<char const *>(view.data()), view.size());
 
-                ShaderCompiler compiler{};
+                ShaderCompiler const compiler{};
                 auto extension = shaderPath.extension();
                 auto language = (extension == ".vert")
                                     ? EShLanguage::EShLangVertex
                                     : EShLanguage::EShLangFragment;
 
-                return compiler.compile(source, language)
+                return mpvgl::ShaderCompiler::compile(source, language)
                     .and_then([&](std::vector<u32> const &data)
                                   -> tl::expected<void, Error<EngineError>> {
                         std::ofstream ofile(outputPath(shaderPath),
@@ -115,16 +118,18 @@ class ShaderWatcher {
             });
     }
 
-    inline void scanAndCompile() {
+    void scanAndCompile() {
         bool compiledSomething = false;
         for (auto const &entry :
              std::filesystem::directory_iterator(shaderDir)) {
-            if (!isShaderFile(entry.path())) continue;
+            if (!isShaderFile(entry.path())) {
+                continue;
+            }
 
             auto const pathStr = entry.path().string();
             auto currentTime = std::filesystem::last_write_time(entry);
 
-            if (timestamps.find(pathStr) == timestamps.end() ||
+            if (!timestamps.contains(pathStr) ||
                 timestamps[pathStr] != currentTime) {
                 timestamps[pathStr] = currentTime;
 

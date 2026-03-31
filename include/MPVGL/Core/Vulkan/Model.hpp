@@ -42,8 +42,8 @@ class Model {
     [[nodiscard]] u32 indexCount() const noexcept { return m_indexCount; }
 
    private:
-    Buffer m_vertexBuffer{};
-    Buffer m_indexBuffer{};
+    Buffer m_vertexBuffer;
+    Buffer m_indexBuffer;
     u32 m_indexCount{0};
 };
 

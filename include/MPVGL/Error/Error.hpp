@@ -10,15 +10,16 @@ namespace mpvgl {
 template <typename ErrorCategory>
 class Error {
    public:
-    Error(std::error_code ec, std::string msg = "")
-        : m_code(ec), m_message(msg.empty() ? ec.message() : std::move(msg)) {}
+    Error(std::error_code errorCode, std::string message = "")
+        : m_code(errorCode),
+          m_message(message.empty() ? errorCode.message()
+                                    : std::move(message)) {}
 
     Error(ErrorCategory err, std::string msg = "")
         : m_code(err),
           m_message(msg.empty() ? m_code.message() : std::move(msg)) {}
 
     [[nodiscard]] std::error_code code() const noexcept { return m_code; }
-
     [[nodiscard]] std::string const& message() const noexcept {
         return m_message;
     }

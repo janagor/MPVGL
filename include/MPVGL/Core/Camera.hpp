@@ -1,6 +1,8 @@
 #pragma once
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include <algorithm>
+
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_common.hpp>
@@ -30,7 +32,9 @@ enum class CameraMovement : u8 {
 
 constexpr f64 SPEED = 2.5;
 constexpr f64 SENSITIVITY = 0.1;
-constexpr f64 ZOOM = 45.0;
+constexpr f64 DEFAULT_ZOOM = 45.0;
+constexpr f64 MIN_ZOOM = 1.0;
+constexpr f64 MAX_ZOOM = 45.0;
 
 class Camera {
    public:
@@ -53,7 +57,7 @@ class Camera {
     Camera(glm::dvec3 position = glm::dvec3(0.0, 0.0, 0.0))
         : m_movementSpeed(SPEED),
           m_mouseSensitivity(SENSITIVITY),
-          m_zoom(ZOOM) {
+          m_zoom(DEFAULT_ZOOM) {
         m_position = position;
         auto const lookAt = glm::lookAt(position, glm::dvec3(0.0, 0.0, 0.0),
                                         glm::dvec3(0.0, 0.0, 1.0));
@@ -70,26 +74,35 @@ class Camera {
     void processKeyboard(CameraMovement direction, f64 deltaTime) {
         auto const velocity = m_movementSpeed * deltaTime;
 
-        if (direction == CameraMovement::Forward)
+        if (direction == CameraMovement::Forward) {
             m_position += m_front * velocity;
-        if (direction == CameraMovement::Backward)
+        }
+        if (direction == CameraMovement::Backward) {
             m_position -= m_front * velocity;
-        if (direction == CameraMovement::Left) m_position -= m_right * velocity;
-        if (direction == CameraMovement::Right)
+        }
+        if (direction == CameraMovement::Left) {
+            m_position -= m_right * velocity;
+        }
+        if (direction == CameraMovement::Right) {
             m_position += m_right * velocity;
-        if (direction == CameraMovement::Up) m_position += m_up * velocity;
-        if (direction == CameraMovement::Down) m_position -= m_up * velocity;
+        }
+        if (direction == CameraMovement::Up) {
+            m_position += m_up * velocity;
+        }
+        if (direction == CameraMovement::Down) {
+            m_position -= m_up * velocity;
+        }
 
         if (direction == CameraMovement::RollLeft) {
             auto const qRoll =
-                glm::angleAxis(glm::radians(-50.0f * deltaTime), m_front);
+                glm::angleAxis(glm::radians(-50.0F * deltaTime), m_front);
             m_orientation = qRoll * m_orientation;
             m_orientation = glm::normalize(m_orientation);
             updateCameraVectors();
         }
         if (direction == CameraMovement::RollRight) {
             auto const qRoll =
-                glm::angleAxis(glm::radians(50.0f * deltaTime), m_front);
+                glm::angleAxis(glm::radians(50.0F * deltaTime), m_front);
             m_orientation = qRoll * m_orientation;
             m_orientation = glm::normalize(m_orientation);
             updateCameraVectors();
@@ -111,8 +124,7 @@ class Camera {
 
     void processMouseScroll(f64 yoffset) {
         m_zoom -= yoffset;
-        if (m_zoom < 1.0) m_zoom = 1.0;
-        if (m_zoom > 45.0) m_zoom = 45.0;
+        m_zoom = std::clamp(m_zoom, MIN_ZOOM, MAX_ZOOM);
     }
 
    private:
@@ -122,7 +134,6 @@ class Camera {
         m_up = glm::normalize(m_orientation * glm::dvec3(0.0, 1.0, 0.0));
     }
 
-   private:
     glm::dvec3 m_position;
     glm::dquat m_orientation;
 

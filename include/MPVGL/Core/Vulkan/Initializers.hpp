@@ -133,10 +133,10 @@ pipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode,
         .cullMode = cullMode,
         .frontFace = frontFace,
         .depthBiasEnable = VK_FALSE,
-        .depthBiasConstantFactor = 0.0f,
-        .depthBiasClamp = 0.0f,
-        .depthBiasSlopeFactor = 0.0f,
-        .lineWidth = 1.0f,
+        .depthBiasConstantFactor = 0.0F,
+        .depthBiasClamp = 0.0F,
+        .depthBiasSlopeFactor = 0.0F,
+        .lineWidth = 1.0F,
     };
 }
 
@@ -148,10 +148,10 @@ inline VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo(
         .flags = 0,
         .rasterizationSamples = rasterizationSamples,
         .sampleShadingEnable = VK_FALSE,
-        .minSampleShading = 0.0f,
+        .minSampleShading = 0.0F,
         .pSampleMask = nullptr,
-        .alphaToCoverageEnable = false,
-        .alphaToOneEnable = false,
+        .alphaToCoverageEnable = 0U,
+        .alphaToOneEnable = 0U,
     };
 }
 
@@ -171,8 +171,8 @@ pipelineDepthStencilStateCreateInfo(
         .stencilTestEnable = VK_FALSE,
         .front = {},
         .back = {},
-        .minDepthBounds = 0.0f,
-        .maxDepthBounds = 0.0f,
+        .minDepthBounds = 0.0F,
+        .maxDepthBounds = 0.0F,
     };
 }
 

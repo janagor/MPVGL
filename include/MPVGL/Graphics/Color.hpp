@@ -5,17 +5,18 @@
 namespace mpvgl {
 
 struct Color {
+    static constexpr f64 MAX_COLOR_VALUE = 255.0;
     struct RGB {
         u8 r;
         u8 g;
         u8 b;
     };
     constexpr Color(RGB rgb) noexcept
-        : m_red(static_cast<f64>(rgb.r) / 255.0),
-          m_green(static_cast<f64>(rgb.g) / 255.0),
-          m_blue(static_cast<f64>(rgb.b) / 255.0) {}
+        : m_red(static_cast<f64>(rgb.r) / MAX_COLOR_VALUE),
+          m_green(static_cast<f64>(rgb.g) / MAX_COLOR_VALUE),
+          m_blue(static_cast<f64>(rgb.b) / MAX_COLOR_VALUE) {}
 
-    struct literal;
+    struct Literal;
 
     [[nodiscard]] constexpr f64 red() const noexcept { return m_red; }
     [[nodiscard]] constexpr f64 green() const noexcept { return m_green; }
@@ -27,7 +28,7 @@ struct Color {
     f64 m_blue;
 };
 
-struct Color::literal {
+struct Color::Literal {
     static constexpr Color Red = Color{{255, 0, 0}};
     static constexpr Color Green = Color{{0, 255, 0}};
     static constexpr Color Blue = Color{{0, 0, 255}};

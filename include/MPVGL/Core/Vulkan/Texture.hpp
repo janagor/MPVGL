@@ -41,7 +41,7 @@ class Texture {
 
    private:
     VmaAllocator m_allocator{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 
     VkImage m_image{VK_NULL_HANDLE};
     VkImageView m_imageView{VK_NULL_HANDLE};
@@ -49,7 +49,6 @@ class Texture {
     VmaAllocation m_allocation{VK_NULL_HANDLE};
     u32 m_mipLevels{0};
 
-   private:
     Texture(VkImage image, VkImageView imageView, VkSampler sampler,
             VmaAllocation allocation, u32 mipLevels, VmaAllocator allocator,
             vkb::DispatchTable disp) noexcept;
@@ -71,7 +70,6 @@ class Texture {
                                   VkQueue graphicsQueue, VkBuffer buffer,
                                   VkImage image, Extent2D const& extent);
 
-   private:
     class RawPixels {
        public:
         constexpr RawPixels() noexcept = default;

@@ -87,11 +87,15 @@ Texture& Texture::operator=(Texture&& other) noexcept {
 Texture::~Texture() { cleanup(); }
 
 void Texture::cleanup() noexcept {
-    if (m_sampler != VK_NULL_HANDLE) m_disp.destroySampler(m_sampler, nullptr);
-    if (m_imageView != VK_NULL_HANDLE)
+    if (m_sampler != VK_NULL_HANDLE) {
+        m_disp.destroySampler(m_sampler, nullptr);
+    }
+    if (m_imageView != VK_NULL_HANDLE) {
         m_disp.destroyImageView(m_imageView, nullptr);
-    if (m_image != VK_NULL_HANDLE && m_allocator != VK_NULL_HANDLE)
+    }
+    if (m_image != VK_NULL_HANDLE && m_allocator != VK_NULL_HANDLE) {
         vmaDestroyImage(m_allocator, m_image, m_allocation);
+    }
     m_sampler = VK_NULL_HANDLE;
     m_imageView = VK_NULL_HANDLE;
     m_image = VK_NULL_HANDLE;
@@ -186,8 +190,8 @@ tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
     device.instDisp.getPhysicalDeviceFormatProperties(
         device.logicalDevice.physical_device, imageFormat, &formatProperties);
 
-    if (!(formatProperties.optimalTilingFeatures &
-          VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+    if ((formatProperties.optimalTilingFeatures &
+         VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0) {
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
                   "Texture image format does not support linear blitting"}};
@@ -251,8 +255,12 @@ tl::expected<void, Error<EngineError>> Texture::generateMipmaps(
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
                     nullptr, 1, &barrier);
 
-                if (mipWidth > 1) mipWidth /= 2;
-                if (mipHeight > 1) mipHeight /= 2;
+                if (mipWidth > 1) {
+                    mipWidth /= 2;
+                }
+                if (mipHeight > 1) {
+                    mipHeight /= 2;
+                }
             }
 
             barrier.subresourceRange.baseMipLevel = mipLevels - 1;
@@ -274,13 +282,16 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
     return io::ResourceBuffer::load(filepath)
-        .map_error([](auto const& e) {
-            return Error<EngineError>{EngineError::FileNotFound, e.message()};
+        .map_error([](auto const& error) {
+            return Error<EngineError>{EngineError::FileNotFound,
+                                      error.message()};
         })
         .and_then([&](io::ResourceBuffer const& buffer)
                       -> tl::expected<Texture, Error<EngineError>> {
             auto view = buffer.view();
-            int width, height, channels;
+            int width;
+            int height;
+            int channels;
 
             unsigned char* data = stbi_load_from_memory(
                 reinterpret_cast<stbi_uc const*>(view.data()),
@@ -339,7 +350,7 @@ tl::expected<Texture, Error<EngineError>> Texture::loadFromFile(
 }
 
 void Texture::RawPixels::free() noexcept {
-    if (m_data) {
+    if (m_data != nullptr) {
         stbi_image_free(m_data);
         m_data = nullptr;
     }
@@ -350,12 +361,12 @@ tl::expected<Texture::RawPixels, Error<EngineError>> Texture::loadRawPixels(
     RawPixels pixels{};
     int channels;
     auto const& extent = pixels.extent();
-    auto width = static_cast<int>(extent.width),
-         height = static_cast<int>(extent.height);
+    auto width = static_cast<int>(extent.width);
+    auto height = static_cast<int>(extent.height);
     pixels.data() =
         stbi_load(filepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
-    if (!pixels.data()) {
+    if (pixels.data() == nullptr) {
         return tl::unexpected{
             Error{EngineError::VulkanRuntimeError,
                   "Failed to load Texture from: " + filepath}};
@@ -404,7 +415,9 @@ tl::expected<void, Error<EngineError>> Texture::uploadAndGenerateMipmaps(
                        VMA_MEMORY_USAGE_AUTO,
                        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-    if (!stagingRes) return tl::unexpected{stagingRes.error()};
+    if (!stagingRes) {
+        return tl::unexpected{stagingRes.error()};
+    }
     auto stagingBuffer = std::move(stagingRes.value());
 
     if (auto mapRes = stagingBuffer.map()) {
@@ -466,12 +479,12 @@ tl::expected<VkSampler, Error<EngineError>> Texture::createSampler(
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.mipLodBias = 0.0F;
     samplerInfo.anisotropyEnable = VK_FALSE;
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
     samplerInfo.compareEnable = VK_FALSE;
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.minLod = 0.0f;
+    samplerInfo.minLod = 0.0F;
     samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;

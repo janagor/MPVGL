@@ -74,8 +74,8 @@ PipelineBuilder& PipelineBuilder::setDepthStencil(VkBool32 depthTestEnable,
                                                   VkCompareOp compareOp) {
     m_depthStencil = initializers::pipelineDepthStencilStateCreateInfo(
         depthTestEnable, depthWriteEnable, compareOp);
-    m_depthStencil.minDepthBounds = 0.0f;
-    m_depthStencil.maxDepthBounds = 1.0f;
+    m_depthStencil.minDepthBounds = 0.0F;
+    m_depthStencil.maxDepthBounds = 1.0F;
     return *this;
 }
 
@@ -102,7 +102,7 @@ tl::expected<VkPipeline, Error<EngineError>> PipelineBuilder::build(
 
     auto colorBlending = initializers::pipelineColorBlendStateCreateInfo(
         {&m_colorBlendAttachment, 1}, VK_FALSE, VK_LOGIC_OP_COPY);
-    auto blendConstants = std::array{0.0f, 0.0f, 0.0f, 0.0f};
+    auto blendConstants = std::array{0.0F, 0.0F, 0.0F, 0.0F};
     std::copy(blendConstants.begin(), blendConstants.end(),
               colorBlending.blendConstants);
 

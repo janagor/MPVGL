@@ -30,11 +30,11 @@ struct GlslShaderIncluder : public glslang::TShader::Includer {
         return nullptr;
     };
 
-    virtual void releaseInclude(IncludeResult *) override {};
+    virtual void releaseInclude(IncludeResult * /*includeResult*/) override {};
 
    private:
     static IncludeResult *getFailResult() {
-        static std::string const sEmpty = "";
+        static std::string const sEmpty;
         static IncludeResult sFailResult(sEmpty, "Header does not exist!", 0,
                                          nullptr);
         return &sFailResult;
@@ -53,8 +53,7 @@ struct ShaderCompiler {
     ShaderCompiler(ShaderCompiler &&other) noexcept = delete;
     ShaderCompiler &operator=(ShaderCompiler &&other) noexcept = delete;
 
-   public:
-    tl::expected<std::vector<u32>, Error<EngineError>> compile(
+    static tl::expected<std::vector<u32>, Error<EngineError>> compile(
         std::string const &source, EShLanguage lang) {
         glslang::TShader shader{lang};
 
@@ -71,7 +70,7 @@ struct ShaderCompiler {
 
         shader.setEntryPoint("main");
 
-        auto const resources = GetResources();
+        auto *const resources = GetResources();
         resources->maxDrawBuffers = 1;
         auto const defaultVersion = 450;
         auto const defaultProfile = ENoProfile;

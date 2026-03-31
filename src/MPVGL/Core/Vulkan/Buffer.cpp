@@ -126,8 +126,8 @@ tl::expected<Buffer, Error<EngineError>> Buffer::createWithStaging(
                VMA_MEMORY_USAGE_AUTO,
                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
         .and_then([&](Buffer staging) {
-            return staging.map().transform([&](void* d) {
-                std::memcpy(d, data, static_cast<size_t>(size));
+            return staging.map().transform([&](void* mappedData) {
+                std::memcpy(mappedData, data, static_cast<size_t>(size));
                 staging.unmap();
                 return std::move(staging);
             });

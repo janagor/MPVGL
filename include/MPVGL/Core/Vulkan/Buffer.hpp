@@ -52,7 +52,6 @@ class Buffer {
     VmaAllocation m_allocation{VK_NULL_HANDLE};
     VkDeviceSize m_size{0};
 
-   private:
     Buffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize size,
            VmaAllocator allocator) noexcept;
     static tl::expected<Buffer, Error<EngineError>> createWithStaging(

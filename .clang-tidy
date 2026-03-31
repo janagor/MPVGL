@@ -8,7 +8,7 @@ Checks: >
   misc-*,
   # modernize-*,
   performance-*,
-  # readability-*,
+  readability-*,
   -cert-dcl58-cpp,
   -misc-header-include-cycle,
 

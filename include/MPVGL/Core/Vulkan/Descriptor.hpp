@@ -39,7 +39,7 @@ class DescriptorSetLayout {
     void cleanup() noexcept;
 
     VkDescriptorSetLayout m_layout{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 };
 
 class DescriptorLayoutBuilder {

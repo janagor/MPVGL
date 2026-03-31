@@ -32,7 +32,9 @@ CommandPool& CommandPool::operator=(CommandPool&& other) noexcept {
 CommandPool::~CommandPool() noexcept { cleanup(); }
 
 void CommandPool::cleanup() noexcept {
-    if (m_pool != VK_NULL_HANDLE) m_disp.destroyCommandPool(m_pool, nullptr);
+    if (m_pool != VK_NULL_HANDLE) {
+        m_disp.destroyCommandPool(m_pool, nullptr);
+    }
     m_pool = VK_NULL_HANDLE;
 }
 

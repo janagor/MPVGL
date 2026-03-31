@@ -13,12 +13,12 @@ namespace mpvgl {
 struct SceneNode {
     Mesh<Vertex> mesh{};
     glm::mat4 transform{};
-    std::string texturePath{};
+    std::string texturePath;
 };
 
 class Scene {
    public:
-    void add(Mesh<Vertex> mesh, glm::mat4 transform = glm::mat4(1.0f),
+    void add(Mesh<Vertex> mesh, glm::mat4 transform = glm::mat4(1.0F),
              std::string texturePath = "textures/default.ppm") {
         m_nodes.emplace_back(std::move(mesh), transform,
                              std::move(texturePath));

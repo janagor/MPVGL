@@ -37,10 +37,9 @@ class GraphicsPipeline {
                      vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
 
-   private:
     VkPipeline m_pipeline{VK_NULL_HANDLE};
     VkPipelineLayout m_layout{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 };
 
 }  // namespace mpvgl::vlk

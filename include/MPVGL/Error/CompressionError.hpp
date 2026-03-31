@@ -50,14 +50,14 @@ struct is_error_code_enum<mpvgl::CompressionError> : true_type {};
 
 namespace mpvgl {
 
-class CompressionErrorCategory_impl : public std::error_category {
+class CompressionErrorCategoryImpl : public std::error_category {
    public:
     [[nodiscard]] char const* name() const noexcept override {
         return "mpvgl::Compression";
     }
 
-    [[nodiscard]] std::string message(int ev) const override {
-        switch (static_cast<CompressionError>(ev)) {
+    [[nodiscard]] std::string message(int error) const override {
+        switch (static_cast<CompressionError>(error)) {
             case CompressionError::InvalidData:
                 return "Invalid compression data or corrupted stream";
             case CompressionError::TreeOverflow:
@@ -71,12 +71,12 @@ class CompressionErrorCategory_impl : public std::error_category {
 };
 
 [[nodiscard]] inline std::error_category const& CompressionErrorCategory() {
-    static CompressionErrorCategory_impl instance;
+    static CompressionErrorCategoryImpl instance;
     return instance;
 }
 
-[[nodiscard]] inline std::error_code make_error_code(CompressionError e) {
-    return {static_cast<int>(e), CompressionErrorCategory()};
+[[nodiscard]] inline std::error_code make_error_code(CompressionError error) {
+    return {static_cast<int>(error), CompressionErrorCategory()};
 }
 
 }  // namespace mpvgl

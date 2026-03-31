@@ -9,7 +9,7 @@ namespace mpvgl {
 template <typename ShapeTag>
 struct Shape {
     [[nodiscard]] static Mesh<Vertex> generate(
-        Color const& color = Color::literal::White);
+        Color const& color = Color::Literal::White);
 };
 
 }  // namespace mpvgl

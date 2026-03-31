@@ -31,13 +31,13 @@ class RenderPass {
     void cleanup() noexcept;
 
     VkRenderPass m_renderPass{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 };
 
 struct SubpassInfo {
     VkPipelineBindPoint bindPoint{VK_PIPELINE_BIND_POINT_GRAPHICS};
-    std::vector<VkAttachmentReference> colorAttachments{};
-    std::optional<VkAttachmentReference> depthAttachment{};
+    std::vector<VkAttachmentReference> colorAttachments;
+    std::optional<VkAttachmentReference> depthAttachment;
 };
 
 class RenderPassBuilder {
@@ -52,9 +52,9 @@ class RenderPassBuilder {
         DeviceContext const& device);
 
    private:
-    std::vector<VkAttachmentDescription> m_attachments{};
-    std::vector<SubpassInfo> m_subpassInfos{};
-    std::vector<VkSubpassDependency> m_dependencies{};
+    std::vector<VkAttachmentDescription> m_attachments;
+    std::vector<SubpassInfo> m_subpassInfos;
+    std::vector<VkSubpassDependency> m_dependencies;
 };
 
 }  // namespace mpvgl::vlk

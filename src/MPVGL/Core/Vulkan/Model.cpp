@@ -23,8 +23,9 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
     DeviceContext const& device, VkCommandPool commandPool,
     VkQueue graphicsQueue, std::string const& filepath) {
     return io::ResourceBuffer::load(filepath)
-        .map_error([](auto const& e) {
-            return Error<EngineError>{EngineError::FileNotFound, e.message()};
+        .map_error([](auto const& error) {
+            return Error<EngineError>{EngineError::FileNotFound,
+                                      error.message()};
         })
         .and_then([&](io::ResourceBuffer const& buffer)
                       -> tl::expected<Model, Error<EngineError>> {
@@ -51,15 +52,15 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
             for (auto const& shape : shapes) {
                 for (auto const& index : shape.mesh.indices) {
                     auto vertex = Vertex{
-                        {attrib.vertices[3 * index.vertex_index + 0],
-                         attrib.vertices[3 * index.vertex_index + 1],
-                         attrib.vertices[3 * index.vertex_index + 2]},
-                        {{255, 255, 255}},
-                        {attrib.texcoords[2 * index.texcoord_index + 0],
-                         1.0f -
-                             attrib.texcoords[2 * index.texcoord_index + 1]}};
+                        {attrib.vertices[(3 * index.vertex_index) + 0],
+                         attrib.vertices[(3 * index.vertex_index) + 1],
+                         attrib.vertices[(3 * index.vertex_index) + 2]},
+                        {Color::Literal::White},
+                        {attrib.texcoords[(2 * index.texcoord_index) + 0],
+                         1.0F -
+                             attrib.texcoords[(2 * index.texcoord_index) + 1]}};
 
-                    if (uniqueVertices.count(vertex) == 0) {
+                    if (!uniqueVertices.contains(vertex)) {
                         uniqueVertices[vertex] =
                             static_cast<u32>(vertices.size());
                         vertices.push_back(vertex);
@@ -72,13 +73,17 @@ tl::expected<Model, Error<EngineError>> Model::loadFromFile(
                 device, commandPool, graphicsQueue, vertices,
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-            if (!vBufferRes) return tl::unexpected{vBufferRes.error()};
+            if (!vBufferRes) {
+                return tl::unexpected{vBufferRes.error()};
+            }
 
             auto iBufferRes = Buffer::createFromData(
                 device, commandPool, graphicsQueue, indices,
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                     VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-            if (!iBufferRes) return tl::unexpected{iBufferRes.error()};
+            if (!iBufferRes) {
+                return tl::unexpected{iBufferRes.error()};
+            }
 
             return Model(std::move(vBufferRes.value()),
                          std::move(iBufferRes.value()),
@@ -93,12 +98,16 @@ tl::expected<Model, Error<EngineError>> Model::create(
     auto vBufferRes = Buffer::createFromData(
         device, commandPool, graphicsQueue, vertices,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (!vBufferRes) return tl::unexpected{vBufferRes.error()};
+    if (!vBufferRes) {
+        return tl::unexpected{vBufferRes.error()};
+    }
 
     auto iBufferRes = Buffer::createFromData(
         device, commandPool, graphicsQueue, indices,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    if (!iBufferRes) return tl::unexpected{iBufferRes.error()};
+    if (!iBufferRes) {
+        return tl::unexpected{iBufferRes.error()};
+    }
 
     return Model(std::move(vBufferRes.value()), std::move(iBufferRes.value()),
                  static_cast<u32>(indices.size()));

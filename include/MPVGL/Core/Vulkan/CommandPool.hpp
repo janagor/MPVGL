@@ -29,9 +29,8 @@ class CommandPool {
     CommandPool(VkCommandPool pool, vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
 
-   private:
     VkCommandPool m_pool{VK_NULL_HANDLE};
-    vkb::DispatchTable m_disp{};
+    vkb::DispatchTable m_disp;
 };
 
 }  // namespace mpvgl::vlk

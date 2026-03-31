@@ -48,9 +48,10 @@ namespace {
 template <typename T>
 tl::expected<T, mpvgl::Error<mpvgl::EngineError>> vkb_to_expected(
     vkb::Result<T> &&res, std::string const &msg) {
-    if (!res)
+    if (!res) {
         return tl::unexpected{
             mpvgl::Error<mpvgl::EngineError>{res.error(), msg}};
+    }
     return std::move(res.value());
 }
 
@@ -59,6 +60,7 @@ tl::expected<T, mpvgl::Error<mpvgl::EngineError>> vkb_to_expected(
 namespace mpvgl::vlk {
 
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
+constexpr u32 DESCRIPTOR_POOL_MAX_SETS = 1000;
 
 tl::expected<void, Error<EngineError>> deviceInitialization(
     Vulkan &vulkan, int width, int height, std::string const &title,
@@ -67,13 +69,15 @@ tl::expected<void, Error<EngineError>> deviceInitialization(
     auto &deviceContext = vulkan.deviceContext;
 
     return createWindow(width, height, title, monitor, share, resize)
-        .transform_error([](auto e) { return Error{std::move(e)}; })
+        .transform_error([](auto error) { return Error{std::move(error)}; })
         .and_then([&](auto window) {
             deviceContext.window = window;
 
-            return InstanceBuilder::getInstance().transform_error([](auto e) {
-                return Error<EngineError>{e, "Failed to create Instance"};
-            });
+            return InstanceBuilder::getInstance().transform_error(
+                [](auto error) {
+                    return Error<EngineError>{error,
+                                              "Failed to create Instance"};
+                });
         })
         .and_then([&](auto instance) {
             deviceContext.instance = instance;
@@ -83,16 +87,16 @@ tl::expected<void, Error<EngineError>> deviceInitialization(
 
             return PhysicalDeviceBuilder::getPhysicalDevice(
                        deviceContext.instance, surface)
-                .transform_error([](auto e) {
+                .transform_error([](auto error) {
                     return Error<EngineError>{
-                        e, "Failed to create Physical Device"};
+                        error, "Failed to create Physical Device"};
                 });
         })
         .and_then([](auto physicalDevice) {
             return LogicalDeviceBuilder::getLogicalDevice(physicalDevice)
-                .transform_error([](auto e) {
+                .transform_error([](auto error) {
                     return Error<EngineError>{
-                        e, "Failed to create Logical Device"};
+                        error, "Failed to create Logical Device"};
                 });
         })
         .and_then([&](auto logicalDevice)
@@ -326,17 +330,20 @@ tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
         auto modelRes = Model::create(
             deviceContext, vulkan.data.commandPool.handle(),
             deviceContext.graphicsQueue, node.mesh.vertices, node.mesh.indices);
-        if (!modelRes) return tl::unexpected{modelRes.error()};
+        if (!modelRes) {
+            return tl::unexpected{modelRes.error()};
+        }
         sceneContext.models.push_back(std::move(modelRes.value()));
 
-        if (sceneContext.materials.find(node.texturePath) ==
-            sceneContext.materials.end()) {
+        if (!sceneContext.materials.contains(node.texturePath)) {
             MaterialData newMaterial{};
 
             auto texRes = Texture::loadFromFile(
                 deviceContext, vulkan.data.commandPool.handle(),
                 deviceContext.graphicsQueue, node.texturePath);
-            if (!texRes) return tl::unexpected{texRes.error()};
+            if (!texRes) {
+                return tl::unexpected{texRes.error()};
+            }
             newMaterial.texture = std::move(texRes.value());
 
             size_t const framesInFlight = vulkan.data.frames.size();
@@ -347,7 +354,9 @@ tl::expected<void, Error<EngineError>> loadScene(Vulkan &vulkan,
                     deviceContext,
                     pipelineContext.descriptorSetLayout.handle());
 
-                if (!setRes) return tl::unexpected{setRes.error()};
+                if (!setRes) {
+                    return tl::unexpected{setRes.error()};
+                }
                 newMaterial.descriptorSets[i] = setRes.value();
 
                 DescriptorWriter writer{};
@@ -404,11 +413,11 @@ tl::expected<void, Error<EngineError>> createUniformBuffers(Vulkan &vulkan) {
 
 tl::expected<void, Error<EngineError>> createDescriptorPool(Vulkan &vulkan) {
     std::vector<DescriptorAllocator::PoolSizeRatio> ratios = {
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1.0f},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f}};
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1.0F},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0F}};
 
-    return vulkan.data.descriptorAllocator.init(vulkan.deviceContext, 1000,
-                                                ratios);
+    return vulkan.data.descriptorAllocator.init(
+        vulkan.deviceContext, DESCRIPTOR_POOL_MAX_SETS, ratios);
 }
 
 tl::expected<void, Error<EngineError>> createCommandBuffers(Vulkan &vulkan) {
@@ -449,12 +458,16 @@ tl::expected<void, Error<EngineError>> createSyncObjects(Vulkan &vulkan) {
 
     for (size_t i = 0; i < vulkan.data.frames.size(); ++i) {
         auto semRes = Semaphore::create(deviceContext);
-        if (!semRes) return tl::unexpected{semRes.error()};
+        if (!semRes) {
+            return tl::unexpected{semRes.error()};
+        }
         vulkan.data.frames[i].availableSemaphore = std::move(semRes.value());
 
         auto fenceRes =
             Fence::create(deviceContext, VK_FENCE_CREATE_SIGNALED_BIT);
-        if (!fenceRes) return tl::unexpected{fenceRes.error()};
+        if (!fenceRes) {
+            return tl::unexpected{fenceRes.error()};
+        }
         vulkan.data.frames[i].inFlightFence = std::move(fenceRes.value());
     }
     return {};
@@ -477,9 +490,10 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
         swapchainContext.swapchain.handle(), std::numeric_limits<u64>::max(),
         availableSemaphore, VK_NULL_HANDLE, &image_index);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         return recreateSwapchain(vulkan);
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    }
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to acquire Swapchain Image"}};
     }
@@ -518,7 +532,7 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
                                     "Failed to submit Draw Command Buffer"}};
     }
 
-    auto swapchainKRH = swapchainContext.swapchain.handle();
+    auto *swapchainKRH = swapchainContext.swapchain.handle();
     auto presentInfoKHR = initializers::presentInfoKHR(
         {&finishedSemaphore, 1}, {&swapchainKRH, 1}, {&image_index, 1});
 
@@ -526,7 +540,8 @@ tl::expected<void, Error<EngineError>> drawFrame(Vulkan &vulkan) {
         deviceContext.presentQueue, &presentInfoKHR);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         return recreateSwapchain(vulkan);
-    } else if (result != VK_SUCCESS) {
+    }
+    if (result != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to present Swapchain Image"}};
     }

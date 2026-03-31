@@ -8,7 +8,8 @@ namespace mpvgl {
 
 class InputManager {
    public:
-    void processKeyboard(GLFWwindow* window, Camera& camera, f64 deltaTime);
+    static void processKeyboard(GLFWwindow* window, Camera& camera,
+                                f64 deltaTime);
     void processMouse(GLFWwindow* window, Camera& camera);
 
    private:

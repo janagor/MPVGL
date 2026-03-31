@@ -23,7 +23,8 @@ struct SwapchainBuilder {
         vkb::Device const& device, GLFWwindow* window,
         vkb::Swapchain const& oldSwapchain = {}) {
         vkb::SwapchainBuilder swapchainBuilder{device};
-        int width, height;
+        int width;
+        int height;
         glfwGetWindowSize(window, &width, &height);
         auto newSwapchain = swapchainBuilder
                                 .set_desired_extent(static_cast<u32>(width),
@@ -84,7 +85,6 @@ class Swapchain {
     // TODO: Make it a pointer to table owned by VulkanContext/Vulkan
     vkb::DispatchTable m_disp;
 
-   private:
     Swapchain(vkb::Swapchain vkbSwapchain, vkb::DispatchTable disp) noexcept;
     void cleanup() noexcept;
     tl::expected<void, Error<EngineError>> initImageViews();

@@ -28,14 +28,14 @@ struct is_error_code_enum<mpvgl::EngineError> : true_type {};
 
 namespace mpvgl {
 
-class EngineErrorCategory_impl : public std::error_category {
+class EngineErrorCategoryImpl : public std::error_category {
    public:
     [[nodiscard]] char const* name() const noexcept override {
         return "mpvgl::Engine";
     }
 
-    [[nodiscard]] constexpr std::string message(int ev) const override {
-        switch (static_cast<EngineError>(ev)) {
+    [[nodiscard]] constexpr std::string message(int error) const override {
+        switch (static_cast<EngineError>(error)) {
             case EngineError::VulkanInitFailed:
                 return "Vulkan initialization failed";
             case EngineError::VulkanRuntimeError:
@@ -53,12 +53,12 @@ class EngineErrorCategory_impl : public std::error_category {
 };
 
 [[nodiscard]] inline std::error_category const& EngineErrorCategory() {
-    static EngineErrorCategory_impl const instance;
+    static EngineErrorCategoryImpl const instance;
     return instance;
 }
 
-[[nodiscard]] inline std::error_code make_error_code(EngineError e) {
-    return {static_cast<int>(e), EngineErrorCategory()};
+[[nodiscard]] inline std::error_code make_error_code(EngineError error) {
+    return {static_cast<int>(error), EngineErrorCategory()};
 }
 
 }  // namespace mpvgl

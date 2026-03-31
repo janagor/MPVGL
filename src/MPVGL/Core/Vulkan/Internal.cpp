@@ -41,7 +41,7 @@ tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
         std::cerr << "GLFW Error (" << error << "): " << description << '\n';
     });
 
-    if (!glfwInit()) {
+    if (glfwInit() == GLFW_FALSE) {
         return tl::unexpected{
             Error{EngineError::VulkanInitFailed, "Failed to initialize GLFW"}};
     }
@@ -54,7 +54,7 @@ tl::expected<GLFWwindow *, Error<EngineError>> createWindow(
     GLFWwindow *window =  // NOLINT(misc-const-correctness)
         glfwCreateWindow(width, height, title.c_str(), monitor, share);
 
-    if (!window) {
+    if (window == nullptr) {
         return tl::unexpected{
             Error{EngineError::WindowError, "Failed to create GLFW window!"}};
     }
@@ -71,12 +71,14 @@ VkSurfaceKHR create_surface_glfw(VkInstance instance, GLFWwindow *window,
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkResult const err =
         glfwCreateWindowSurface(instance, window, allocator, &surface);
-    if (err) {
+    if (err != VK_SUCCESS) {
         char const *error_msg;
         int const ret = glfwGetError(&error_msg);
         if (ret != 0) {
             std::cout << ret << " ";
-            if (error_msg != nullptr) std::cout << error_msg;
+            if (error_msg != nullptr) {
+                std::cout << error_msg;
+            }
             std::cout << "\n";
         }
         surface = VK_NULL_HANDLE;
@@ -252,7 +254,9 @@ tl::expected<VkFormat, Error<EngineError>> findSupportedFormat(
             (tiling == VK_IMAGE_TILING_OPTIMAL &&
              (props.optimalTilingFeatures & features) == features);
 
-        if (isLinearOk || isOptimalOk) return format;
+        if (isLinearOk || isOptimalOk) {
+            return format;
+        }
     }
     return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                 "Failed to find supported Format"}};
@@ -277,7 +281,7 @@ void cleanupSwapChain(Vulkan &vulkan) {
     auto &swapchainContext = vulkan.swapchainContext;
 
     swapchainContext.depthTexture = Texture{};
-    for (auto framebuffer : swapchainContext.framebuffers) {
+    for (auto *framebuffer : swapchainContext.framebuffers) {
         deviceContext.logDevDisp.destroyFramebuffer(framebuffer, nullptr);
     }
     swapchainContext.framebuffers.clear();
@@ -291,7 +295,7 @@ tl::expected<void, Error<EngineError>> recreateSwapchain(Vulkan &vulkan) {
     deviceContext.logDevDisp.deviceWaitIdle();
 
     swapchainContext.depthTexture = Texture{};
-    for (auto framebuffer : swapchainContext.framebuffers) {
+    for (auto *framebuffer : swapchainContext.framebuffers) {
         deviceContext.logDevDisp.destroyFramebuffer(framebuffer, nullptr);
     }
     swapchainContext.framebuffers.clear();
@@ -335,8 +339,8 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
     }
 
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    clearValues[0].color = {{0.0F, 0.0F, 0.0F, 1.0F}};
+    clearValues[1].depthStencil = {1.0F, 0};
 
     auto renderPassInfo = initializers::renderPassBeginInfo(
         swapchainContext.renderPass.handle(),
@@ -352,14 +356,14 @@ tl::expected<void, Error<EngineError>> recordCommandBuffer(
         pipelineContext.graphicsPipeline.handle());
 
     VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
+    viewport.x = 0.0F;
+    viewport.y = 0.0F;
     viewport.width =
         static_cast<f32>(swapchainContext.swapchain.extent().width);
     viewport.height =
         static_cast<f32>(swapchainContext.swapchain.extent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
     deviceContext.logDevDisp.cmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {};
@@ -408,14 +412,19 @@ void updateUniformBuffer(Vulkan &vulkan, u32 current_image) {
     auto &sceneContext = vulkan.sceneContext;
     auto &swapchainContext = vulkan.swapchainContext;
 
+    constexpr f32 NEAR_PLANE = 0.1F;
+    constexpr f32 FAR_PLANE = 10.0F;
+    constexpr f32 VULKAN_Y_FLIP = -1.0F;
+
     UniformBufferObject ubo{};
     ubo.view = sceneContext.camera.getViewMatrix();
     ubo.projection = glm::perspective(
         glm::radians(static_cast<f32>(sceneContext.camera.zoom())),
         static_cast<f32>(swapchainContext.swapchain.extent().width) /
             static_cast<f32>(swapchainContext.swapchain.extent().height),
-        0.1f, 10.0f);
-    ubo.projection[1][1] *= -1;
+        NEAR_PLANE, FAR_PLANE);
+
+    ubo.projection[1][1] *= VULKAN_Y_FLIP;
 
     memcpy(vulkan.data.frames.at(current_image).uniformBufferMapped, &ubo,
            sizeof(ubo));
