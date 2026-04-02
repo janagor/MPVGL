@@ -24,7 +24,9 @@
  */
 #pragma once
 
+#include <concepts>
 #include <cstdint>
+#include <limits>
 
 namespace mpvgl {
 
@@ -40,5 +42,45 @@ using i64 = int64_t;
 
 using f32 = float;
 using f64 = double;
+
+template <class Containing, class Contained>
+concept ContainingMax = std::integral<Containing> && std::integral<Contained> &&
+                        (std::numeric_limits<Containing>::max() >=
+                         std::numeric_limits<Contained>::max());
+
+template <class IntType>
+    requires(ContainingMax<IntType, u8>)
+static constexpr IntType U8_MAX = UINT8_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, u16>)
+static constexpr IntType U16_MAX = UINT16_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, u32>)
+static constexpr IntType U32_MAX = UINT32_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, u64>)
+static constexpr IntType U64_MAX = UINT64_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, i8>)
+static constexpr IntType I8_MAX = INT8_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, i16>)
+static constexpr IntType I16_MAX = INT16_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, i32>)
+static constexpr IntType I32_MAX = INT32_MAX;
+
+template <class IntType>
+    requires(ContainingMax<IntType, i64>)
+static constexpr IntType I64_MAX = INT64_MAX;
+
+template <class IntType>
+static constexpr IntType ZERO = 0;
 
 }  // namespace mpvgl
