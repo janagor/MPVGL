@@ -36,14 +36,14 @@ namespace mpvgl {
 namespace detail {
 
 template <typename T>
-[[nodiscard]] constexpr T adjust_endianness(T value) noexcept {
+[[nodiscard]] constexpr auto adjust_endianness(T value) noexcept -> T {
     if constexpr (sizeof(T) == 1) {
         return value;
     } else if constexpr (std::integral<T>) {
         return std::byteswap(value);
-    } else if constexpr (std::floating_point<T> && sizeof(T) == 4) {
+    } else if constexpr (std::floating_point<T> && sizeof(T) == sizeof(u32)) {
         return std::bit_cast<T>(std::byteswap(std::bit_cast<u32>(value)));
-    } else if constexpr (std::floating_point<T> && sizeof(T) == 8) {
+    } else if constexpr (std::floating_point<T> && sizeof(T) == sizeof(u64)) {
         return std::bit_cast<T>(std::byteswap(std::bit_cast<u64>(value)));
     }
     return value;
@@ -58,18 +58,19 @@ template <typename T>
 template <typename T, std::endian Endian = std::endian::little,
           std::input_iterator Iter>
     requires std::is_trivially_copyable_v<T>
-[[nodiscard]] constexpr T readType(Iter& iterator) {
-    T value;
-    auto* dst = reinterpret_cast<std::byte*>(std::addressof(value));
+[[nodiscard]] constexpr auto readType(Iter& iterator) -> T {
+    std::array<std::byte, sizeof(T)> buffer{};
 
-    for (std::size_t i = 0; i < sizeof(T); ++i) {
-        dst[i] = static_cast<std::byte>(*iterator);
-        ++iterator;
+    for (std::size_t i{}; i < sizeof(T); ++i) {
+        buffer.at(i) = static_cast<std::byte>(*iterator++);
     }
+
+    T value = std::bit_cast<T>(buffer);
 
     if constexpr (Endian != std::endian::native) {
         return detail::adjust_endianness(value);
     }
+
     return value;
 }
 
@@ -80,9 +81,7 @@ template <typename T, std::endian Endian = std::endian::little,
 template <typename T, std::endian Endian = std::endian::little,
           std::input_iterator Iter>
     requires std::is_trivially_copyable_v<T>
-[[nodiscard]] constexpr T peekType(Iter iterator) {
-    // Kopia iteratora jest przekazana przez wartość (Iter iterator),
-    // więc readType nie przesunie oryginalnego!
+[[nodiscard]] constexpr auto peekType(Iter iterator) -> T {
     return readType<T, Endian>(iterator);
 }
 
@@ -92,8 +91,8 @@ template <typename T, std::endian Endian = std::endian::little,
  */
 template <std::endian Endian = std::endian::little,
           std::integral BaseType = i32, std::floating_point FloatType = f32,
-          std::size_t Shift = 16, std::input_iterator Iter>
-[[nodiscard]] constexpr FloatType readFixed(Iter& iterator) {
+          std::size_t Shift = UINT16_WIDTH, std::input_iterator Iter>
+[[nodiscard]] constexpr auto readFixed(Iter& iterator) -> FloatType {
     BaseType rawValue = readType<BaseType, Endian>(iterator);
     return static_cast<FloatType>(rawValue) /
            static_cast<FloatType>(1ULL << Shift);
@@ -104,8 +103,8 @@ template <std::endian Endian = std::endian::little,
  */
 template <std::endian Endian = std::endian::little,
           std::integral BaseType = i32, std::floating_point FloatType = f32,
-          std::size_t Shift = 16, std::input_iterator Iter>
-[[nodiscard]] constexpr FloatType peekFixed(Iter iterator) {
+          std::size_t Shift = UINT16_WIDTH, std::input_iterator Iter>
+[[nodiscard]] constexpr auto peekFixed(Iter iterator) -> FloatType {
     return readFixed<Endian, BaseType, FloatType, Shift>(iterator);
 }
 
@@ -113,8 +112,8 @@ template <std::endian Endian = std::endian::little,
  * Reads n-chars from the iterator. Advances iterator by length.
  */
 template <std::input_iterator Iter>
-[[nodiscard]] inline std::string readNChars(std::size_t length,
-                                            Iter& iterator) {
+[[nodiscard]] inline auto readNChars(std::size_t length, Iter& iterator)
+    -> std::string {
     std::string result;
     result.reserve(length);  // Pre-alokacja dla wydajności
 
@@ -129,12 +128,13 @@ template <std::input_iterator Iter>
  * Peeks n-chars from the iterator.
  */
 template <std::input_iterator Iter>
-[[nodiscard]] inline std::string peekNChars(std::size_t length, Iter iterator) {
+[[nodiscard]] inline auto peekNChars(std::size_t length, Iter iterator)
+    -> std::string {
     return readNChars(length, iterator);
 }
 
 template <std::integral T, std::input_iterator Iter>
-[[nodiscard]] constexpr T readNBits(std::size_t length, Iter& iter) {
+[[nodiscard]] constexpr auto readNBits(std::size_t length, Iter& iter) -> T {
     T result = 0;
     for (std::size_t i = 0; i < length; ++i) {
         result = (result << 1) | static_cast<T>(*iter ? 1 : 0);
@@ -144,12 +144,12 @@ template <std::integral T, std::input_iterator Iter>
 }
 
 template <std::integral T, std::input_iterator Iter>
-[[nodiscard]] constexpr T peekNBits(std::size_t length, Iter iter) {
+[[nodiscard]] constexpr auto peekNBits(std::size_t length, Iter iter) -> T {
     return readNBits<T>(length, iter);
 }
 
 template <std::integral T, std::input_iterator Iter>
-[[nodiscard]] constexpr T readRNBits(std::size_t length, Iter& iter) {
+[[nodiscard]] constexpr auto readRNBits(std::size_t length, Iter& iter) -> T {
     T result = 0;
     for (std::size_t i = 0; i < length; ++i) {
         result |= (static_cast<T>(*iter ? 1 : 0) << i);
@@ -159,7 +159,7 @@ template <std::integral T, std::input_iterator Iter>
 }
 
 template <std::integral T, std::input_iterator Iter>
-[[nodiscard]] constexpr T peekRNBits(std::size_t length, Iter iter) {
+[[nodiscard]] constexpr auto peekRNBits(std::size_t length, Iter iter) -> T {
     return readRNBits<T>(length, iter);
 }
 
