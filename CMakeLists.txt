@@ -68,4 +68,4 @@ add_custom_target(tidy
     USES_TERMINAL
     COMMENT "Running static analysis pipeline..."
 )
-
+add_subdirectory(tests)
