@@ -9,6 +9,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -52,7 +53,7 @@ auto findDepthFormat(Vulkan &vulkan)
     -> tl::expected<VkFormat, Error<EngineError>>;
 auto has_stencil_component(VkFormat format) -> bool;
 void cleanupSwapChain(Vulkan &vulkan);
-auto recreateSwapchain(Vulkan &vulkan)
+auto recreateSwapchain(Renderer &renderer)
     -> tl::expected<void, Error<EngineError>>;
 auto recordCommandBuffer(Vulkan &vulkan, VkCommandBuffer command_buffer,
                          u32 image_index)

@@ -19,9 +19,9 @@
 
 #include <GLFW/glfw3.h>
 
+#include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
-#include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/CommandPool.hpp"
 #include "MPVGL/Core/Vulkan/Descriptor.hpp"
@@ -62,12 +62,14 @@ namespace mpvgl::vlk {
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 constexpr u32 DESCRIPTOR_POOL_MAX_SETS = 1000;
 
-auto deviceInitialization(Vulkan &vulkan, int width, int height,
-                          std::string const &title, GLFWmonitor *monitor,
-                          GLFWwindow *share, bool resize)
+// TODO: move to another class
+auto Renderer::deviceInitialization(int width, int height,
+                                    std::string const &title,
+                                    GLFWmonitor *monitor, GLFWwindow *share,
+                                    bool resize)
     -> tl::expected<void, Error<EngineError>> {
-    auto &surface = vulkan.surface;
-    auto &deviceContext = vulkan.deviceContext;
+    auto &surface = m_vulkan.surface;
+    auto &deviceContext = m_vulkan.deviceContext;
 
     return createWindow(width, height, title, monitor, share, resize)
         .transform_error(
@@ -121,17 +123,18 @@ auto deviceInitialization(Vulkan &vulkan, int width, int height,
             return {};
         });
 }
-
-auto createSwapchain(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>> {
-    return Swapchain::create(vulkan.deviceContext)
-        .transform([&vulkan](Swapchain swapchain) -> void {
-            vulkan.swapchainContext.swapchain = std::move(swapchain);
+// TODO: move to another class
+auto Renderer::createSwapchain() -> tl::expected<void, Error<EngineError>> {
+    return Swapchain::create(m_vulkan.deviceContext)
+        .transform([&](Swapchain swapchain) -> void {
+            m_vulkan.swapchainContext.swapchain = std::move(swapchain);
         });
 }
 
-auto getQueues(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>> {
-    auto &logicalDevice = vulkan.deviceContext.logicalDevice;
-    auto &deviceContext = vulkan.deviceContext;
+// TODO: move to another class
+auto Renderer::getQueues() -> tl::expected<void, Error<EngineError>> {
+    auto &logicalDevice = m_vulkan.deviceContext.logicalDevice;
+    auto &deviceContext = m_vulkan.deviceContext;
 
     return vkb_to_expected(logicalDevice.get_queue(vkb::QueueType::graphics),
                            "Failed to get Graphics Queue")
@@ -148,66 +151,63 @@ auto getQueues(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>> {
         });
 }
 
-auto bootstrap(Vulkan &vulkan, int width, int height, std::string const &title,
-               GLFWmonitor *monitor, GLFWwindow *share, bool resize)
+auto Renderer::bootstrap(int width, int height, std::string const &title,
+                         GLFWmonitor *monitor, GLFWwindow *share, bool resize)
     -> tl::expected<void, Error<EngineError>> {
-    return deviceInitialization(vulkan, width, height, title, monitor, share,
-                                resize)
+    return deviceInitialization(width, height, title, monitor, share, resize)
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return createSwapchain(vulkan);
+            return createSwapchain();
         })
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return getQueues(vulkan);
+            return getQueues();
         });
 }
 
-auto setupRenderingPipeline(Vulkan &vulkan)
+auto Renderer::setupRenderingPipeline()
     -> tl::expected<void, Error<EngineError>> {
-    return createRenderPass(vulkan)
+    return createRenderPass()
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return createDescriptorSetLayout(vulkan);
+            return createDescriptorSetLayout();
         })
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return createGraphicsPipeline(vulkan);
+            return createGraphicsPipeline();
         });
 }
 
-auto setupRenderTargets(Vulkan &vulkan)
-    -> tl::expected<void, Error<EngineError>> {
-    return createDepthResources(vulkan).and_then(
+auto Renderer::setupRenderTargets() -> tl::expected<void, Error<EngineError>> {
+    return createDepthResources().and_then(
         [&] -> tl::expected<void, Error<EngineError>> {
-            return createFramebuffers(vulkan);
+            return createFramebuffers();
         });
 }
 
-auto loadAndPrepareAssets(Vulkan &vulkan, Scene const &scene)
+auto Renderer::loadAndPrepareAssets(Scene const &scene)
     -> tl::expected<void, Error<EngineError>> {
-    return vlk::createUniformBuffers(vulkan).and_then(
+    return createUniformBuffers().and_then(
         [&] -> tl::expected<void, Error<EngineError>> {
-            return vlk::loadScene(vulkan, scene);
+            return loadScene(scene);
         });
 }
 
-auto setupDescriptorsAndSync(Vulkan &vulkan)
+auto Renderer::setupDescriptorsAndSync()
     -> tl::expected<void, Error<EngineError>> {
-    return vlk::createDescriptorPool(vulkan)
+    return createDescriptorPool()
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return vlk::createCommandPool(vulkan);
+            return createCommandPool();
         })
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return vlk::createCommandBuffers(vulkan);
+            return createCommandBuffers();
         })
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
-            return vlk::createSyncObjects(vulkan);
+            return createSyncObjects();
         });
 }
 
-auto createRenderPass(Vulkan &vulkan)
-    -> tl::expected<void, Error<EngineError>> {
+auto Renderer::createRenderPass() -> tl::expected<void, Error<EngineError>> {
     RenderPassBuilder builder{};
 
     VkAttachmentDescription const colorAttachment = {
-        .format = vulkan.swapchainContext.swapchain.format(),
+        .format = m_vulkan.swapchainContext.swapchain.format(),
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -222,7 +222,7 @@ auto createRenderPass(Vulkan &vulkan)
     mainSubpass.colorAttachments.push_back(
         {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
 
-    if (auto depthFormat = findDepthFormat(vulkan); depthFormat.has_value()) {
+    if (auto depthFormat = findDepthFormat(m_vulkan); depthFormat.has_value()) {
         VkAttachmentDescription depthAttachment{};
         depthAttachment.format = depthFormat.value();
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -256,13 +256,13 @@ auto createRenderPass(Vulkan &vulkan)
 
     builder.addDependency(dependency);
 
-    return builder.build(vulkan.deviceContext)
+    return builder.build(m_vulkan.deviceContext)
         .transform([&](RenderPass renderPass) -> void {
-            vulkan.swapchainContext.renderPass = std::move(renderPass);
+            m_vulkan.swapchainContext.renderPass = std::move(renderPass);
         });
 }
 
-auto createDescriptorSetLayout(Vulkan &vulkan)
+auto Renderer::createDescriptorSetLayout()
     -> tl::expected<void, Error<EngineError>> {
     DescriptorLayoutBuilder builder{};
 
@@ -271,17 +271,17 @@ auto createDescriptorSetLayout(Vulkan &vulkan)
     builder.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                        VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    return builder.build(vulkan.deviceContext)
+    return builder.build(m_vulkan.deviceContext)
         .transform([&](DescriptorSetLayout layout) -> void {
-            vulkan.pipelineContext.descriptorSetLayout = std::move(layout);
+            m_vulkan.pipelineContext.descriptorSetLayout = std::move(layout);
         });
 }
 
-auto createGraphicsPipeline(Vulkan &vulkan)
+auto Renderer::createGraphicsPipeline()
     -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
-    auto &pipelineContext = vulkan.pipelineContext;
-    auto &swapchainContext = vulkan.swapchainContext;
+    auto &deviceContext = m_vulkan.deviceContext;
+    auto &pipelineContext = m_vulkan.pipelineContext;
+    auto &swapchainContext = m_vulkan.swapchainContext;
 
     return GraphicsPipeline::create(
                deviceContext, swapchainContext.renderPass.handle(),
@@ -293,12 +293,11 @@ auto createGraphicsPipeline(Vulkan &vulkan)
         });
 }
 
-auto createFramebuffers(Vulkan &vulkan)
-    -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
-    auto &swapchainContext = vulkan.swapchainContext;
+auto Renderer::createFramebuffers() -> tl::expected<void, Error<EngineError>> {
+    auto &deviceContext = m_vulkan.deviceContext;
+    auto &swapchainContext = m_vulkan.swapchainContext;
 
-    auto const &imageViews = vulkan.swapchainContext.swapchain.imageViews();
+    auto const &imageViews = m_vulkan.swapchainContext.swapchain.imageViews();
 
     swapchainContext.framebuffers.resize(
         swapchainContext.swapchain.imageViews().size());
@@ -322,27 +321,26 @@ auto createFramebuffers(Vulkan &vulkan)
     return {};
 }
 
-auto createCommandPool(Vulkan &vulkan)
-    -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
+auto Renderer::createCommandPool() -> tl::expected<void, Error<EngineError>> {
+    auto &deviceContext = m_vulkan.deviceContext;
     return vkb_to_expected(deviceContext.logicalDevice.get_queue_index(
                                vkb::QueueType::graphics),
                            "Failed to get Queue Index")
         .and_then(
             [&](u32 queueIndex) -> tl::expected<void, Error<EngineError>> {
                 return CommandPool::create(deviceContext, queueIndex)
-                    .transform([&vulkan](CommandPool pool) -> void {
-                        vulkan.data.commandPool = std::move(pool);
+                    .transform([&](CommandPool pool) -> void {
+                        m_vulkan.data.commandPool = std::move(pool);
                     });
             });
 }
 
-auto createDepthResources(Vulkan &vulkan)
+auto Renderer::createDepthResources()
     -> tl::expected<void, Error<EngineError>> {
-    auto &swapchainContext = vulkan.swapchainContext;
-    auto &deviceContext = vulkan.deviceContext;
+    auto &swapchainContext = m_vulkan.swapchainContext;
+    auto &deviceContext = m_vulkan.deviceContext;
 
-    return findDepthFormat(vulkan).and_then(
+    return findDepthFormat(m_vulkan).and_then(
         [&](VkFormat format) -> tl::expected<void, Error<EngineError>> {
             return Texture::createDepthTexture(
                        deviceContext, swapchainContext.swapchain.extent().width,
@@ -353,15 +351,15 @@ auto createDepthResources(Vulkan &vulkan)
         });
 }
 
-auto loadScene(Vulkan &vulkan, Scene const &scene)
+auto Renderer::loadScene(Scene const &scene)
     -> tl::expected<void, Error<EngineError>> {
-    auto &sceneContext = vulkan.sceneContext;
-    auto &pipelineContext = vulkan.pipelineContext;
-    auto &deviceContext = vulkan.deviceContext;
+    auto &sceneContext = m_vulkan.sceneContext;
+    auto &pipelineContext = m_vulkan.pipelineContext;
+    auto &deviceContext = m_vulkan.deviceContext;
 
     for (auto const &node : scene.nodes()) {
         auto modelRes = Model::create(
-            deviceContext, vulkan.data.commandPool.handle(),
+            deviceContext, m_vulkan.data.commandPool.handle(),
             deviceContext.graphicsQueue, node.mesh.vertices, node.mesh.indices);
         if (!modelRes) {
             return tl::unexpected{modelRes.error()};
@@ -372,18 +370,18 @@ auto loadScene(Vulkan &vulkan, Scene const &scene)
             MaterialData newMaterial{};
 
             auto texRes = Texture::loadFromFile(
-                deviceContext, vulkan.data.commandPool.handle(),
+                deviceContext, m_vulkan.data.commandPool.handle(),
                 deviceContext.graphicsQueue, node.texturePath);
             if (!texRes) {
                 return tl::unexpected{texRes.error()};
             }
             newMaterial.texture = std::move(texRes.value());
 
-            size_t const framesInFlight = vulkan.data.frames.size();
+            size_t const framesInFlight = m_vulkan.data.frames.size();
             newMaterial.descriptorSets.resize(framesInFlight);
 
             for (size_t i = 0; i < framesInFlight; i++) {
-                auto setRes = vulkan.data.descriptorAllocator.allocate(
+                auto setRes = m_vulkan.data.descriptorAllocator.allocate(
                     deviceContext,
                     pipelineContext.descriptorSetLayout.handle());
 
@@ -395,7 +393,7 @@ auto loadScene(Vulkan &vulkan, Scene const &scene)
                 DescriptorWriter writer{};
                 writer
                     .writeBuffer(
-                        0, vulkan.data.frames.at(i).uniformBuffer.handle(),
+                        0, m_vulkan.data.frames.at(i).uniformBuffer.handle(),
                         sizeof(UniformBufferObject), 0,
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
                     .writeImage(1, newMaterial.texture.imageView(),
@@ -420,23 +418,23 @@ auto loadScene(Vulkan &vulkan, Scene const &scene)
     return {};
 }
 
-auto createUniformBuffers(Vulkan &vulkan)
+auto Renderer::createUniformBuffers()
     -> tl::expected<void, Error<EngineError>> {
     auto bufferSize = sizeof(UniformBufferObject);
 
     for (size_t i = {}; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         auto result =
             Buffer::create(
-                vulkan.deviceContext, bufferSize,
+                m_vulkan.deviceContext, bufferSize,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
                 .and_then([&](Buffer buffer)
                               -> tl::expected<void, Error<EngineError>> {
                     return buffer.map().transform(
                         [&](void *mappedData) -> void {
-                            vulkan.data.frames.at(i).uniformBufferMapped =
+                            m_vulkan.data.frames.at(i).uniformBufferMapped =
                                 mappedData;
-                            vulkan.data.frames.at(i).uniformBuffer =
+                            m_vulkan.data.frames.at(i).uniformBuffer =
                                 std::move(buffer);
                         });
                 });
@@ -447,55 +445,54 @@ auto createUniformBuffers(Vulkan &vulkan)
     return {};
 }
 
-auto createDescriptorPool(Vulkan &vulkan)
+auto Renderer::createDescriptorPool()
     -> tl::expected<void, Error<EngineError>> {
     std::vector<DescriptorAllocator::PoolSizeRatio> ratios = {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1.0F},
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0F}};
 
-    return vulkan.data.descriptorAllocator.init(
-        vulkan.deviceContext, DESCRIPTOR_POOL_MAX_SETS, ratios);
+    return m_vulkan.data.descriptorAllocator.init(
+        m_vulkan.deviceContext, DESCRIPTOR_POOL_MAX_SETS, ratios);
 }
 
-auto createCommandBuffers(Vulkan &vulkan)
+auto Renderer::createCommandBuffers()
     -> tl::expected<void, Error<EngineError>> {
-    vulkan.data.frames.resize(MAX_FRAMES_IN_FLIGHT);
-    auto framesCount = vulkan.data.frames.size();
+    m_vulkan.data.frames.resize(MAX_FRAMES_IN_FLIGHT);
+    auto framesCount = m_vulkan.data.frames.size();
     std::vector<VkCommandBuffer> allocatedBuffers(framesCount);
 
     auto allocInfo = initializers::commandBufferAllocateInfo(
-        vulkan.data.commandPool.handle(), VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        m_vulkan.data.commandPool.handle(), VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         static_cast<u32>(framesCount));
 
-    if (vulkan.deviceContext.logDevDisp.allocateCommandBuffers(
+    if (m_vulkan.deviceContext.logDevDisp.allocateCommandBuffers(
             &allocInfo, allocatedBuffers.data()) != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to allocate Command Buffers"}};
     }
 
     for (size_t i = {}; i < framesCount; ++i) {
-        vulkan.data.frames.at(i).commandBuffer = allocatedBuffers.at(i);
+        m_vulkan.data.frames.at(i).commandBuffer = allocatedBuffers.at(i);
     }
     return {};
 }
 
-auto createSyncObjects(Vulkan &vulkan)
-    -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
-    auto imageCount = vulkan.swapchainContext.swapchain.imageCount();
+auto Renderer::createSyncObjects() -> tl::expected<void, Error<EngineError>> {
+    auto &deviceContext = m_vulkan.deviceContext;
+    auto imageCount = m_vulkan.swapchainContext.swapchain.imageCount();
 
-    vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
-    vulkan.data.finishedSemaphores.clear();
+    m_vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
+    m_vulkan.data.finishedSemaphores.clear();
 
     for (size_t i = 0; i < imageCount; ++i) {
         if (auto sem = Semaphore::create(deviceContext); sem.has_value()) {
-            vulkan.data.finishedSemaphores.push_back(std::move(sem.value()));
+            m_vulkan.data.finishedSemaphores.push_back(std::move(sem.value()));
         } else {
             return tl::unexpected{sem.error()};
         }
     }
 
-    for (auto &frame : vulkan.data.frames) {
+    for (auto &frame : m_vulkan.data.frames) {
         auto semRes = Semaphore::create(deviceContext);
         if (!semRes) {
             return tl::unexpected{semRes.error()};
@@ -512,11 +509,11 @@ auto createSyncObjects(Vulkan &vulkan)
     return {};
 }
 
-auto drawFrame(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
-    auto &swapchainContext = vulkan.swapchainContext;
+auto Renderer::drawFrame() -> tl::expected<void, Error<EngineError>> {
+    auto &deviceContext = m_vulkan.deviceContext;
+    auto &swapchainContext = m_vulkan.swapchainContext;
 
-    auto &currentFrame = vulkan.data.frames[vulkan.data.currentFrame];
+    auto &currentFrame = m_vulkan.data.frames[m_vulkan.data.currentFrame];
 
     VkFence inFlightFence = currentFrame.inFlightFence.handle();
     VkSemaphore availableSemaphore = currentFrame.availableSemaphore.handle();
@@ -530,30 +527,30 @@ auto drawFrame(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>> {
         availableSemaphore, VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        return recreateSwapchain(vulkan);
+        return recreateSwapchain(*this);
     }
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to acquire Swapchain Image"}};
     }
 
-    if (vulkan.data.imageInFlight.at(image_index) != VK_NULL_HANDLE) {
+    if (m_vulkan.data.imageInFlight.at(image_index) != VK_NULL_HANDLE) {
         deviceContext.logDevDisp.waitForFences(
-            1, &vulkan.data.imageInFlight.at(image_index), VK_TRUE,
+            1, &m_vulkan.data.imageInFlight.at(image_index), VK_TRUE,
             std::numeric_limits<u64>::max());
     }
-    vulkan.data.imageInFlight.at(image_index) = inFlightFence;
+    m_vulkan.data.imageInFlight.at(image_index) = inFlightFence;
 
-    updateUniformBuffer(vulkan, vulkan.data.currentFrame);
+    updateUniformBuffer(m_vulkan, m_vulkan.data.currentFrame);
 
-    if (auto res = recordCommandBuffer(vulkan, currentFrame.commandBuffer,
+    if (auto res = recordCommandBuffer(m_vulkan, currentFrame.commandBuffer,
                                        image_index);
         !res) {
         return res;
     }
 
     VkSemaphore finishedSemaphore =
-        vulkan.data.finishedSemaphores[image_index].handle();
+        m_vulkan.data.finishedSemaphores[image_index].handle();
 
     auto wait_stages = std::array<VkPipelineStageFlags, 1>{
         {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}};
@@ -578,47 +575,47 @@ auto drawFrame(Vulkan &vulkan) -> tl::expected<void, Error<EngineError>> {
     result = deviceContext.logDevDisp.queuePresentKHR(
         deviceContext.presentQueue, &presentInfoKHR);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        return recreateSwapchain(vulkan);
+        return recreateSwapchain(*this);
     }
     if (result != VK_SUCCESS) {
         return tl::unexpected{Error{EngineError::VulkanRuntimeError,
                                     "Failed to present Swapchain Image"}};
     }
 
-    vulkan.data.currentFrame =
-        (vulkan.data.currentFrame + 1) % vulkan.data.frames.size();
+    m_vulkan.data.currentFrame =
+        (m_vulkan.data.currentFrame + 1) % m_vulkan.data.frames.size();
     return {};
 }
 
-auto reloadShadersAndPipeline(Vulkan &vulkan)
+auto Renderer::reloadShadersAndPipeline()
     -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
+    auto &deviceContext = m_vulkan.deviceContext;
 
     deviceContext.logDevDisp.queueWaitIdle(deviceContext.graphicsQueue);
-    return createGraphicsPipeline(vulkan);
+    return createGraphicsPipeline();
 }
 
-void cleanup(Vulkan &vulkan) {
-    cleanupSwapChain(vulkan);
+void Renderer::cleanup() {
+    cleanupSwapChain(m_vulkan);
 
-    vulkan.data.frames.clear();
-    vulkan.data.finishedSemaphores.clear();
-    vulkan.data.commandPool = {};
+    m_vulkan.data.frames.clear();
+    m_vulkan.data.finishedSemaphores.clear();
+    m_vulkan.data.commandPool = {};
 
-    vulkan.pipelineContext.graphicsPipeline = {};
-    vulkan.sceneContext.models.clear();
-    vulkan.sceneContext.materials.clear();
+    m_vulkan.pipelineContext.graphicsPipeline = {};
+    m_vulkan.sceneContext.models.clear();
+    m_vulkan.sceneContext.materials.clear();
 
-    vulkan.data.descriptorAllocator.cleanup(vulkan.deviceContext);
+    m_vulkan.data.descriptorAllocator.cleanup(m_vulkan.deviceContext);
 
-    vulkan.pipelineContext.descriptorSetLayout = {};
-    vulkan.swapchainContext.renderPass = {};
+    m_vulkan.pipelineContext.descriptorSetLayout = {};
+    m_vulkan.swapchainContext.renderPass = {};
 
-    vmaDestroyAllocator(vulkan.deviceContext.allocator);
-    vkb::destroy_device(vulkan.deviceContext.logicalDevice);
-    vkb::destroy_surface(vulkan.deviceContext.instance, vulkan.surface);
-    vkb::destroy_instance(vulkan.deviceContext.instance);
-    destroy_window_glfw(vulkan.deviceContext.window);
+    vmaDestroyAllocator(m_vulkan.deviceContext.allocator);
+    vkb::destroy_device(m_vulkan.deviceContext.logicalDevice);
+    vkb::destroy_surface(m_vulkan.deviceContext.instance, m_vulkan.surface);
+    vkb::destroy_instance(m_vulkan.deviceContext.instance);
+    destroy_window_glfw(m_vulkan.deviceContext.window);
 }
 
 }  // namespace mpvgl::vlk

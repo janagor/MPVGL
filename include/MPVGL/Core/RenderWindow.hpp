@@ -17,6 +17,7 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/InputManager.hpp"
+#include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
@@ -41,7 +42,7 @@ class RenderWindow {
     auto draw() noexcept -> int;
 
    private:
-    vlk::Vulkan vulkan{};
+    vlk::Renderer renderer;
     GLFWwindow *window = nullptr;
     ShaderWatcher shader_watcher;
     InputManager m_inputManager{};

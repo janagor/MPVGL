@@ -18,8 +18,8 @@
 #include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Camera.hpp"
+#include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/UniformBufferObject.hpp"
-#include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Core/Vulkan/Initializers.hpp"
@@ -293,10 +293,10 @@ void cleanupSwapChain(Vulkan &vulkan) {
     swapchainContext.swapchain = Swapchain();
 }
 
-auto recreateSwapchain(Vulkan &vulkan)
+auto recreateSwapchain(Renderer &renderer)
     -> tl::expected<void, Error<EngineError>> {
-    auto &deviceContext = vulkan.deviceContext;
-    auto &swapchainContext = vulkan.swapchainContext;
+    auto &deviceContext = renderer.vulkan().deviceContext;
+    auto &swapchainContext = renderer.vulkan().swapchainContext;
 
     deviceContext.logDevDisp.deviceWaitIdle();
 
@@ -306,24 +306,25 @@ auto recreateSwapchain(Vulkan &vulkan)
     }
     swapchainContext.framebuffers.clear();
 
-    return swapchainContext.swapchain.recreate(vulkan.deviceContext)
+    return swapchainContext.swapchain.recreate(renderer.vulkan().deviceContext)
         .and_then([&]() -> tl::expected<void, Error<EngineError>> {
-            return createDepthResources(vulkan);
+            return renderer.createDepthResources();
         })
         .and_then([&]() -> tl::expected<void, Error<EngineError>> {
-            return createFramebuffers(vulkan);
+            return renderer.createFramebuffers();
         })
         .and_then([&]() -> tl::expected<void, Error<EngineError>> {
             auto imageCount = swapchainContext.swapchain.imageCount();
-            vulkan.data.imageInFlight.assign(imageCount, VK_NULL_HANDLE);
+            renderer.vulkan().data.imageInFlight.assign(imageCount,
+                                                        VK_NULL_HANDLE);
 
-            vulkan.data.finishedSemaphores.clear();
-            vulkan.data.finishedSemaphores.reserve(imageCount);
+            renderer.vulkan().data.finishedSemaphores.clear();
+            renderer.vulkan().data.finishedSemaphores.reserve(imageCount);
 
             for (size_t i = 0; i < imageCount; ++i) {
                 if (auto semRes = Semaphore::create(deviceContext);
                     semRes.has_value()) {
-                    vulkan.data.finishedSemaphores.push_back(
+                    renderer.vulkan().data.finishedSemaphores.push_back(
                         std::move(semRes.value()));
                 } else {
                     return tl::unexpected{semRes.error()};

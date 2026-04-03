@@ -14,9 +14,9 @@
 
 #include "MPVGL/Core/InputManager.hpp"
 #include "MPVGL/Core/RenderWindow.hpp"
+#include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
-#include "MPVGL/Core/Vulkan.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
@@ -34,20 +34,19 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
     shader_watcher.compileAll();
 
-    auto result =
-        vlk::bootstrap(vulkan, width, height, title, monitor, share, true)
-            .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                return vlk::setupRenderingPipeline(vulkan);
-            })
-            .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                return vlk::setupRenderTargets(vulkan);
-            })
-            .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                return vlk::setupDescriptorsAndSync(vulkan);
-            })
-            .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                return vlk::loadAndPrepareAssets(vulkan, scene);
-            });
+    auto result = renderer.bootstrap(width, height, title, monitor, share, true)
+                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                          return renderer.setupRenderingPipeline();
+                      })
+                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                          return renderer.setupRenderTargets();
+                      })
+                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                          return renderer.setupDescriptorsAndSync();
+                      })
+                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                          return renderer.loadAndPrepareAssets(scene);
+                      });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
                   << result.error().message() << "\n";
@@ -55,7 +54,7 @@ RenderWindow::RenderWindow(int width, int height, std::string const &title,
     }
 }
 
-RenderWindow::~RenderWindow() noexcept { cleanup(vulkan); }
+RenderWindow::~RenderWindow() noexcept { renderer.cleanup(); }
 
 auto RenderWindow::draw() noexcept -> int {
     std::jthread const watcherThread(
@@ -66,10 +65,11 @@ auto RenderWindow::draw() noexcept -> int {
     f64 deltaTime = 0.0;
     f64 lastFrame = 0.0;
 
-    glfwSetInputMode(vulkan.deviceContext.window, GLFW_CURSOR,
+    glfwSetInputMode(renderer.vulkan().deviceContext.window, GLFW_CURSOR,
                      GLFW_CURSOR_DISABLED);
 
-    while (glfwWindowShouldClose(vulkan.deviceContext.window) == GLFW_FALSE) {
+    while (glfwWindowShouldClose(renderer.vulkan().deviceContext.window) ==
+           GLFW_FALSE) {
         glfwPollEvents();
 
         auto const currentFrame = glfwGetTime();
@@ -77,7 +77,8 @@ auto RenderWindow::draw() noexcept -> int {
         lastFrame = currentFrame;
 
         for (auto &&[index, object] :
-             vulkan.sceneContext.renderables | std::views::enumerate) {
+             renderer.vulkan().sceneContext.renderables |
+                 std::views::enumerate) {
             f32 const speed = (index % 2 == 0) ? 45.0F : -90.0F;
             object.transformMatrix =
                 glm::rotate(object.transformMatrix,
@@ -85,20 +86,21 @@ auto RenderWindow::draw() noexcept -> int {
                             glm::vec3(0.0F, 0.0F, 1.0F));
         }
 
-        InputManager::processKeyboard(vulkan.deviceContext.window,
-                                      vulkan.sceneContext.camera, deltaTime);
-        m_inputManager.processMouse(vulkan.deviceContext.window,
-                                    vulkan.sceneContext.camera);
+        InputManager::processKeyboard(renderer.vulkan().deviceContext.window,
+                                      renderer.vulkan().sceneContext.camera,
+                                      deltaTime);
+        m_inputManager.processMouse(renderer.vulkan().deviceContext.window,
+                                    renderer.vulkan().sceneContext.camera);
 
-        if (auto result = vlk::drawFrame(vulkan); !result.has_value()) {
+        if (auto result = renderer.drawFrame(); !result.has_value()) {
             std::cout << "failed to draw a Frame:" << result.error().message()
                       << '\n';
             return -1;
         }
 
         if (shader_watcher.consumeChange()) {
-            vulkan.deviceContext.logDevDisp.deviceWaitIdle();
-            if (auto result = vlk::reloadShadersAndPipeline(vulkan);
+            renderer.vulkan().deviceContext.logDevDisp.deviceWaitIdle();
+            if (auto result = renderer.reloadShadersAndPipeline();
                 !result.has_value()) {
                 std::cerr << "[Hot-Reload] Pipeline creation failed: "
                           << result.error().message() << "\n";
@@ -109,7 +111,7 @@ auto RenderWindow::draw() noexcept -> int {
         }
     }
 
-    vulkan.deviceContext.logDevDisp.deviceWaitIdle();
+    renderer.vulkan().deviceContext.logDevDisp.deviceWaitIdle();
     return 0;
 }
 
