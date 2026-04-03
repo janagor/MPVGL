@@ -13,8 +13,7 @@ class Renderer {
    public:
     Renderer() = default;
 
-    auto bootstrap(int width, int height, std::string const &title,
-                   GLFWmonitor *monitor, GLFWwindow *share, bool resize)
+    auto bootstrap(GLFWwindow *window)
         -> tl::expected<void, Error<EngineError>>;
     auto setupRenderingPipeline() -> tl::expected<void, Error<EngineError>>;
     auto setupRenderTargets() -> tl::expected<void, Error<EngineError>>;
@@ -40,10 +39,12 @@ class Renderer {
 
     // TODO: remove from public api
 
-    auto deviceInitialization(int width, int height, std::string const &title,
-                              GLFWmonitor *monitor, GLFWwindow *share,
-                              bool resize)
-        -> tl::expected<void, Error<EngineError>>;
+    auto deviceInitialization(
+        GLFWwindow *window
+        // int width, int height, std::string const &title,
+        //                       GLFWmonitor *monitor, GLFWwindow *share,
+        //                       bool resize
+        ) -> tl::expected<void, Error<EngineError>>;
     auto createSwapchain() -> tl::expected<void, Error<EngineError>>;
     auto getQueues() -> tl::expected<void, Error<EngineError>>;
 

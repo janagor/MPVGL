@@ -63,32 +63,28 @@ constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 constexpr u32 DESCRIPTOR_POOL_MAX_SETS = 1000;
 
 // TODO: move to another class
-auto Renderer::deviceInitialization(int width, int height,
-                                    std::string const &title,
-                                    GLFWmonitor *monitor, GLFWwindow *share,
-                                    bool resize)
+auto Renderer::deviceInitialization(GLFWwindow *window)
     -> tl::expected<void, Error<EngineError>> {
     auto &surface = m_vulkan.surface;
     auto &deviceContext = m_vulkan.deviceContext;
 
-    return createWindow(width, height, title, monitor, share, resize)
-        .transform_error(
-            [](auto error) -> auto { return Error{std::move(error)}; })
-        .and_then([&](auto window) -> auto {
-            deviceContext.window = window;
-
-            return InstanceBuilder::getInstance().transform_error(
-                [](auto error) -> auto {
-                    return Error<EngineError>{error,
-                                              "Failed to create Instance"};
-                });
+    deviceContext.window = window;
+    return InstanceBuilder::getInstance()
+        .transform_error([](auto error) -> auto {
+            return Error<EngineError>{error, "Failed to create Instance"};
         })
-        .and_then([&](auto instance) -> auto {
+        .and_then([&](auto instance) -> tl::expected<void, Error<EngineError>> {
             deviceContext.instance = instance;
             deviceContext.instDisp = deviceContext.instance.make_table();
-            surface = create_surface_glfw(deviceContext.instance,
-                                          deviceContext.window, nullptr);
-
+            if (glfwCreateWindowSurface(deviceContext.instance.instance, window,
+                                        nullptr, &surface) != VK_SUCCESS) {
+                return tl::unexpected{
+                    Error<EngineError>{EngineError::VulkanInitFailed,
+                                       "Failed to create Window Surface"}};
+            }
+            return {};
+        })
+        .and_then([&] -> auto {
             return PhysicalDeviceBuilder::getPhysicalDevice(
                        deviceContext.instance, surface)
                 .transform_error([](auto error) -> auto {
@@ -151,10 +147,9 @@ auto Renderer::getQueues() -> tl::expected<void, Error<EngineError>> {
         });
 }
 
-auto Renderer::bootstrap(int width, int height, std::string const &title,
-                         GLFWmonitor *monitor, GLFWwindow *share, bool resize)
+auto Renderer::bootstrap(GLFWwindow *window)
     -> tl::expected<void, Error<EngineError>> {
-    return deviceInitialization(width, height, title, monitor, share, resize)
+    return deviceInitialization(window)
         .and_then([&] -> tl::expected<void, Error<EngineError>> {
             return createSwapchain();
         })
@@ -615,7 +610,6 @@ void Renderer::cleanup() {
     vkb::destroy_device(m_vulkan.deviceContext.logicalDevice);
     vkb::destroy_surface(m_vulkan.deviceContext.instance, m_vulkan.surface);
     vkb::destroy_instance(m_vulkan.deviceContext.instance);
-    destroy_window_glfw(m_vulkan.deviceContext.window);
 }
 
 }  // namespace mpvgl::vlk

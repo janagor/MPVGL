@@ -7,8 +7,6 @@
 #include <tl/expected.hpp>
 #include <vulkan/vulkan_core.h>
 
-#include <GLFW/glfw3.h>
-
 #include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/Vulkan/Buffer.hpp"
 #include "MPVGL/Core/Vulkan/DeviceContext.hpp"
@@ -18,12 +16,6 @@
 
 namespace mpvgl::vlk {
 
-auto createWindow(int width, int height, std::string const &title,
-                  GLFWmonitor *monitor, GLFWwindow *share, bool resize)
-    -> tl::expected<GLFWwindow *, Error<EngineError>>;
-void destroy_window_glfw(GLFWwindow *window);
-auto create_surface_glfw(VkInstance instance, GLFWwindow *window,
-                         VkAllocationCallbacks *allocator) -> VkSurfaceKHR;
 auto createShaderModule(DeviceContext const &context,
                         std::span<std::byte const> code) -> VkShaderModule;
 auto createBuffer(Vulkan &vulkan, VkDeviceSize size, VkBufferUsageFlags usage,

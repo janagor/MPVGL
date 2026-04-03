@@ -3,7 +3,6 @@
 #include <ranges>
 #include <stdexcept>
 #include <stop_token>
-#include <string>
 #include <thread>
 
 #include <glm/ext/matrix_transform.hpp>
@@ -18,6 +17,8 @@
 #include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
 #include "MPVGL/Core/Vulkan/Init.hpp"
+#include "MPVGL/Core/Window.hpp"
+#include "MPVGL/Core/WindowConfig.hpp"
 #include "MPVGL/Error/EngineError.hpp"
 #include "MPVGL/Error/Error.hpp"
 #include "MPVGL/Utility/Types.hpp"
@@ -26,27 +27,35 @@
 
 namespace mpvgl {
 
-RenderWindow::RenderWindow(int width, int height, std::string const &title,
-                           Scene const &scene, GLFWmonitor *monitor,
-                           GLFWwindow *share) noexcept(false)
+// TODO: remove monitor and share and make them actually used somewhere else
+RenderWindow::RenderWindow(WindowConfig const &config, Scene const &scene,
+                           [[maybe_unused]] GLFWmonitor *monitor,
+                           [[maybe_unused]] GLFWwindow *share)
     : shader_watcher(
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY,
           std::filesystem::path(SOURCE_DIRECTORY) / SHADERS_DIRECTORY) {
     shader_watcher.compileAll();
 
-    auto result = renderer.bootstrap(width, height, title, monitor, share, true)
-                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                          return renderer.setupRenderingPipeline();
-                      })
-                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                          return renderer.setupRenderTargets();
-                      })
-                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                          return renderer.setupDescriptorsAndSync();
-                      })
-                      .and_then([&] -> tl::expected<void, Error<EngineError>> {
-                          return renderer.loadAndPrepareAssets(scene);
-                      });
+    auto result =
+        glfw::Window::create(config)
+            .transform(
+                [&](auto window) -> auto { m_window = std::move(window); })
+            .and_then([&]() -> tl::expected<void, Error<EngineError>> {
+                return renderer.bootstrap(
+                    static_cast<GLFWwindow *>(m_window.getNativeHandle()));
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return renderer.setupRenderingPipeline();
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return renderer.setupRenderTargets();
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return renderer.setupDescriptorsAndSync();
+            })
+            .and_then([&] -> tl::expected<void, Error<EngineError>> {
+                return renderer.loadAndPrepareAssets(scene);
+            });
     if (!result.has_value()) {
         std::cerr << "[FATAL ERROR] Vulkan initialization failed: "
                   << result.error().message() << "\n";

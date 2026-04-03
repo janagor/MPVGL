@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
-#include <iostream>
 #include <span>
 #include <string>
 #include <utility>
@@ -14,8 +13,6 @@
 #include <glm/trigonometric.hpp>
 #include <tl/expected.hpp>
 #include <vulkan/vulkan_core.h>
-
-#include <GLFW/glfw3.h>
 
 #include "MPVGL/Core/Camera.hpp"
 #include "MPVGL/Core/Renderer.hpp"
@@ -33,58 +30,6 @@
 #include "MPVGL/Utility/Types.hpp"
 
 namespace mpvgl::vlk {
-
-auto createWindow(int width, int height, std::string const &title,
-                  GLFWmonitor *monitor, GLFWwindow *share, bool resize)
-    -> tl::expected<GLFWwindow *, Error<EngineError>> {
-    glfwSetErrorCallback([](int error, char const *description) -> void {
-        std::cerr << "GLFW Error (" << error << "): " << description << '\n';
-    });
-
-    if (glfwInit() == GLFW_FALSE) {
-        return tl::unexpected{
-            Error{EngineError::VulkanInitFailed, "Failed to initialize GLFW"}};
-    }
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    if (!resize) {
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    }
-
-    GLFWwindow *window =  // NOLINT(misc-const-correctness)
-        glfwCreateWindow(width, height, title.c_str(), monitor, share);
-
-    if (window == nullptr) {
-        return tl::unexpected{
-            Error{EngineError::WindowError, "Failed to create GLFW window!"}};
-    }
-    return window;
-}
-
-void destroy_window_glfw(GLFWwindow *window) {
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-auto create_surface_glfw(VkInstance instance, GLFWwindow *window,
-                         VkAllocationCallbacks *allocator) -> VkSurfaceKHR {
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VkResult const err =
-        glfwCreateWindowSurface(instance, window, allocator, &surface);
-    if (err != VK_SUCCESS) {
-        char const *error_msg = nullptr;
-        int const ret = glfwGetError(&error_msg);
-        if (ret != 0) {
-            std::cout << ret << " ";
-            if (error_msg != nullptr) {
-                std::cout << error_msg;
-            }
-            std::cout << "\n";
-        }
-        surface = VK_NULL_HANDLE;
-    }
-    return surface;
-}
 
 auto createShaderModule(DeviceContext const &context,
                         std::span<std::byte const> code) -> VkShaderModule {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_common.hpp>
@@ -20,14 +18,15 @@
 #include "MPVGL/Core/Renderer.hpp"
 #include "MPVGL/Core/Scene.hpp"
 #include "MPVGL/Core/Shader/ShaderWatcher.hpp"
-#include "MPVGL/Core/Vulkan/Init.hpp"
+#include "MPVGL/Core/Window.hpp"
+#include "MPVGL/Core/WindowConfig.hpp"
 
 namespace mpvgl {
 
 class RenderWindow {
    public:
-    explicit RenderWindow(int width, int height, std::string const &title,
-                          Scene const &scene, GLFWmonitor *monitor = nullptr,
+    explicit RenderWindow(WindowConfig const &config, Scene const &scene,
+                          GLFWmonitor *monitor = nullptr,
                           GLFWwindow *share = nullptr) noexcept(false);
 
     RenderWindow(RenderWindow const &other) noexcept = delete;
@@ -43,6 +42,7 @@ class RenderWindow {
 
    private:
     vlk::Renderer renderer;
+    glfw::Window m_window;
     GLFWwindow *window = nullptr;
     ShaderWatcher shader_watcher;
     InputManager m_inputManager{};
